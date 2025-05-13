@@ -17,6 +17,7 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import BaseChatMessage
 from tool_analytics import ToolAnalytics, ToolUsageMetrics
+from llm_cache import LLMCache
 
 logger = logging.getLogger("AnalyticsAssistantAgent")
 
@@ -30,6 +31,9 @@ class InteractionMetrics:
     tool_calls: int
     success: bool
     error_message: Optional[str] = None
+    cache_hit: bool = False
+    cache_type: Optional[str] = None
+    cache_similarity: Optional[float] = None
 
 @dataclass
 class PerformanceMetrics:
@@ -41,6 +45,10 @@ class PerformanceMetrics:
     success_rate: float
     tool_usage_rate: float
     error_rate: float
+    cache_hit_rate: float
+    exact_match_hits: int
+    similarity_hits: int
+    cache_misses: int
 
 class AnalyticsAssistantAgent(AssistantAgent):
     """
@@ -57,7 +65,8 @@ class AnalyticsAssistantAgent(AssistantAgent):
         model_client,
         system_message: str,
         tools: Optional[List[Dict]] = None,
-        reflect_on_tool_use: bool = True
+        reflect_on_tool_use: bool = True,
+        cache: Optional[LLMCache] = None
     ):
         """
         Initialize the AnalyticsAssistantAgent.
@@ -68,6 +77,7 @@ class AnalyticsAssistantAgent(AssistantAgent):
             system_message (str): System message for the agent
             tools (Optional[List[Dict]]): List of tools available to the agent
             reflect_on_tool_use (bool): Whether to reflect on tool use
+            cache (Optional[LLMCache]): Cache instance to use for response caching
         """
         super().__init__(name, model_client=model_client, system_message=system_message, tools=tools)
         self.tool_analytics = ToolAnalytics()
@@ -76,6 +86,12 @@ class AnalyticsAssistantAgent(AssistantAgent):
         self.performance_metrics = defaultdict(list)
         self.interaction_metrics: List[InteractionMetrics] = []
         self.error_history: List[Dict[str, Any]] = []
+        self.cache = cache
+        self.cache_stats = {
+            "exact_match_hits": 0,
+            "similarity_hits": 0,
+            "cache_misses": 0
+        }
         
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
         """
@@ -102,8 +118,48 @@ class AnalyticsAssistantAgent(AssistantAgent):
             # Track interaction start
             self._track_interaction_start(messages)
             
-            # Process messages
-            response = await super().on_messages(messages, cancellation_token)
+            # Try to get response from cache if available
+            if self.cache:
+                # Convert messages to cache format
+                cache_messages = [
+                    {"role": m.source, "content": m.content}
+                    for m in messages
+                ]
+                query_text = " ".join(m.content for m in messages)
+                
+                cached_response = self.cache.get(
+                    messages=cache_messages,
+                    query_text=query_text
+                )
+                
+                if cached_response:
+                    # Update cache hit metrics
+                    if hasattr(cached_response, 'similarity_score'):
+                        interaction_metrics.cache_hit = True
+                        interaction_metrics.cache_type = 'similarity'
+                        interaction_metrics.cache_similarity = cached_response.similarity_score
+                        self.cache_stats["similarity_hits"] += 1
+                    else:
+                        interaction_metrics.cache_hit = True
+                        interaction_metrics.cache_type = 'exact'
+                        self.cache_stats["exact_match_hits"] += 1
+                    
+                    response = cached_response
+                else:
+                    self.cache_stats["cache_misses"] += 1
+                    response = await super().on_messages(messages, cancellation_token)
+                    
+                    # Cache the response
+                    self.cache.put(
+                        messages=cache_messages,
+                        response=response,
+                        metadata={
+                            "agent": self.name,
+                            "timestamp": datetime.utcnow().isoformat() + "Z"
+                        }
+                    )
+            else:
+                response = await super().on_messages(messages, cancellation_token)
             
             # Calculate response time
             end_time = datetime.now()
@@ -221,12 +277,21 @@ class AnalyticsAssistantAgent(AssistantAgent):
                 response_time_std_dev=0.0,
                 success_rate=0.0,
                 tool_usage_rate=0.0,
-                error_rate=0.0
+                error_rate=0.0,
+                cache_hit_rate=0.0,
+                exact_match_hits=0,
+                similarity_hits=0,
+                cache_misses=0
             )
         
         successful_interactions = sum(1 for m in self.interaction_metrics if m.success)
         tool_using_interactions = sum(1 for m in self.interaction_metrics if m.tool_calls > 0)
         error_count = len(self.error_history)
+        
+        # Calculate cache metrics
+        total_cache_hits = self.cache_stats["exact_match_hits"] + self.cache_stats["similarity_hits"]
+        total_cache_attempts = total_cache_hits + self.cache_stats["cache_misses"]
+        cache_hit_rate = total_cache_hits / total_cache_attempts if total_cache_attempts > 0 else 0.0
         
         return PerformanceMetrics(
             total_interactions=total_interactions,
@@ -235,7 +300,11 @@ class AnalyticsAssistantAgent(AssistantAgent):
             response_time_std_dev=statistics.stdev(response_times) if len(response_times) > 1 else 0.0,
             success_rate=successful_interactions / total_interactions,
             tool_usage_rate=tool_using_interactions / total_interactions,
-            error_rate=error_count / total_interactions
+            error_rate=error_count / total_interactions,
+            cache_hit_rate=cache_hit_rate,
+            exact_match_hits=self.cache_stats["exact_match_hits"],
+            similarity_hits=self.cache_stats["similarity_hits"],
+            cache_misses=self.cache_stats["cache_misses"]
         )
     
     def get_analytics_summary(self) -> Dict[str, Any]:
@@ -248,13 +317,24 @@ class AnalyticsAssistantAgent(AssistantAgent):
         """
         performance_metrics = self.get_performance_metrics()
         
-        return {
+        summary = {
             "performance_metrics": asdict(performance_metrics),
             "tool_usage": self.tool_analytics.get_performance_dashboard(),
             "interaction_history": self.interaction_history,
             "error_history": self.error_history,
             "optimization_suggestions": self.tool_analytics.get_optimization_suggestions()
         }
+        
+        # Add cache statistics if cache is enabled
+        if self.cache:
+            summary["cache_stats"] = {
+                "hit_rate": performance_metrics.cache_hit_rate,
+                "exact_match_hits": performance_metrics.exact_match_hits,
+                "similarity_hits": performance_metrics.similarity_hits,
+                "cache_misses": performance_metrics.cache_misses
+            }
+        
+        return summary
     
     def get_error_analysis(self) -> Dict[str, Any]:
         """

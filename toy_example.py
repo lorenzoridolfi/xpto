@@ -340,7 +340,7 @@ async def main():
         subject = input("> ").strip()
 
     # Load configuration
-    with open("multi_agent_human_feedback_toy_example.json", "r") as f:
+    with open("toy_example.json", "r") as f:
         config = json.load(f)
 
     # Extract configuration values
