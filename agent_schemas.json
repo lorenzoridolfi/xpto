@@ -1,0 +1,229 @@
+{
+  "schemas": {
+    "writer": {
+      "type": "object",
+      "required": ["files_used", "content", "rationale"],
+      "properties": {
+        "files_used": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["filename", "sections_used", "key_information"],
+            "properties": {
+              "filename": { "type": "string" },
+              "sections_used": { 
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "key_information": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "content": {
+          "type": "object",
+          "required": ["title", "sections"],
+          "properties": {
+            "title": { "type": "string" },
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["heading", "content", "source_files"],
+                "properties": {
+                  "heading": { "type": "string" },
+                  "content": { "type": "string" },
+                  "source_files": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "rationale": {
+          "type": "object",
+          "required": ["organization", "content_decisions", "synthesis_approach", "key_points", "omissions"],
+          "properties": {
+            "organization": {
+              "type": "object",
+              "required": ["structure_choice", "section_order"],
+              "properties": {
+                "structure_choice": { "type": "string" },
+                "section_order": { "type": "string" }
+              }
+            },
+            "content_decisions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["decision", "reasoning", "impact"],
+                "properties": {
+                  "decision": { "type": "string" },
+                  "reasoning": { "type": "string" },
+                  "impact": { "type": "string" }
+                }
+              }
+            },
+            "synthesis_approach": { "type": "string" },
+            "key_points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["point", "emphasis_reason", "source"],
+                "properties": {
+                  "point": { "type": "string" },
+                  "emphasis_reason": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            },
+            "omissions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["content", "reason"],
+                "properties": {
+                  "content": { "type": "string" },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "information_verifier": {
+      "type": "object",
+      "required": ["verification_status", "verification_results", "summary", "termination_reason"],
+      "properties": {
+        "verification_status": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+        },
+        "verification_results": {
+          "type": "object",
+          "required": ["factual_accuracy", "logical_consistency", "source_compliance"],
+          "properties": {
+            "factual_accuracy": {
+              "type": "object",
+              "required": ["status", "issues"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["type", "description", "location", "suggestion"],
+                    "properties": {
+                      "type": { "type": "string" },
+                      "description": { "type": "string" },
+                      "location": { "type": "string" },
+                      "suggestion": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "logical_consistency": {
+              "$ref": "#/schemas/information_verifier/properties/verification_results/properties/factual_accuracy"
+            },
+            "source_compliance": {
+              "$ref": "#/schemas/information_verifier/properties/verification_results/properties/factual_accuracy"
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["overall_assessment", "key_findings", "recommendations"],
+          "properties": {
+            "overall_assessment": { "type": "string" },
+            "key_findings": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "recommendations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "termination_reason": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "text_quality_expert": {
+      "type": "object",
+      "required": ["quality_status", "quality_assessment", "summary", "termination_reason"],
+      "properties": {
+        "quality_status": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+        },
+        "quality_assessment": {
+          "type": "object",
+          "required": ["writing_style", "clarity", "structure", "mechanics"],
+          "properties": {
+            "writing_style": {
+              "type": "object",
+              "required": ["status", "issues"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["type", "description", "location", "suggestion"],
+                    "properties": {
+                      "type": { "type": "string" },
+                      "description": { "type": "string" },
+                      "location": { "type": "string" },
+                      "suggestion": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "clarity": {
+              "$ref": "#/schemas/text_quality_expert/properties/quality_assessment/properties/writing_style"
+            },
+            "structure": {
+              "$ref": "#/schemas/text_quality_expert/properties/quality_assessment/properties/writing_style"
+            },
+            "mechanics": {
+              "$ref": "#/schemas/text_quality_expert/properties/quality_assessment/properties/writing_style"
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["overall_assessment", "key_findings", "recommendations"],
+          "properties": {
+            "overall_assessment": { "type": "string" },
+            "key_findings": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "recommendations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "termination_reason": {
+          "type": ["string", "null"]
+        }
+      }
+    }
+  }
+} 

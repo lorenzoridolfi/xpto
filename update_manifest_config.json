@@ -1,0 +1,101 @@
+{
+  "llm_config": {
+    "creator": {
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "validator": {
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "manager": {
+      "model": "gpt-4",
+      "temperature": 0.7
+    }
+  },
+  "agents": {
+    "creator": {
+      "name": "creator",
+      "description": "Creator agent responsible for generating initial metadata for documents",
+      "system_message": "You are the Creator agent, responsible for generating initial metadata for documents. Your tasks include:\n1. Analyzing document content thoroughly\n2. Generating concise summaries\n3. Extracting key topics and entities\n4. Identifying relevant keywords\n5. Ensuring metadata is comprehensive and accurate\n\nYour output should be in JSON format with the following structure:\n{\n  \"summary\": \"concise document summary\",\n  \"keywords\": [\"key\", \"terms\", \"...\"],\n  \"topics\": [\"main\", \"topics\", \"...\"],\n  \"entities\": [\"important\", \"entities\", \"...\"]\n}"
+    },
+    "validator": {
+      "name": "validator",
+      "description": "Validator agent responsible for reviewing and improving metadata quality",
+      "system_message": "You are the Validator agent, responsible for reviewing and improving metadata. Your tasks include:\n1. Verifying the accuracy of generated summaries\n2. Checking for missing or incorrect topics\n3. Validating entity extraction\n4. Ensuring keyword relevance\n5. Suggesting improvements to metadata quality\n\nReview the Creator's output and provide feedback or corrections. Your response should maintain the same JSON structure but with validated and improved content."
+    },
+    "manager": {
+      "description": "Manager agent coordinating the metadata generation process",
+      "system_message": "You are the Manager agent, coordinating the metadata generation process. Your tasks include:\n1. Facilitating communication between Creator and Validator\n2. Resolving conflicts in metadata generation\n3. Ensuring consistent output format\n4. Maintaining quality standards\n5. Finalizing the metadata structure\n\nYour role is to ensure the collaborative process produces high-quality, consistent metadata that accurately represents the document content."
+    }
+  },
+  "file_manifest": [
+    {
+      "filename": "abstract.txt",
+      "description": "Abstract of the paper"
+    },
+    {
+      "filename": "methods.txt",
+      "description": "Experimental methods"
+    },
+    {
+      "filename": "results.txt",
+      "description": "Results and data"
+    },
+    {
+      "filename": "conclusion.txt",
+      "description": "Conclusions"
+    }
+  ],
+  "max_rounds": 5,
+  "metadata_requirements": {
+    "summary": {
+      "max_length": 200,
+      "required_elements": [
+        "main topic",
+        "key findings",
+        "conclusion"
+      ]
+    },
+    "keywords": {
+      "min_count": 3,
+      "max_count": 10,
+      "format": "lowercase",
+      "separator": ", "
+    },
+    "topics": {
+      "min_count": 1,
+      "max_count": 5,
+      "hierarchy": true
+    },
+    "entities": {
+      "min_count": 2,
+      "max_count": 8,
+      "types": [
+        "person",
+        "organization",
+        "location",
+        "concept",
+        "method"
+      ]
+    }
+  },
+  "output_format": {
+    "file_record": {
+      "required_fields": [
+        "filename",
+        "path",
+        "metadata",
+        "sha256",
+        "modified_date",
+        "status"
+      ],
+      "metadata_structure": {
+        "summary": "string",
+        "keywords": "array",
+        "topics": "array",
+        "entities": "array"
+      }
+    }
+  }
+} 
