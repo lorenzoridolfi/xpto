@@ -387,11 +387,11 @@ async def main():
         presence_penalty=LLM_CONFIG["presence_penalty"]
     )
 
-    # Initialize LLM cache with parameters
+    # Initialize LLM cache with parameters from config
     llm_cache = LLMCache(
-        max_size=1000,
-        similarity_threshold=0.85,
-        expiration_hours=24,
+        max_size=config["cache_config"]["max_size"],
+        similarity_threshold=config["cache_config"]["similarity_threshold"],
+        expiration_hours=config["cache_config"]["expiration_hours"],
         llm_params=LLM_CONFIG  # Pass LLM parameters to cache
     )
 

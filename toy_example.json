@@ -62,5 +62,20 @@
         "top_p": 1.0,
         "frequency_penalty": 0.0,
         "presence_penalty": 0.0
+    },
+    "cache_config": {
+        "use_gpu": true,
+        "gpu_memory_fraction": 0.8,
+        "batch_size": 32,
+        "similarity_threshold": 0.99,
+        "max_size": 1000,
+        "expiration_hours": 24,
+        "cleaning": {
+            "mode": "expired",
+            "min_similarity": 0.99,
+            "max_age_hours": 48,
+            "min_hits": 5,
+            "max_size": 800
+        }
     }
 } 
