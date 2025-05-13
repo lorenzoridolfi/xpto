@@ -346,12 +346,13 @@ async def main():
     # Extract configuration values
     TASK_DESCRIPTION = config["task_description"]
     HIERARCHY = config["hierarchy"]
-    MAX_ROUNDS = config["max_rounds"]
-    FILE_MANIFEST = config["file_manifest"]
     AGENT_CONFIGS = config["agents"]
     OUTPUT_FILES = config["output_files"]
     LOGGING_CONFIG = config["logging"]
     LLM_CONFIG = config["llm_config"]
+    # Use these directly from config
+    file_manifest = config["file_manifest"]
+    max_rounds = config["max_rounds"]
 
     # Configure logging based on config
     logging.basicConfig(
@@ -376,17 +377,6 @@ async def main():
     with open(config["output_files"]["agents_configuration"], "w", encoding="utf-8") as fcfg2:
         json.dump(config, fcfg2, indent=2, ensure_ascii=False)
 
-    # Extract configuration parameters
-    task_description = config.get("task_description", "")
-    hierarchy = config.get("hierarchy", [])
-    agent_configs = config.get("agents", {})
-    file_manifest = config.get("file_manifest", [])
-    max_rounds = config.get("max_rounds", 5)
-    llm_config = config.get("llm_config", {})
-
-    logger.info(f"Task description: {task_description}")
-    logger.info(f"Agent hierarchy: {hierarchy}")
-
     # Initialize OpenAI client
     openai_client = autogen.OpenAIWrapper(
         model=LLM_CONFIG["model"],
@@ -408,7 +398,7 @@ async def main():
     # Create file manifest from config
     file_manifest = [
         {"filename": item["filename"], "description": item["description"]}
-        for item in FILE_MANIFEST
+        for item in file_manifest
     ]
 
     # Create file log
@@ -438,7 +428,7 @@ async def main():
 
     # Instantiate and configure agents
     agents = {}
-    for name, info in agent_configs.items():
+    for name, info in AGENT_CONFIGS.items():
         if name == "FileReaderAgent":
             agents[name] = FileReaderAgent(
                 name=name,
@@ -480,7 +470,7 @@ async def main():
     groupchat = GroupChat(
         agents=[coordinator, file_reader, writer, verifier, quality_checker],
         messages=[],
-        max_round=MAX_ROUNDS
+        max_round=max_rounds
     )
 
     # Start the conversation
