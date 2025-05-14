@@ -1,147 +1,72 @@
-# Multi-Agent Human Feedback System
+# Text Processing and Markdown Removal System
 
-A multi-agent system for processing and analyzing text content with human feedback, featuring advanced caching, manifest management, and quality control.
+A system for processing text content and removing markdown formatting, featuring advanced text analysis and quality control.
 
 ## Features
 
-- **Multi-Agent Architecture**: Specialized agents for reading, writing, verification, and quality control
-- **Human-in-the-Loop**: Interactive feedback and improvement cycles
-- **Advanced Caching**: LLM response caching with configurable similarity thresholds
-- **Manifest Management**: Structured file tracking with metadata and validation
+- **Text Processing**: Efficient processing of text files with markdown removal
 - **Quality Control**: Multiple layers of content verification and improvement
-- **Analytics**: Detailed performance metrics and root cause analysis
 - **Error Handling**: Comprehensive error handling and recovery
 - **Logging**: Detailed logging of all operations and decisions
 
 ## System Components
 
-### Agents
+### Text Processing
 
-1. **CoordinatorAgent**: Orchestrates the workflow between agents
-2. **FileReaderAgent**: Reads and processes input files
-3. **WriterAgent**: Generates content based on input
-4. **InformationVerifierAgent**: Validates information accuracy
-5. **TextQualityAgent**: Ensures content quality
-6. **RootCauseAnalyzerAgent**: Analyzes feedback and system behavior
-
-### Cache System
-
-The system includes an advanced LLM cache with the following features:
-- **Similarity-based Caching**: Matches similar queries using configurable thresholds
-- **GPU Acceleration**: Optional GPU support for faster processing
-- **Configurable Parameters**:
-  - `similarity_threshold`: 0.99 (for safer caching)
-  - `max_size`: Maximum number of cached items
-  - `expiration_hours`: Cache entry lifetime
-  - `language`: Language-specific processing (e.g., "portuguese")
-
-### Manifest System
-
-The system uses a structured manifest to track files and their metadata:
-
-#### Schema Features
-
-- **Version Control**: Semantic versioning for manifest compatibility
-- **File Tracking**:
-  - Basic info (filename, path, status)
-  - Metadata (summary, keywords, topics, entities)
-  - Technical details (hash, size, type, encoding)
-  - Dependencies and categories
-- **Global Metadata**: Cross-file topics and entities
-- **Statistics**: File counts, sizes, and update tracking
-
-#### File Selection
-
-The manifest supports flexible file selection using glob patterns:
-- **Basic Patterns**:
-  - `*.txt` - All text files
-  - `data/*.csv` - CSV files in data directory
-  - `[0-9]*.log` - Log files starting with numbers
-- **Recursive Patterns**:
-  - `**/*.json` - JSON files in any subdirectory
-  - `docs/**/*.md` - Markdown files in docs and subdirectories
-- **Multiple Patterns**: Combine different patterns in the manifest
+1. **Markdown Removal**: Strips markdown formatting while preserving content
+2. **Text Analysis**: Analyzes text content for quality and consistency
+3. **Content Verification**: Validates information accuracy
+4. **Quality Control**: Ensures content quality and readability
 
 ### Configuration
 
 The system is configured through JSON files:
 
-1. **Main Configuration** (`toy_example.json`):
-   - Task description
-   - Agent hierarchy
-   - LLM settings
-   - Cache parameters
-   - File manifest
-
-2. **Manifest Configuration** (`update_manifest_config.json`):
+1. **Main Configuration** (`config.json`):
+   - Processing settings
    - File patterns
-   - Metadata requirements
    - Output format
    - Processing rules
-
-3. **Schema Definition** (`manifest_schema.json`):
-   - File structure
-   - Required fields
-   - Data types
-   - Validation rules
 
 ## Usage
 
 1. **Setup Configuration**:
    ```json
    {
-     "file_manifest": [
-       {
-         "filename": "*.txt",
-         "description": "Text files"
-       },
-       {
-         "filename": "data/**/*.json",
-         "description": "JSON data files"
-       }
+     "file_patterns": [
+       "*.txt",
+       "text/**/*.txt"
      ],
-     "cache_config": {
-       "similarity_threshold": 0.99,
-       "max_size": 1000,
-       "expiration_hours": 24,
-       "language": "portuguese"
-     }
+     "output_directory": "processed",
+     "log_level": "INFO"
    }
    ```
 
-2. **Generate Manifest**:
+2. **Run System**:
    ```bash
-   python update_manifest.py
-   ```
-
-3. **Run System**:
-   ```bash
-   python toy_example.py
+   python process_text.py
    ```
 
 ## Error Handling
 
 The system includes comprehensive error handling:
-- **Manifest Validation**: Schema-based validation
 - **File Processing**: Graceful handling of missing or invalid files
-- **Cache Management**: Automatic cleanup and recovery
-- **Backup System**: Automatic manifest backups with versioning
+- **Content Validation**: Verification of processed content
+- **Backup System**: Automatic backups of original files
 
 ## Logging
 
 The system provides detailed logging:
 - **File Operations**: Track all file reads and writes
-- **Agent Actions**: Record agent decisions and interactions
-- **Cache Statistics**: Monitor cache performance
+- **Processing Steps**: Record processing decisions and actions
 - **Error Tracking**: Detailed error logging with context
 
 ## Performance
 
 The system includes several performance optimizations:
-- **Caching**: Configurable LLM response caching
 - **Parallel Processing**: Support for concurrent file processing
-- **Incremental Updates**: Efficient manifest updates
-- **Resource Management**: Automatic cleanup of old data
+- **Resource Management**: Automatic cleanup of temporary data
+- **Efficient Processing**: Optimized text processing algorithms
 
 ## Contributing
 

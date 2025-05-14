@@ -31,20 +31,8 @@
   },
   "file_manifest": [
     {
-      "filename": "abstract.txt",
-      "description": "Abstract of the paper"
-    },
-    {
-      "filename": "methods.txt",
-      "description": "Experimental methods"
-    },
-    {
-      "filename": "results.txt",
-      "description": "Results and data"
-    },
-    {
-      "filename": "conclusion.txt",
-      "description": "Conclusions"
+      "filename": "text/**/*.txt",
+      "description": "All text files in the text directory and its subdirectories"
     }
   ],
   "max_rounds": 5,
