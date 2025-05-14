@@ -22,7 +22,7 @@ import json
 import logging
 import asyncio
 import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import jsonschema
 from jsonschema import validate
 import sys
@@ -36,6 +36,7 @@ from tool_analytics import ToolAnalytics, ToolUsageMetrics
 from analytics_assistant_agent import AnalyticsAssistantAgent
 from llm_cache import LLMCache
 import autogen
+from autogen import UserProxyAgent, GroupChat, GroupChatManager
 
 # -----------------------------------------------------------------------------
 # Global logs and cache

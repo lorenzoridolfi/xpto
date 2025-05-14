@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "File Manifest Schema",
+  "description": "Schema for file manifest used by both update_manifest and toy_example systems",
+  "type": "object",
+  "required": ["version", "files", "metadata"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Manifest version for compatibility tracking",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "files": {
+      "type": "array",
+      "description": "List of files in the manifest",
+      "items": {
+        "type": "object",
+        "required": ["filename", "path", "description", "status", "metadata"],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Name of the file"
+          },
+          "path": {
+            "type": "string",
+            "description": "Full path to the file"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the file's content"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["okay", "non-existent", "empty", "error"],
+            "description": "Current status of the file"
+          },
+          "metadata": {
+            "type": "object",
+            "required": ["summary", "keywords", "topics", "entities"],
+            "properties": {
+              "summary": {
+                "type": "string",
+                "description": "Summary of the file's content",
+                "maxLength": 200
+              },
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 3,
+                "maxItems": 10,
+                "description": "Keywords describing the file's content"
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "maxItems": 5,
+                "description": "Main topics covered in the file"
+              },
+              "entities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2,
+                "maxItems": 8,
+                "description": "Key entities mentioned in the file"
+              }
+            }
+          },
+          "sha256": {
+            "type": "string",
+            "description": "SHA-256 hash of the file content",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "modified_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last modification date of the file"
+          },
+          "file_type": {
+            "type": "string",
+            "description": "Type of the file (e.g., text, json, markdown)",
+            "enum": ["text", "json", "markdown", "pdf", "other"]
+          },
+          "encoding": {
+            "type": "string",
+            "description": "File encoding",
+            "default": "utf-8"
+          },
+          "size": {
+            "type": "integer",
+            "description": "File size in bytes",
+            "minimum": 0
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of files this file depends on"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the file (e.g., input, reference, output)",
+            "enum": ["input", "reference", "output", "temporary", "other"]
+          },
+          "read_order": {
+            "type": "integer",
+            "description": "Suggested order for reading this file",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["topics", "entities"],
+      "properties": {
+        "topics": {
+          "type": "object",
+          "description": "Global topics across all files",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "entities": {
+          "type": "object",
+          "description": "Global entities across all files",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "statistics": {
+          "type": "object",
+          "properties": {
+            "total_files": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "total_size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "last_updated": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  }
+} 
