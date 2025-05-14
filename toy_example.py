@@ -50,7 +50,7 @@ FILE_LOG: List[str] = []         # Tracks file operations
 ACTION_LOG: List[str] = []       # Records agent actions and decisions
 
 # Global logger instance
-logger = logging.getLogger("MultiAgentSystem")
+logger = logging.getLogger("toy_example")
 
 # Initialize LLM cache
 llm_cache = LLMCache(
@@ -111,12 +111,27 @@ def setup_logging(config: dict) -> None:
     Args:
         config (dict): Configuration dictionary containing logging settings
     """
-    global logger
-    logger.setLevel(getattr(logging, config["logging"]["level"]))
-    fmt = logging.Formatter(config["logging"]["format"])
-    ch = logging.StreamHandler(); ch.setFormatter(fmt)
-    fh = logging.FileHandler(config["logging"]["file"], mode="w"); fh.setFormatter(fmt)
-    logger.addHandler(ch); logger.addHandler(fh)
+    log_config = config["logging"]
+    
+    # Set up logger
+    logger.setLevel(getattr(logging, log_config["level"]))
+    
+    # Create formatter
+    formatter = logging.Formatter(log_config["format"])
+    
+    # Console handler
+    if log_config.get("console", True):
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+    
+    # File handler
+    file_handler = logging.FileHandler(log_config["file"])
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    
+    # Don't propagate to root logger to avoid duplicate logs
+    logger.propagate = False
 
 # -----------------------------------------------------------------------------
 # Event logger
@@ -172,7 +187,9 @@ def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], o
                 entry["outputs"].append({"source": o.source, "content": o.content})
     else:
         entry["outputs"] = outputs
-        
+    
+    # Log the event
+    logger.debug(f"Event: {json.dumps(entry, indent=2)}")
     ROOT_CAUSE_DATA.append(entry)
 
 # -----------------------------------------------------------------------------
@@ -567,82 +584,100 @@ async def main():
     """
     Main function to run the multi-agent system.
     """
-    # Load configuration
-    with open("toy_example.json", "r") as f:
-        config = json.load(f)
-    
-    # Setup logging
-    setup_logging(config)
-    
-    # Get document selection from user
-    selected_document = get_document_selection()
-    logger.info(f"User selected document: {selected_document}")
-    
-    # Initialize agents
-    file_reader = FileReaderAgent(
-        name="FileReader",
-        description="Reads and processes input files",
-        manifest=config["file_manifest"],
-        file_log=FILE_LOG
-    )
-    
-    writer = WriterAgent(
-        name="Writer",
-        description="Generates content based on input",
-        model_client=OpenAIChatCompletionClient(),
-        system_message=config["agents"]["writer"]["system_message"]
-    )
-    
-    verifier = InformationVerifierAgent(
-        name="Verifier",
-        description="Validates information accuracy",
-        model_client=OpenAIChatCompletionClient(),
-        system_message=config["agents"]["verifier"]["system_message"]
-    )
-    
-    quality_agent = TextQualityAgent(
-        name="QualityAgent",
-        description="Ensures content quality",
-        model_client=OpenAIChatCompletionClient(),
-        system_message=config["agents"]["quality"]["system_message"]
-    )
-    
-    coordinator = CoordinatorAgent(
-        name="Coordinator",
-        description="Orchestrates the workflow",
-        model_client=OpenAIChatCompletionClient(),
-        system_message=config["agents"]["coordinator"]["system_message"]
-    )
-    
-    analyzer = RootCauseAnalyzerAgent(
-        name="Analyzer",
-        description="Analyzes feedback and system behavior",
-        model_client=OpenAIChatCompletionClient(),
-        system_message=config["agents"]["analyzer"]["system_message"]
-    )
-    
-    # Process the selected document
     try:
+        # Load configuration
+        logger.info("Loading configuration from update_manifest_config.json")
+        with open("update_manifest_config.json", "r") as f:
+            config = json.load(f)
+        
+        # Setup logging
+        logger.info("Setting up logging system")
+        setup_logging(config)
+        
+        # Get document selection from user
+        logger.info("Prompting user for document selection")
+        selected_document = get_document_selection()
+        logger.info(f"User selected document: {selected_document}")
+        
+        # Initialize agents
+        logger.info("Initializing agents")
+        logger.debug("Creating FileReader agent")
+        file_reader = FileReaderAgent(
+            name="FileReader",
+            description="Reads and processes input files",
+            manifest=config["file_manifest"],
+            file_log=FILE_LOG
+        )
+        
+        logger.debug("Creating Writer agent")
+        writer = WriterAgent(
+            name="Writer",
+            description="Generates content based on input",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=config["agents"]["writer"]["system_message"]
+        )
+        
+        logger.debug("Creating Verifier agent")
+        verifier = InformationVerifierAgent(
+            name="Verifier",
+            description="Validates information accuracy",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=config["agents"]["verifier"]["system_message"]
+        )
+        
+        logger.debug("Creating Quality agent")
+        quality_agent = TextQualityAgent(
+            name="QualityAgent",
+            description="Ensures content quality",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=config["agents"]["quality"]["system_message"]
+        )
+        
+        logger.debug("Creating Coordinator agent")
+        coordinator = CoordinatorAgent(
+            name="Coordinator",
+            description="Orchestrates the workflow",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=config["agents"]["coordinator"]["system_message"]
+        )
+        
+        logger.debug("Creating Analyzer agent")
+        analyzer = RootCauseAnalyzerAgent(
+            name="Analyzer",
+            description="Analyzes feedback and system behavior",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=config["agents"]["analyzer"]["system_message"]
+        )
+        
+        # Process the selected document
+        logger.info(f"Starting document processing for: {selected_document}")
+        
         # Read the document
+        logger.debug(f"Reading document: {selected_document}")
         file_content = await file_reader.on_messages(
             [TextMessage(content=selected_document, source="User")],
             None
         )
         
         # Generate content
+        logger.debug("Generating content")
         generated_text = await writer.generate_content(file_content.chat_message.content)
         
         # Verify information
+        logger.debug("Verifying content")
         verification_result = await verifier.verify_content(generated_text)
         
         # Check quality
+        logger.debug("Checking content quality")
         quality_result = await quality_agent.check_quality(generated_text)
         
         # Get user feedback
+        logger.info("Requesting user feedback")
         user_feedback = get_user_feedback()
         logger.info(f"User feedback received: {user_feedback}")
         
         # Analyze feedback
+        logger.debug("Analyzing user feedback")
         analysis_result = await analyzer.analyze_feedback(user_feedback)
         
         # Log results
@@ -652,7 +687,7 @@ async def main():
         logger.info(f"Analysis result: {analysis_result}")
         
     except Exception as e:
-        logger.error(f"Error processing document: {e}")
+        logger.error(f"Error processing document: {e}", exc_info=True)
         raise
 
 if __name__ == "__main__":
