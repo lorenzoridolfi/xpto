@@ -26,6 +26,9 @@ from typing import List, Dict, Any, Optional
 import jsonschema
 from jsonschema import validate
 import sys
+from prompt_toolkit import prompt
+from prompt_toolkit.styles import Style
+from prompt_toolkit.formatted_text import HTML
 
 from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
@@ -525,215 +528,132 @@ class InformationVerifierAgent(AnalyticsAssistantAgent):
         return resp
 
 # -----------------------------------------------------------------------------
+# User Input Functions
+# -----------------------------------------------------------------------------
+def get_document_selection() -> str:
+    """
+    Prompt the user to select which document they want the agents to generate.
+    Uses prompt-toolkit for a better user experience.
+    
+    Returns:
+        str: The selected document name
+    """
+    style = Style.from_dict({
+        'prompt': 'ansicyan bold',
+    })
+    
+    message = HTML('<prompt>Which document would you like the agents to generate? </prompt>')
+    return prompt(message, style=style)
+
+def get_user_feedback() -> str:
+    """
+    Prompt the user for feedback after text generation.
+    Uses prompt-toolkit for a better user experience.
+    
+    Returns:
+        str: The user's feedback
+    """
+    style = Style.from_dict({
+        'prompt': 'ansigreen bold',
+    })
+    
+    message = HTML('<prompt>Please provide your feedback on the generated text: </prompt>')
+    return prompt(message, style=style)
+
+# -----------------------------------------------------------------------------
 # Main orchestration
 # -----------------------------------------------------------------------------
 async def main():
     """
-    Main function that orchestrates the multi-agent system workflow.
-    
-    The workflow consists of:
-    1. Getting subject input from user
-    2. Loading and validating configuration
-    3. Initializing agents
-    4. Running iterative content generation and improvement rounds
-    5. Collecting and analyzing user feedback
+    Main function to run the multi-agent system.
     """
-    # Get subject from user
-    print("\nPlease enter the subject of the text to be processed:")
-    subject = input("> ").strip()
-    while not subject:
-        print("Subject cannot be empty. Please try again:")
-        subject = input("> ").strip()
-
     # Load configuration
     with open("toy_example.json", "r") as f:
         config = json.load(f)
-
-    # Extract configuration values
-    TASK_DESCRIPTION = config["task_description"]
-    HIERARCHY = config["hierarchy"]
-    AGENT_CONFIGS = config["agents"]
-    OUTPUT_FILES = config["output_files"]
-    LOGGING_CONFIG = config["logging"]
-    LLM_CONFIG = config["llm_config"]
-    file_manifest = config["file_manifest"]
-    max_rounds = config["max_rounds"]
-
-    # Configure logging based on config
-    logging.basicConfig(
-        level=getattr(logging, LOGGING_CONFIG["level"]),
-        format=LOGGING_CONFIG["format"],
-        handlers=[
-            logging.FileHandler(LOGGING_CONFIG["file"]),
-            logging.StreamHandler(sys.stdout)
-        ]
+    
+    # Setup logging
+    setup_logging(config)
+    
+    # Get document selection from user
+    selected_document = get_document_selection()
+    logger.info(f"User selected document: {selected_document}")
+    
+    # Initialize agents
+    file_reader = FileReaderAgent(
+        name="FileReader",
+        description="Reads and processes input files",
+        manifest=config["file_manifest"],
+        file_log=FILE_LOG
     )
-
-    # Update agent system messages with subject
-    for agent_name, agent_config in AGENT_CONFIGS.items():
-        if "system_message" in agent_config:
-            agent_config["system_message"] = agent_config["system_message"].replace(
-                "{subject}", subject
-            )
-
-    # Write configuration files for runtime use
-    with open(config["output_files"]["agent_config"], "w", encoding="utf-8") as fcfg:
-        json.dump(config, fcfg, indent=2, ensure_ascii=False)
-    with open(config["output_files"]["agents_configuration"], "w", encoding="utf-8") as fcfg2:
-        json.dump(config, fcfg2, indent=2, ensure_ascii=False)
-
-    # Initialize OpenAI client
-    openai_client = autogen.OpenAIWrapper(
-        model=LLM_CONFIG["model"],
-        temperature=LLM_CONFIG["temperature"],
-        max_tokens=LLM_CONFIG["max_tokens"],
-        top_p=LLM_CONFIG["top_p"],
-        frequency_penalty=LLM_CONFIG["frequency_penalty"],
-        presence_penalty=LLM_CONFIG["presence_penalty"]
+    
+    writer = WriterAgent(
+        name="Writer",
+        description="Generates content based on input",
+        model_client=OpenAIChatCompletionClient(),
+        system_message=config["agents"]["writer"]["system_message"]
     )
-
-    # Initialize LLM cache with parameters from config
-    llm_cache = LLMCache(
-        max_size=config["cache_config"]["max_size"],
-        similarity_threshold=config["cache_config"]["similarity_threshold"],
-        expiration_hours=config["cache_config"]["expiration_hours"],
-        llm_params=LLM_CONFIG,
-        language=config["cache_config"]["language"]
+    
+    verifier = InformationVerifierAgent(
+        name="Verifier",
+        description="Validates information accuracy",
+        model_client=OpenAIChatCompletionClient(),
+        system_message=config["agents"]["verifier"]["system_message"]
     )
-
-    # Create file manifest from config
-    file_manifest = [
-        {"filename": item["filename"], "description": item["description"]}
-        for item in file_manifest
-    ]
-
-    # Create file log
-    FILE_LOG = "file_operations.log"
-
-    def get_tool_for_agent(agent_name: str) -> Any:
-        """Get the appropriate tool for a given agent."""
-        if agent_name == "WriterAgent":
-            return autogen.Tool(
-                name="write_content",
-                description="Write content based on input",
-                function=lambda x: f"Generated content: {x}"
-            )
-        elif agent_name == "InformationVerifierAgent":
-            return autogen.Tool(
-                name="verify_information",
-                description="Verify information accuracy",
-                function=lambda x: f"Verified content: {x}"
-            )
-        elif agent_name == "TextQualityAgent":
-            return autogen.Tool(
-                name="check_quality",
-                description="Check text quality",
-                function=lambda x: f"Quality checked content: {x}"
-            )
-        return None
-
-    # Instantiate and configure agents
-    agents = {}
-    for name, info in AGENT_CONFIGS.items():
-        if name == "FileReaderAgent":
-            agents[name] = FileReaderAgent(
-                name=name,
-                description=info.get("description",""),
-                manifest=file_manifest,
-                file_log=FILE_LOG
-            )
-        elif name == "InformationVerifierAgent":
-            agents[name] = InformationVerifierAgent(
-                name=name,
-                model_client=openai_client,
-                system_message=info.get("system_message",""),
-                tools=[get_tool_for_agent(name)],
-                cache=llm_cache
-            )
-        elif name == "RootCauseAnalyzerAgent":
-            agents[name] = RootCauseAnalyzerAgent(
-                name=name,
-                model_client=openai_client,
-                system_message=info.get("system_message",""),
-                reflect_on_tool_use=True,
-                cache=llm_cache
-            )
-        else:
-            agents[name] = AnalyticsAssistantAgent(
-                name=name,
-                model_client=openai_client,
-                system_message=info.get("system_message",""),
-                tools=[get_tool_for_agent(name)],
-                reflect_on_tool_use=True,
-                cache=llm_cache
-            )
-        logger.info(f"Instantiated agent: {name} with analytics, tool reflection, and caching enabled")
-
-    # Get references to key agents
-    coordinator = agents["CoordinatorAgent"]
-    file_reader = agents["FileReaderAgent"]
-    writer = agents["WriterAgent"]
-    verifier = agents["InformationVerifierAgent"]
-    quality_checker = agents["TextQualityAgent"]
-    root_cause_analyzer = agents["RootCauseAnalyzerAgent"]
-
-    # Create a group chat
-    groupchat = GroupChat(
-        agents=[coordinator, file_reader, writer, verifier, quality_checker],
-        messages=[],
-        max_round=max_rounds
+    
+    quality_agent = TextQualityAgent(
+        name="QualityAgent",
+        description="Ensures content quality",
+        model_client=OpenAIChatCompletionClient(),
+        system_message=config["agents"]["quality"]["system_message"]
     )
-
-    # Start the conversation
-    coordinator.initiate_chat(
-        groupchat,
-        message=f"Let's work on the task: {TASK_DESCRIPTION}"
+    
+    coordinator = CoordinatorAgent(
+        name="Coordinator",
+        description="Orchestrates the workflow",
+        model_client=OpenAIChatCompletionClient(),
+        system_message=config["agents"]["coordinator"]["system_message"]
     )
-
-    # After file reading is complete, update verifier with source files
-    source_files = []
-    source_content = {}
-    for message in groupchat.messages:
-        if message.source == "FileReaderAgent" and message.content != "NO_FILE":
-            # Extract file content from message
-            file_sections = message.content.split("---")
-            for section in file_sections[1:]:  # Skip first empty section
-                if section.strip():
-                    filename = section.split("\n")[0].strip()
-                    content = "\n".join(section.split("\n")[1:]).strip()
-                    source_files.append(filename)
-                    source_content[filename] = content
-
-    # Update verifier with source files
-    verifier.set_source_files(source_files, source_content)
-
-    # Analyze the conversation
-    root_cause_analyzer.analyze_conversation(groupchat.messages)
-
-    # Print cache statistics
-    print("\n--- CACHE STATISTICS ---")
-    cache_stats = llm_cache.get_stats()
-    print(f"Cache Size: {cache_stats['size']}/{cache_stats['max_size']}")
-    print(f"Oldest Entry: {cache_stats['oldest_entry']}")
-    print(f"Newest Entry: {cache_stats['newest_entry']}")
-    if "llm_params" in cache_stats:
-        print("\nLLM Parameters:")
-        for param, value in cache_stats["llm_params"].items():
-            print(f"  {param}: {value}")
-
-    # Print per-agent cache statistics
-    print("\n--- PER-AGENT CACHE STATISTICS ---")
-    for name, agent in agents.items():
-        if isinstance(agent, AnalyticsAssistantAgent):
-            metrics = agent.get_performance_metrics()
-            print(f"\n{name}:")
-            print(f"Cache Hit Rate: {metrics.cache_hit_rate:.2%}")
-            print(f"Exact Match Hits: {metrics.exact_match_hits}")
-            print(f"Similarity Hits: {metrics.similarity_hits}")
-            print(f"Cache Misses: {metrics.cache_misses}")
+    
+    analyzer = RootCauseAnalyzerAgent(
+        name="Analyzer",
+        description="Analyzes feedback and system behavior",
+        model_client=OpenAIChatCompletionClient(),
+        system_message=config["agents"]["analyzer"]["system_message"]
+    )
+    
+    # Process the selected document
+    try:
+        # Read the document
+        file_content = await file_reader.on_messages(
+            [TextMessage(content=selected_document, source="User")],
+            None
+        )
+        
+        # Generate content
+        generated_text = await writer.generate_content(file_content.chat_message.content)
+        
+        # Verify information
+        verification_result = await verifier.verify_content(generated_text)
+        
+        # Check quality
+        quality_result = await quality_agent.check_quality(generated_text)
+        
+        # Get user feedback
+        user_feedback = get_user_feedback()
+        logger.info(f"User feedback received: {user_feedback}")
+        
+        # Analyze feedback
+        analysis_result = await analyzer.analyze_feedback(user_feedback)
+        
+        # Log results
+        logger.info("Document processing completed successfully")
+        logger.info(f"Verification result: {verification_result}")
+        logger.info(f"Quality result: {quality_result}")
+        logger.info(f"Analysis result: {analysis_result}")
+        
+    except Exception as e:
+        logger.error(f"Error processing document: {e}")
+        raise
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
+    asyncio.run(main())
