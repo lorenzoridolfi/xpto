@@ -1,80 +1,125 @@
-# Text Processing and Markdown Removal System
+# Update Manifest System
 
-A system for processing text content and removing markdown formatting, featuring advanced text analysis and quality control.
+A three-agent system for creating, validating, and managing text content. The system uses three specialized agents: one for creating the manifest, another for criticizing it, and a manager to orchestrate the process.
 
 ## Features
 
-- **Text Processing**: Efficient processing of text files with markdown removal
-- **Quality Control**: Multiple layers of content verification and improvement
-- **Error Handling**: Comprehensive error handling and recovery
-- **Logging**: Detailed logging of all operations and decisions
+- Three-agent architecture for manifest creation, validation, and management
+- Human-in-the-loop feedback system
+- Quality control and validation
+- Comprehensive logging system
+- Error handling and recovery
+- Performance tracking
 
 ## System Components
 
-### Text Processing
+### Agents
 
-1. **Markdown Removal**: Strips markdown formatting while preserving content
-2. **Text Analysis**: Analyzes text content for quality and consistency
-3. **Content Verification**: Validates information accuracy
-4. **Quality Control**: Ensures content quality and readability
+- **Creator Agent**: Creates and generates the manifest content
+  - Analyzes input files
+  - Generates structured content
+  - Ensures completeness and accuracy
+  - Maintains consistent formatting
+  - Logs all creation steps in DEBUG level
 
-### Configuration
+- **Critic Agent**: Reviews and improves the manifest
+  - Validates content accuracy
+  - Suggests improvements
+  - Ensures quality standards
+  - Provides detailed feedback
+  - Logs all validation steps in DEBUG level
 
-The system is configured through JSON files:
+- **Manager Agent**: Orchestrates the entire process
+  - Coordinates between Creator and Critic agents
+  - Manages workflow and timing
+  - Handles error recovery
+  - Ensures process completion
+  - Logs all coordination steps in DEBUG level
 
-1. **Main Configuration** (`config.json`):
-   - Processing settings
-   - File patterns
-   - Output format
-   - Processing rules
+### Logging System
+
+The system uses a simple and efficient logging system that:
+- Logs to both console and file
+- Uses DEBUG level for detailed troubleshooting
+- Includes timestamps and log levels
+- Captures all system events and user interactions
+- Provides structured logging for analysis
+
+#### DEBUG Level Logging Details
+
+The system logs all agent operations in DEBUG level, including:
+
+**Creator Agent Logs:**
+- File analysis steps
+- Content generation process
+- Structure validation
+- Formatting decisions
+- Error handling details
+
+**Critic Agent Logs:**
+- Content validation steps
+- Improvement suggestions
+- Quality check results
+- Feedback generation
+- Error detection details
+
+**Manager Agent Logs:**
+- Workflow coordination
+- Agent communication
+- Process state changes
+- Error recovery attempts
+- Performance metrics
+
+## Configuration
+
+The system is configured through `update_manifest_config.json`, which includes:
+
+- Agent configurations and settings
+- File manifest settings
+- Logging configuration
+- Metadata requirements
+- Output format specifications
 
 ## Usage
 
-1. **Setup Configuration**:
-   ```json
-   {
-     "file_patterns": [
-       "*.txt",
-       "text/**/*.txt"
-     ],
-     "output_directory": "processed",
-     "log_level": "INFO"
-   }
-   ```
-
-2. **Run System**:
+1. Configure the system in `update_manifest_config.json`
+2. Run the main script:
    ```bash
-   python process_text.py
+   python update_manifest.py
    ```
+3. The Manager Agent coordinates the process:
+   - Initiates the Creator Agent to process input files
+   - Triggers the Critic Agent for review
+   - Manages the feedback loop
+4. Review the results and provide additional feedback if needed
+
+## Logging
+
+The system logs all operations to `update_manifest.log` with the following information:
+- Timestamps for all events
+- Agent operations and interactions
+- Content creation and validation steps
+- User inputs and feedback
+- System events and errors
+- Detailed DEBUG level information for all agent activities
 
 ## Error Handling
 
 The system includes comprehensive error handling:
-- **File Processing**: Graceful handling of missing or invalid files
-- **Content Validation**: Verification of processed content
-- **Backup System**: Automatic backups of original files
+- Graceful error recovery
+- Detailed error logging
+- User-friendly error messages
+- Automatic retry mechanisms
+- Error analysis and reporting
 
-## Logging
+## Development
 
-The system provides detailed logging:
-- **File Operations**: Track all file reads and writes
-- **Processing Steps**: Record processing decisions and actions
-- **Error Tracking**: Detailed error logging with context
-
-## Performance
-
-The system includes several performance optimizations:
-- **Parallel Processing**: Support for concurrent file processing
-- **Resource Management**: Automatic cleanup of temporary data
-- **Efficient Processing**: Optimized text processing algorithms
-
-## Contributing
+To contribute to the project:
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Make your changes
+4. Submit a pull request
 
 ## License
 

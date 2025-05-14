@@ -15,17 +15,29 @@ import glob
 
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 # Constants
 MANIFEST_VERSION = "1.0.0"
 MANIFEST_BACKUP_DIR = "manifest_backups"
 MAX_BACKUPS = 5
+
+def setup_logging(config: Dict) -> None:
+    """Configure logging based on the configuration file."""
+    log_config = config["logging"]
+    handlers = []
+    
+    # Add file handler
+    handlers.append(logging.FileHandler(log_config["file"]))
+    
+    # Add console handler if enabled
+    if log_config.get("console", True):
+        handlers.append(logging.StreamHandler())
+    
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, log_config["level"]),
+        format=log_config["format"],
+        handlers=handlers
+    )
 
 def load_json_file(file_path: str) -> Dict:
     """Load and parse a JSON file."""
@@ -45,18 +57,18 @@ def save_json_file(data: Dict, file_path: str) -> None:
         logger.error(f"Error saving JSON file {file_path}: {str(e)}")
         raise
 
-def load_schema() -> Dict:
+def load_schema(config: Dict) -> Dict:
     """Load the manifest schema."""
     try:
-        return load_json_file("manifest_schema.json")
+        return load_json_file(config["system"]["schema_file"])
     except Exception as e:
         logger.error(f"Error loading schema: {str(e)}")
         raise
 
-def validate_manifest(manifest: Dict) -> bool:
+def validate_manifest(manifest: Dict, config: Dict) -> bool:
     """Validate manifest against schema."""
     try:
-        schema = load_schema()
+        schema = load_schema(config)
         jsonschema.validate(instance=manifest, schema=schema)
         return True
     except jsonschema.exceptions.ValidationError as e:
@@ -66,37 +78,41 @@ def validate_manifest(manifest: Dict) -> bool:
         logger.error(f"Error during validation: {str(e)}")
         return False
 
-def create_backup(manifest_path: str) -> None:
+def create_backup(manifest_path: str, config: Dict) -> None:
     """Create a backup of the manifest file."""
     try:
         # Create backup directory if it doesn't exist
-        os.makedirs(MANIFEST_BACKUP_DIR, exist_ok=True)
+        backup_dir = config["system"]["manifest_backup_dir"]
+        os.makedirs(backup_dir, exist_ok=True)
         
         # Generate backup filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = os.path.join(MANIFEST_BACKUP_DIR, f"manifest_{timestamp}.json")
+        backup_path = os.path.join(backup_dir, f"manifest_{timestamp}.json")
         
         # Copy the manifest file
         shutil.copy2(manifest_path, backup_path)
         logger.info(f"Created backup: {backup_path}")
         
         # Clean up old backups
-        cleanup_old_backups()
+        cleanup_old_backups(config)
     except Exception as e:
         logger.error(f"Error creating backup: {str(e)}")
         raise
 
-def cleanup_old_backups() -> None:
+def cleanup_old_backups(config: Dict) -> None:
     """Remove old backup files keeping only the most recent ones."""
     try:
+        backup_dir = config["system"]["manifest_backup_dir"]
+        max_backups = config["system"]["max_backups"]
+        
         backups = sorted([
-            os.path.join(MANIFEST_BACKUP_DIR, f) 
-            for f in os.listdir(MANIFEST_BACKUP_DIR) 
+            os.path.join(backup_dir, f) 
+            for f in os.listdir(backup_dir) 
             if f.startswith("manifest_") and f.endswith(".json")
         ])
         
         # Remove old backups
-        while len(backups) > MAX_BACKUPS:
+        while len(backups) > max_backups:
             os.remove(backups.pop(0))
             logger.info(f"Removed old backup: {backups[0]}")
     except Exception as e:
@@ -229,30 +245,117 @@ def process_files(config: Dict) -> Dict:
         logger.error(f"Error processing files: {str(e)}")
         raise
 
+def create_agents(config: Dict) -> Dict[str, Any]:
+    """Create and configure the agents using settings from config file."""
+    logger.debug("Creating agents...")
+    
+    # Create Creator Agent
+    creator_config = config["agents"]["creator"]
+    creator = AssistantAgent(
+        name=creator_config["name"],
+        system_message=creator_config["system_message"],
+        llm_config=config["llm_config"]["creator"]
+    )
+    logger.debug(f"Creator Agent created: {creator_config['description']}")
+    
+    # Create Critic Agent
+    critic_config = config["agents"]["validator"]  # Using validator as critic
+    critic = AssistantAgent(
+        name=critic_config["name"],
+        system_message=critic_config["system_message"],
+        llm_config=config["llm_config"]["validator"]
+    )
+    logger.debug(f"Critic Agent created: {critic_config['description']}")
+    
+    # Create Manager Agent
+    manager_config = config["agents"]["manager"]
+    manager = AssistantAgent(
+        name=manager_config["name"],
+        system_message=manager_config["system_message"],
+        llm_config=config["llm_config"]["manager"]
+    )
+    logger.debug(f"Manager Agent created: {manager_config['description']}")
+    
+    # Create User Proxy
+    user_proxy_config = config["system"]["user_proxy"]
+    user_proxy = UserProxyAgent(
+        name=user_proxy_config["name"],
+        human_input_mode=user_proxy_config["human_input_mode"],
+        max_consecutive_auto_reply=user_proxy_config["max_consecutive_auto_reply"]
+    )
+    logger.debug("User Proxy Agent created")
+    
+    # Create Group Chat
+    groupchat = GroupChat(
+        agents=[user_proxy, creator, critic, manager],
+        messages=[],
+        max_round=config["system"]["group_chat"]["max_round"]
+    )
+    logger.debug("Group Chat created")
+    
+    # Create Group Chat Manager
+    group_chat_manager = GroupChatManager(
+        groupchat=groupchat,
+        llm_config=config["llm_config"]["manager"]
+    )
+    logger.debug("Group Chat Manager created")
+    
+    return {
+        "creator": creator,
+        "critic": critic,
+        "manager": manager,
+        "user_proxy": user_proxy,
+        "group_chat_manager": group_chat_manager
+    }
+
 def main():
     """Main function to update the manifest."""
     try:
         # Load configuration
         config = load_json_file("update_manifest_config.json")
+        logger.debug("Configuration loaded")
+        
+        # Setup logging based on config
+        setup_logging(config)
+        logger.debug("Logging configured")
+        
+        # Create agents
+        agents = create_agents(config)
+        logger.debug("Agents created and configured")
+        
+        # Initialize the process
+        agents["user_proxy"].initiate_chat(
+            agents["group_chat_manager"],
+            message="""Let's create and validate a manifest for our files.
+            The Manager should coordinate the process:
+            1. Creator should analyze the files and generate the manifest
+            2. Critic should review and provide feedback
+            3. Manager should ensure the process completes successfully"""
+        )
         
         # Process files and generate manifest
         manifest = process_files(config)
+        logger.debug("Files processed and manifest generated")
         
         # Validate manifest
-        if not validate_manifest(manifest):
+        if not validate_manifest(manifest, config):
             raise ValueError("Generated manifest failed validation")
+        logger.debug("Manifest validated successfully")
         
         # Create backup of existing manifest if it exists
-        manifest_path = "file_manifest.json"
+        manifest_path = config["system"]["manifest_file"]
         if os.path.exists(manifest_path):
-            create_backup(manifest_path)
+            create_backup(manifest_path, config)
+            logger.debug("Backup created for existing manifest")
         
         # Save new manifest
         save_json_file(manifest, manifest_path)
-        logger.info("Manifest updated successfully")
+        logger.debug("New manifest saved successfully")
+        
+        logger.info("Manifest update completed successfully")
         
     except Exception as e:
-        logger.error(f"Error in main: {str(e)}")
+        logger.error(f"Error in main process: {str(e)}")
         raise
 
 if __name__ == "__main__":
