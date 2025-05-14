@@ -17,8 +17,13 @@ from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 
 # Constants
 MANIFEST_VERSION = "1.0.0"
-MANIFEST_BACKUP_DIR = "manifest_backups"
-MAX_BACKUPS = 5
+
+def get_openai_api_key() -> str:
+    """Get OpenAI API key from environment variable."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable not set")
+    return api_key
 
 def setup_logging(config: Dict) -> None:
     """Configure logging based on the configuration file."""
@@ -78,46 +83,47 @@ def validate_manifest(manifest: Dict, config: Dict) -> bool:
         logger.error(f"Error during validation: {str(e)}")
         return False
 
-def create_backup(manifest_path: str, config: Dict) -> None:
+def create_backup(manifest_data: Dict[str, Any], config: Dict[str, Any]) -> str:
     """Create a backup of the manifest file."""
-    try:
-        # Create backup directory if it doesn't exist
-        backup_dir = config["system"]["manifest_backup_dir"]
-        os.makedirs(backup_dir, exist_ok=True)
-        
-        # Generate backup filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = os.path.join(backup_dir, f"manifest_{timestamp}.json")
-        
-        # Copy the manifest file
-        shutil.copy2(manifest_path, backup_path)
-        logger.info(f"Created backup: {backup_path}")
-        
-        # Clean up old backups
-        cleanup_old_backups(config)
-    except Exception as e:
-        logger.error(f"Error creating backup: {str(e)}")
-        raise
+    backup_config = config["system"]["backup"]
+    if not backup_config["enabled"]:
+        return ""
 
-def cleanup_old_backups(config: Dict) -> None:
+    backup_dir = backup_config["directory"]
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    timestamp = datetime.now().strftime(backup_config["timestamp_format"])
+    backup_filename = backup_config["filename_pattern"].format(timestamp=timestamp)
+    backup_path = os.path.join(backup_dir, backup_filename)
+    
+    with open(backup_path, "w") as f:
+        json.dump(manifest_data, f, indent=2)
+    
+    return backup_path
+
+def cleanup_old_backups(config: Dict[str, Any]) -> None:
     """Remove old backup files keeping only the most recent ones."""
-    try:
-        backup_dir = config["system"]["manifest_backup_dir"]
-        max_backups = config["system"]["max_backups"]
-        
-        backups = sorted([
-            os.path.join(backup_dir, f) 
-            for f in os.listdir(backup_dir) 
-            if f.startswith("manifest_") and f.endswith(".json")
-        ])
-        
-        # Remove old backups
-        while len(backups) > max_backups:
-            os.remove(backups.pop(0))
-            logger.info(f"Removed old backup: {backups[0]}")
-    except Exception as e:
-        logger.error(f"Error cleaning up backups: {str(e)}")
-        raise
+    backup_config = config["system"]["backup"]
+    if not backup_config["enabled"]:
+        return
+
+    backup_dir = backup_config["directory"]
+    if not os.path.exists(backup_dir):
+        return
+
+    backup_files = sorted(
+        [f for f in os.listdir(backup_dir) if f.startswith("manifest_") and f.endswith(".json")],
+        key=lambda x: os.path.getmtime(os.path.join(backup_dir, x)),
+        reverse=True
+    )
+
+    max_backups = backup_config["max_count"]
+    for old_file in backup_files[max_backups:]:
+        try:
+            os.remove(os.path.join(backup_dir, old_file))
+            logger.debug(f"Removed old backup: {old_file}")
+        except Exception as e:
+            logger.error(f"Error removing old backup {old_file}: {e}")
 
 def calculate_file_hash(file_path: str) -> str:
     """Calculate SHA-256 hash of a file."""
@@ -249,6 +255,13 @@ def create_agents(config: Dict) -> Dict[str, Any]:
     """Create and configure the agents using settings from config file."""
     logger.debug("Creating agents...")
     
+    # Get OpenAI API key
+    api_key = get_openai_api_key()
+    
+    # Update LLM configs with API key
+    for agent_type in ["creator", "validator", "manager"]:
+        config["llm_config"][agent_type]["api_key"] = api_key
+    
     # Create Creator Agent
     creator_config = config["agents"]["creator"]
     creator = AssistantAgent(
@@ -342,15 +355,17 @@ def main():
             raise ValueError("Generated manifest failed validation")
         logger.debug("Manifest validated successfully")
         
-        # Create backup of existing manifest if it exists
-        manifest_path = config["system"]["manifest_file"]
-        if os.path.exists(manifest_path):
-            create_backup(manifest_path, config)
-            logger.debug("Backup created for existing manifest")
+        # Create backup before processing
+        backup_path = create_backup(manifest, config)
+        if backup_path:
+            logger.info(f"Created backup at: {backup_path}")
         
         # Save new manifest
-        save_json_file(manifest, manifest_path)
+        save_json_file(manifest, config["system"]["manifest_file"])
         logger.debug("New manifest saved successfully")
+        
+        # Cleanup old backups
+        cleanup_old_backups(config)
         
         logger.info("Manifest update completed successfully")
         

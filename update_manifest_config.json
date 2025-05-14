@@ -2,15 +2,33 @@
   "llm_config": {
     "creator": {
       "model": "gpt-4",
-      "temperature": 0.7
+      "temperature": 0.7,
+      "config_list": [
+        {
+          "model": "gpt-4",
+          "temperature": 0.7
+        }
+      ]
     },
     "validator": {
       "model": "gpt-4",
-      "temperature": 0.7
+      "temperature": 0.7,
+      "config_list": [
+        {
+          "model": "gpt-4",
+          "temperature": 0.7
+        }
+      ]
     },
     "manager": {
       "model": "gpt-4",
-      "temperature": 0.7
+      "temperature": 0.7,
+      "config_list": [
+        {
+          "model": "gpt-4",
+          "temperature": 0.7
+        }
+      ]
     }
   },
   "logging": {
@@ -25,6 +43,13 @@
     "max_backups": 5,
     "manifest_file": "file_manifest.json",
     "schema_file": "manifest_schema.json",
+    "backup": {
+      "enabled": true,
+      "directory": "manifest_backups",
+      "max_count": 5,
+      "filename_pattern": "manifest_{timestamp}.json",
+      "timestamp_format": "%Y%m%d_%H%M%S"
+    },
     "user_proxy": {
       "name": "User",
       "human_input_mode": "TERMINATE",
