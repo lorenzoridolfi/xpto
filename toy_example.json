@@ -70,6 +70,7 @@
         "similarity_threshold": 0.99,
         "max_size": 1000,
         "expiration_hours": 24,
+        "language": "portuguese",
         "cleaning": {
             "mode": "expired",
             "min_similarity": 0.99,

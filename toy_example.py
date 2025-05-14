@@ -392,7 +392,8 @@ async def main():
         max_size=config["cache_config"]["max_size"],
         similarity_threshold=config["cache_config"]["similarity_threshold"],
         expiration_hours=config["cache_config"]["expiration_hours"],
-        llm_params=LLM_CONFIG  # Pass LLM parameters to cache
+        llm_params=LLM_CONFIG,  # Pass LLM parameters to cache
+        language=config["cache_config"]["language"]  # Use language from config
     )
 
     # Create file manifest from config

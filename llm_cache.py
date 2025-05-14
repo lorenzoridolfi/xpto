@@ -15,6 +15,19 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import os
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+
+# Download required NLTK data
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 logger = logging.getLogger("LLMCache")
 
@@ -95,7 +108,8 @@ class LLMCache:
         similarity_threshold: float = 0.85,
         expiration_hours: int = 24,
         vectorizer: Optional[TfidfVectorizer] = None,
-        llm_params: Optional[Dict[str, Any]] = None
+        llm_params: Optional[Dict[str, Any]] = None,
+        language: str = "portuguese"
     ):
         """
         Initialize the LLM cache.
@@ -106,14 +120,15 @@ class LLMCache:
             expiration_hours (int): Hours before cache entries expire
             vectorizer (Optional[TfidfVectorizer]): Custom vectorizer for text similarity
             llm_params (Optional[Dict[str, Any]]): Initial LLM parameters
+            language (str): Language for tokenization and stopwords (default: "portuguese")
         """
         self.cache: Dict[str, CacheEntry] = {}
         self.max_size = max_size
         self.similarity_threshold = similarity_threshold
         self.expiration_hours = expiration_hours
         self.vectorizer = vectorizer or TfidfVectorizer(
-            max_features=1000,
-            stop_words='english',
+            tokenizer=self._tokenize_text,
+            stop_words=stopwords.words(language),
             ngram_range=(1, 2)
         )
         self._initialize_vectorizer()
@@ -124,6 +139,22 @@ class LLMCache:
             self.update_llm_params(llm_params)
         else:
             self._load_saved_params()
+
+    def _tokenize_text(self, text: str) -> List[str]:
+        """
+        Tokenize text using NLTK's Portuguese tokenizer.
+        
+        Args:
+            text: Text to tokenize
+            
+        Returns:
+            List of tokens
+        """
+        # Convert to lowercase and tokenize
+        tokens = word_tokenize(text.lower(), language='portuguese')
+        # Remove punctuation and numbers
+        tokens = [token for token in tokens if token.isalpha()]
+        return tokens
 
     def _load_saved_params(self) -> None:
         """Load saved LLM parameters from file."""
