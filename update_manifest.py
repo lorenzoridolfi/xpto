@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional
 import jsonschema
 import shutil
 import logging
+import glob
 
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 
@@ -128,6 +129,33 @@ def get_file_info(file_path: str) -> Dict[str, Any]:
         logger.error(f"Error getting file info: {str(e)}")
         raise
 
+def expand_glob_pattern(pattern: str, base_dir: str = "files") -> List[str]:
+    """Expand a glob pattern into a list of matching files.
+    
+    Args:
+        pattern (str): Glob pattern to expand
+        base_dir (str): Base directory to search in
+        
+    Returns:
+        List[str]: List of matching file paths
+    """
+    try:
+        # Ensure the pattern is relative to the base directory
+        if not pattern.startswith(base_dir):
+            pattern = os.path.join(base_dir, pattern)
+        
+        # Expand the glob pattern
+        matches = glob.glob(pattern, recursive=True)
+        
+        # Filter out directories
+        matches = [m for m in matches if os.path.isfile(m)]
+        
+        logger.info(f"Expanded glob pattern '{pattern}' to {len(matches)} files")
+        return matches
+    except Exception as e:
+        logger.error(f"Error expanding glob pattern '{pattern}': {str(e)}")
+        raise
+
 def process_files(config: Dict) -> Dict:
     """Process files and generate manifest with enhanced features."""
     try:
@@ -146,46 +174,55 @@ def process_files(config: Dict) -> Dict:
             }
         }
         
-        # Process each file
+        # Process each file pattern
         for file_info in config["file_manifest"]:
-            filename = file_info["filename"]
-            file_path = os.path.join("files", filename)
+            filename_pattern = file_info["filename"]
+            description = file_info["description"]
             
-            # Get file status and info
-            status = "okay"
-            if not os.path.exists(file_path):
-                status = "non-existent"
-            elif os.path.getsize(file_path) == 0:
-                status = "empty"
+            # Expand glob pattern
+            matching_files = expand_glob_pattern(filename_pattern)
             
-            # Get file details
-            file_details = get_file_info(file_path) if status == "okay" else {}
+            if not matching_files:
+                logger.warning(f"No files found matching pattern: {filename_pattern}")
+                continue
             
-            # Create file entry
-            file_entry = {
-                "filename": filename,
-                "path": file_path,
-                "description": file_info["description"],
-                "status": status,
-                "metadata": {
-                    "summary": "",
-                    "keywords": [],
-                    "topics": [],
-                    "entities": []
-                },
-                **file_details
-            }
-            
-            # Add SHA-256 hash if file exists
-            if status == "okay":
-                file_entry["sha256"] = calculate_file_hash(file_path)
-            
-            manifest["files"].append(file_entry)
-            
-            # Update statistics
-            if status == "okay":
-                manifest["metadata"]["statistics"]["total_files"] += 1
-                manifest["metadata"]["statistics"]["total_size"] += file_details["size"]
+            # Process each matching file
+            for file_path in matching_files:
+                # Get file status and info
+                status = "okay"
+                if not os.path.exists(file_path):
+                    status = "non-existent"
+                elif os.path.getsize(file_path) == 0:
+                    status = "empty"
+                
+                # Get file details
+                file_details = get_file_info(file_path) if status == "okay" else {}
+                
+                # Create file entry
+                file_entry = {
+                    "filename": os.path.basename(file_path),
+                    "path": file_path,
+                    "description": description,
+                    "status": status,
+                    "metadata": {
+                        "summary": "",
+                        "keywords": [],
+                        "topics": [],
+                        "entities": []
+                    },
+                    **file_details
+                }
+                
+                # Add SHA-256 hash if file exists
+                if status == "okay":
+                    file_entry["sha256"] = calculate_file_hash(file_path)
+                
+                manifest["files"].append(file_entry)
+                
+                # Update statistics
+                if status == "okay":
+                    manifest["metadata"]["statistics"]["total_files"] += 1
+                    manifest["metadata"]["statistics"]["total_size"] += file_details["size"]
         
         return manifest
     except Exception as e:

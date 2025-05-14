@@ -319,6 +319,211 @@ class RootCauseAnalyzerAgent(AnalyticsAssistantAgent):
         log_event(self.name, "on_messages_complete", messages, response)
         return response
 
+class InformationVerifierAgent(AnalyticsAssistantAgent):
+    """
+    Agent responsible for validating information accuracy and source compliance.
+    
+    This agent verifies that all information in the generated text is:
+    1. Present in the source files
+    2. Not contradicted by the source material
+    3. Properly supported by the sources
+    4. Free from hallucinations or additions not present in the sources
+    """
+
+    def __init__(self, name: str, model_client, system_message: str, tools: Optional[List[Dict]] = None, cache: Optional[LLMCache] = None):
+        """
+        Initialize the InformationVerifierAgent.
+
+        Args:
+            name (str): Name of the agent
+            model_client: The model client to use
+            system_message (str): System message for the agent
+            tools (Optional[List[Dict]]): List of tools available to the agent
+            cache (Optional[LLMCache]): Cache instance to use for response caching
+        """
+        super().__init__(
+            name=name,
+            model_client=model_client,
+            system_message=system_message,
+            tools=tools,
+            reflect_on_tool_use=True,
+            cache=cache
+        )
+        self.source_files = []
+        self.source_content = {}
+
+    def set_source_files(self, files: List[str], content: Dict[str, str]):
+        """
+        Set the source files and their content for verification.
+
+        Args:
+            files (List[str]): List of source file names
+            content (Dict[str, str]): Dictionary mapping file names to their content
+        """
+        self.source_files = files
+        self.source_content = content
+
+    async def verify_content(self, content: str) -> Dict[str, Any]:
+        """
+        Verify the content against source files.
+
+        Args:
+            content (str): The content to verify
+
+        Returns:
+            Dict[str, Any]: Verification results including factual accuracy, source compliance,
+                           logical consistency, and unsupported claims
+        """
+        # Prepare verification prompt
+        prompt = f"""
+        Please verify the following content against these source files:
+        
+        Source Files:
+        {json.dumps(self.source_files, indent=2)}
+        
+        Content to Verify:
+        {content}
+        
+        Please provide a detailed verification report in JSON format with the following structure:
+        {{
+            "verification_status": "PASS" | "FAIL" | "NEEDS_IMPROVEMENT",
+            "verification_results": {{
+                "factual_accuracy": {{
+                    "status": "PASS" | "FAIL" | "NEEDS_IMPROVEMENT",
+                    "issues": [
+                        {{
+                            "type": "string",
+                            "description": "string",
+                            "location": "string",
+                            "suggestion": "string"
+                        }}
+                    ]
+                }},
+                "source_compliance": {{
+                    "status": "PASS" | "FAIL" | "NEEDS_IMPROVEMENT",
+                    "issues": [
+                        {{
+                            "type": "string",
+                            "description": "string",
+                            "location": "string",
+                            "suggestion": "string"
+                        }}
+                    ],
+                    "sources_used": [
+                        {{
+                            "filename": "string",
+                            "content_references": [
+                                {{
+                                    "text": "string",
+                                    "location": "string"
+                                }}
+                            ]
+                        }}
+                    ]
+                }},
+                "logical_consistency": {{
+                    "status": "PASS" | "FAIL" | "NEEDS_IMPROVEMENT",
+                    "issues": [
+                        {{
+                            "type": "string",
+                            "description": "string",
+                            "location": "string",
+                            "suggestion": "string"
+                        }}
+                    ]
+                }},
+                "unsupported_claims": [
+                    {{
+                        "claim": "string",
+                        "location": "string",
+                        "suggestion": "string"
+                    }}
+                ]
+            }},
+            "summary": "string",
+            "termination_reason": "string"
+        }}
+        
+        For each claim in the content:
+        1. Check if it's present in any source file
+        2. Verify it's not contradicted by any source
+        3. Ensure it's properly supported by the sources
+        4. Look for any additions not present in the sources
+        
+        If you find any issues, provide specific feedback. If the content is accurate and fully supported by the sources, set verification_status to "PASS" and termination_reason to "TERMINATE".
+        """
+
+        # Get verification response
+        response = await self.run(task=prompt)
+        
+        try:
+            # Parse and validate the response
+            verification_results = json.loads(response)
+            validate(instance=verification_results, schema=load_schemas()["schemas"]["information_verifier"])
+            return verification_results
+        except (json.JSONDecodeError, ValidationError) as e:
+            logger.error(f"Error parsing verification results: {e}")
+            return {
+                "verification_status": "FAIL",
+                "verification_results": {
+                    "factual_accuracy": {"status": "FAIL", "issues": []},
+                    "source_compliance": {"status": "FAIL", "issues": [], "sources_used": []},
+                    "logical_consistency": {"status": "FAIL", "issues": []},
+                    "unsupported_claims": []
+                },
+                "summary": f"Error in verification process: {str(e)}",
+                "termination_reason": "Verification failed due to error"
+            }
+
+    async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+        """
+        Process verification requests.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages containing content to verify
+            cancellation_token: Token for cancellation support
+
+        Returns:
+            Response: Verification results or termination message
+        """
+        log_event(self.name, "on_messages_invoke", messages, [])
+        
+        # Get content to verify from the last message
+        content = messages[-1].content
+        
+        # Perform verification
+        verification_results = await self.verify_content(content)
+        
+        # Check if verification passed
+        if verification_results["verification_status"] == "PASS":
+            resp = Response(chat_message=TextMessage(content="TERMINATE", source=self.name))
+        else:
+            # Format issues for feedback
+            issues = []
+            
+            # Add factual accuracy issues
+            for issue in verification_results["verification_results"]["factual_accuracy"]["issues"]:
+                issues.append(f"Factual Issue: {issue['description']} (Location: {issue['location']})")
+            
+            # Add source compliance issues
+            for issue in verification_results["verification_results"]["source_compliance"]["issues"]:
+                issues.append(f"Source Issue: {issue['description']} (Location: {issue['location']})")
+            
+            # Add logical consistency issues
+            for issue in verification_results["verification_results"]["logical_consistency"]["issues"]:
+                issues.append(f"Logical Issue: {issue['description']} (Location: {issue['location']})")
+            
+            # Add unsupported claims
+            for claim in verification_results["verification_results"]["unsupported_claims"]:
+                issues.append(f"Unsupported Claim: {claim['claim']} (Location: {claim['location']})")
+            
+            # Create feedback message
+            feedback = f"Verification failed. Issues found:\n\n" + "\n".join(issues)
+            resp = Response(chat_message=TextMessage(content=feedback, source=self.name))
+        
+        log_event(self.name, "on_messages_complete", messages, resp)
+        return resp
+
 # -----------------------------------------------------------------------------
 # Main orchestration
 # -----------------------------------------------------------------------------
@@ -351,7 +556,6 @@ async def main():
     OUTPUT_FILES = config["output_files"]
     LOGGING_CONFIG = config["logging"]
     LLM_CONFIG = config["llm_config"]
-    # Use these directly from config
     file_manifest = config["file_manifest"]
     max_rounds = config["max_rounds"]
 
@@ -393,8 +597,8 @@ async def main():
         max_size=config["cache_config"]["max_size"],
         similarity_threshold=config["cache_config"]["similarity_threshold"],
         expiration_hours=config["cache_config"]["expiration_hours"],
-        llm_params=LLM_CONFIG,  # Pass LLM parameters to cache
-        language=config["cache_config"]["language"]  # Use language from config
+        llm_params=LLM_CONFIG,
+        language=config["cache_config"]["language"]
     )
 
     # Create file manifest from config
@@ -438,25 +642,30 @@ async def main():
                 manifest=file_manifest,
                 file_log=FILE_LOG
             )
+        elif name == "InformationVerifierAgent":
+            agents[name] = InformationVerifierAgent(
+                name=name,
+                model_client=openai_client,
+                system_message=info.get("system_message",""),
+                tools=[get_tool_for_agent(name)],
+                cache=llm_cache
+            )
         elif name == "RootCauseAnalyzerAgent":
             agents[name] = RootCauseAnalyzerAgent(
                 name=name,
                 model_client=openai_client,
                 system_message=info.get("system_message",""),
-                reflect_on_tool_use=True,  # Enable reflection for root cause analysis
-                cache=llm_cache  # Enable caching
+                reflect_on_tool_use=True,
+                cache=llm_cache
             )
         else:
-            # Get appropriate tools for the agent
-            tools = [get_tool_for_agent(name)]
-            
             agents[name] = AnalyticsAssistantAgent(
                 name=name,
                 model_client=openai_client,
                 system_message=info.get("system_message",""),
-                tools=tools,
-                reflect_on_tool_use=True,  # Enable reflection for all other agents
-                cache=llm_cache  # Enable caching
+                tools=[get_tool_for_agent(name)],
+                reflect_on_tool_use=True,
+                cache=llm_cache
             )
         logger.info(f"Instantiated agent: {name} with analytics, tool reflection, and caching enabled")
 
@@ -480,6 +689,23 @@ async def main():
         groupchat,
         message=f"Let's work on the task: {TASK_DESCRIPTION}"
     )
+
+    # After file reading is complete, update verifier with source files
+    source_files = []
+    source_content = {}
+    for message in groupchat.messages:
+        if message.source == "FileReaderAgent" and message.content != "NO_FILE":
+            # Extract file content from message
+            file_sections = message.content.split("---")
+            for section in file_sections[1:]:  # Skip first empty section
+                if section.strip():
+                    filename = section.split("\n")[0].strip()
+                    content = "\n".join(section.split("\n")[1:]).strip()
+                    source_files.append(filename)
+                    source_content[filename] = content
+
+    # Update verifier with source files
+    verifier.set_source_files(source_files, source_content)
 
     # Analyze the conversation
     root_cause_analyzer.analyze_conversation(groupchat.messages)

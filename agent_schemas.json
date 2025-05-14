@@ -106,7 +106,7 @@
         },
         "verification_results": {
           "type": "object",
-          "required": ["factual_accuracy", "logical_consistency", "source_compliance"],
+          "required": ["factual_accuracy", "source_compliance", "logical_consistency", "unsupported_claims"],
           "properties": {
             "factual_accuracy": {
               "type": "object",
@@ -131,31 +131,94 @@
                 }
               }
             },
-            "logical_consistency": {
-              "$ref": "#/schemas/information_verifier/properties/verification_results/properties/factual_accuracy"
-            },
             "source_compliance": {
-              "$ref": "#/schemas/information_verifier/properties/verification_results/properties/factual_accuracy"
+              "type": "object",
+              "required": ["status", "issues", "sources_used"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["type", "description", "location", "suggestion"],
+                    "properties": {
+                      "type": { "type": "string" },
+                      "description": { "type": "string" },
+                      "location": { "type": "string" },
+                      "suggestion": { "type": "string" }
+                    }
+                  }
+                },
+                "sources_used": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["filename", "content_references"],
+                    "properties": {
+                      "filename": { "type": "string" },
+                      "content_references": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": ["text", "location"],
+                          "properties": {
+                            "text": { "type": "string" },
+                            "location": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "logical_consistency": {
+              "type": "object",
+              "required": ["status", "issues"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["PASS", "FAIL", "NEEDS_IMPROVEMENT"]
+                },
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["type", "description", "location", "suggestion"],
+                    "properties": {
+                      "type": { "type": "string" },
+                      "description": { "type": "string" },
+                      "location": { "type": "string" },
+                      "suggestion": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "unsupported_claims": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["claim", "location", "suggestion"],
+                "properties": {
+                  "claim": { "type": "string" },
+                  "location": { "type": "string" },
+                  "suggestion": { "type": "string" }
+                }
+              }
             }
           }
         },
         "summary": {
-          "type": "object",
-          "required": ["overall_assessment", "key_findings", "recommendations"],
-          "properties": {
-            "overall_assessment": { "type": "string" },
-            "key_findings": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "recommendations": {
-              "type": "array",
-              "items": { "type": "string" }
-            }
-          }
+          "type": "string",
+          "description": "A summary of the verification results"
         },
         "termination_reason": {
-          "type": ["string", "null"]
+          "type": "string",
+          "description": "Reason for terminating or continuing the verification process"
         }
       }
     },
