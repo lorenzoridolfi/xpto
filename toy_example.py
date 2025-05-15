@@ -63,14 +63,17 @@ from src.base_agent_system import (
 # -----------------------------------------------------------------------------
 # Global logs and cache
 # -----------------------------------------------------------------------------
+# Load configuration
+config = load_json_file("toy_example.json")
+
 # Global logger instance
 logger = logging.getLogger("toy_example")
 
 # Initialize LLM cache
 llm_cache = LLMCache(
-    max_size=1000,
-    similarity_threshold=0.85,
-    expiration_hours=24
+    max_size=config["cache_config"]["max_size"],
+    similarity_threshold=config["cache_config"]["similarity_threshold"],
+    expiration_hours=config["cache_config"]["expiration_hours"]
 )
 
 # -----------------------------------------------------------------------------

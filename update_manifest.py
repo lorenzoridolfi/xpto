@@ -46,6 +46,16 @@ from src.analytics_assistant_agent import AnalyticsAssistantAgent
 # Global logger instance
 logger = logging.getLogger("update_manifest")
 
+# Load configuration
+config = load_json_file("update_manifest.json")
+
+# Initialize LLM cache
+llm_cache = LLMCache(
+    max_size=config["cache_config"]["max_size"],
+    similarity_threshold=config["cache_config"]["similarity_threshold"],
+    expiration_hours=config["cache_config"]["expiration_hours"]
+)
+
 class FileReaderAgent(BaseChatAgent):
     """
     Agent responsible for reading and processing manifest files.
