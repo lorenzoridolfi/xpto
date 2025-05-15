@@ -77,7 +77,7 @@ class FileReaderAgent(BaseChatAgent):
         Returns:
             str: The result of running the task
         """
-        log_event(logger, self.name, "run_invoke", [], [])
+        log_event(self.name, "run_invoke", [], [])
         
         # Process the task as a file request
         requested = [fn.strip() for fn in task.split(",") if fn.strip()]
@@ -97,7 +97,7 @@ class FileReaderAgent(BaseChatAgent):
                 combined.append(f"--- {fname} ---\n{text}")
             result = "\n\n".join(combined)
         
-        log_event(logger, self.name, "run_complete", [], result)
+        log_event(self.name, "run_complete", [], result)
         return result
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
@@ -111,14 +111,14 @@ class FileReaderAgent(BaseChatAgent):
         Returns:
             Response: Content of requested files or "NO_FILE" if no valid files requested
         """
-        log_event(logger, self.name, "on_messages_invoke", messages, [])
+        log_event(self.name, "on_messages_invoke", messages, [])
         instr = messages[-1].content.strip()
         
         # Handle explicit "NO_FILE" request
         if instr.upper() == "NO_FILE":
             self.file_log.append(f"{self.name}: no more files")
             resp = Response(chat_message=TextMessage(content="NO_FILE", source=self.name))
-            log_event(logger, self.name, "on_messages_complete", messages, resp)
+            log_event(self.name, "on_messages_complete", messages, resp)
             return resp
 
         # Process file requests
@@ -127,7 +127,7 @@ class FileReaderAgent(BaseChatAgent):
         
         if not valid:
             resp = Response(chat_message=TextMessage(content="NO_FILE", source=self.name))
-            log_event(logger, self.name, "on_messages_complete", messages, resp)
+            log_event(self.name, "on_messages_complete", messages, resp)
             return resp
 
         # Read and combine file contents
@@ -143,7 +143,7 @@ class FileReaderAgent(BaseChatAgent):
 
         payload = "\n\n".join(combined)
         resp = Response(chat_message=TextMessage(content=payload, source=self.name))
-        log_event(logger, self.name, "on_messages_complete", messages, resp)
+        log_event(self.name, "on_messages_complete", messages, resp)
         return resp
 
     async def on_messages_stream(self, messages: List[BaseChatMessage], cancellation_token):
@@ -184,7 +184,7 @@ class ManifestUpdaterAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
-        log_event(logger, self.name, "on_messages_invoke", messages, [])
+        log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         update_results = await self.update_manifest(content)
         
@@ -194,7 +194,7 @@ class ManifestUpdaterAgent(AnalyticsAssistantAgent):
             feedback = f"Update failed. Issues found:\n\n" + "\n".join(update_results["issues"])
             resp = Response(chat_message=TextMessage(content=feedback, source=self.name))
         
-        log_event(logger, self.name, "on_messages_complete", messages, resp)
+        log_event(self.name, "on_messages_complete", messages, resp)
         return resp
 
 class LoggingConfigAgent(AnalyticsAssistantAgent):
@@ -221,7 +221,7 @@ class LoggingConfigAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
-        log_event(logger, self.name, "on_messages_invoke", messages, [])
+        log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         config_results = await self.configure_logging(content)
         
@@ -231,7 +231,7 @@ class LoggingConfigAgent(AnalyticsAssistantAgent):
             feedback = f"Configuration failed. Issues found:\n\n" + "\n".join(config_results["issues"])
             resp = Response(chat_message=TextMessage(content=feedback, source=self.name))
         
-        log_event(logger, self.name, "on_messages_complete", messages, resp)
+        log_event(self.name, "on_messages_complete", messages, resp)
         return resp
 
 class ValidationAgent(AnalyticsAssistantAgent):
@@ -258,7 +258,7 @@ class ValidationAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
-        log_event(logger, self.name, "on_messages_invoke", messages, [])
+        log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         validation_results = await self.validate_configuration(content)
         
@@ -268,7 +268,7 @@ class ValidationAgent(AnalyticsAssistantAgent):
             feedback = f"Validation failed. Issues found:\n\n" + "\n".join(validation_results["issues"])
             resp = Response(chat_message=TextMessage(content=feedback, source=self.name))
         
-        log_event(logger, self.name, "on_messages_complete", messages, resp)
+        log_event(self.name, "on_messages_complete", messages, resp)
         return resp
 
 def create_agents(config: Dict) -> Dict[str, Any]:

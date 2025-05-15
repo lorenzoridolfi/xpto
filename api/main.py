@@ -15,11 +15,18 @@ import logging
 from datetime import datetime, UTC
 import uuid
 import time
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
 from src.analytics_assistant_agent import AnalyticsAssistantAgent
 from src.tool_analytics import ToolAnalytics
 from src.llm_cache import LLMCache
 from src.config import DEFAULT_CONFIG
+
+# Load environment variables from parent directory
+env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -39,8 +46,8 @@ app.add_middleware(
 
 # Basic authentication
 security = HTTPBasic()
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "admin123"  # In production, use environment variables
+ADMIN_USERNAME = os.getenv("FASTAPI_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("FASTAPI_PASSWORD", "admin123")
 
 # Initialize agents and analytics
 tool_analytics = ToolAnalytics()

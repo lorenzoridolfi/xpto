@@ -29,10 +29,10 @@ from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from src.analytics_assistant_agent import AnalyticsAssistantAgent
-from src.tool_analytics import ToolAnalytics, ToolUsageMetrics
-from src.llm_cache import LLMCache
-from src.config import DEFAULT_CONFIG, load_config, save_config
+from .analytics_assistant_agent import AnalyticsAssistantAgent
+from .tool_analytics import ToolAnalytics, ToolUsageMetrics
+from .llm_cache import LLMCache
+from .config import DEFAULT_CONFIG, load_config, save_config
 
 # -----------------------------------------------------------------------------
 # Configuration Management
@@ -62,7 +62,7 @@ class ConfigVersion:
             'timestamp': self.timestamp
         }
 
-def load_config_with_versioning(config_path: str, default_config: dict = DEFAULT_CONFIG) -> tuple[dict, ConfigVersion]:
+def load_config_with_versioning(config_path: str, default_config: dict = None) -> tuple[dict, ConfigVersion]:
     """
     Load configuration with versioning support and handle updates.
     
@@ -73,6 +73,8 @@ def load_config_with_versioning(config_path: str, default_config: dict = DEFAULT
     Returns:
         Tuple of (configuration dictionary, ConfigVersion instance)
     """
+    if default_config is None:
+        default_config = DEFAULT_CONFIG
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             config_data = json.load(f)

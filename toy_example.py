@@ -24,7 +24,7 @@ import asyncio
 import datetime
 from typing import List, Dict, Any, Optional
 import jsonschema
-from jsonschema import validate
+from jsonschema import validate, ValidationError
 import sys
 from prompt_toolkit import prompt
 from prompt_toolkit.styles import Style
@@ -38,14 +38,14 @@ from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_agentchat.base import Response
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from json_validator_tool import get_tool_for_agent
-from tool_analytics import ToolAnalytics, ToolUsageMetrics
-from analytics_assistant_agent import AnalyticsAssistantAgent
-from llm_cache import LLMCache
+from src.json_validator_tool import get_tool_for_agent
+from src.tool_analytics import ToolAnalytics, ToolUsageMetrics
+from src.analytics_assistant_agent import AnalyticsAssistantAgent
+from src.llm_cache import LLMCache
 import autogen
 from autogen import UserProxyAgent, GroupChat, GroupChatManager
 
-from base_agent_system import (
+from src.base_agent_system import (
     setup_logging, log_event, create_base_agents, create_group_chat,
     load_json_file, save_json_file, FILE_LOG, ROOT_CAUSE_DATA
 )
@@ -53,11 +53,6 @@ from base_agent_system import (
 # -----------------------------------------------------------------------------
 # Global logs and cache
 # -----------------------------------------------------------------------------
-# Lists to store system-wide logging information
-ROOT_CAUSE_DATA: List[dict] = []  # Stores detailed event data for root cause analysis
-FILE_LOG: List[str] = []         # Tracks file operations
-ACTION_LOG: List[str] = []       # Records agent actions and decisions
-
 # Global logger instance
 logger = logging.getLogger("toy_example")
 
