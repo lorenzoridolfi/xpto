@@ -1,126 +1,161 @@
-# Update Manifest System
+# Text Processing System with Human Feedback
 
-A three-agent system for creating, validating, and managing text content. The system uses three specialized agents: one for creating the manifest, another for criticizing it, and a manager to orchestrate the process.
+A multi-agent system for processing text files, removing markdown formatting, and generating comprehensive metadata through collaborative agent interactions.
 
 ## Features
 
-- Three-agent architecture for manifest creation, validation, and management
-- Human-in-the-loop feedback system
-- Quality control and validation
-- Comprehensive logging system
-- Error handling and recovery
-- Performance tracking
+- Multi-agent system with specialized roles
+- Comprehensive text processing and analysis
+- Human feedback integration
+- Detailed logging system
+- Backup management
+- File manifest generation and validation
 
-## System Components
+## Components
 
 ### Agents
 
-- **Creator Agent**: Creates and generates the manifest content
-  - Analyzes input files
-  - Generates structured content
-  - Ensures completeness and accuracy
-  - Maintains consistent formatting
-  - Logs all creation steps in DEBUG level
+The system employs three specialized agents that work together to process and analyze text files:
 
-- **Critic Agent**: Reviews and improves the manifest
-  - Validates content accuracy
-  - Suggests improvements
-  - Ensures quality standards
-  - Provides detailed feedback
-  - Logs all validation steps in DEBUG level
+1. **Creator Agent**
+   - Primary content generator
+   - Analyzes text files and creates initial manifest
+   - Performs deep content analysis
+   - Extracts key information
+   - Structures data according to specified format
+   - Ensures metadata accuracy and completeness
 
-- **Manager Agent**: Orchestrates the entire process
-  - Coordinates between Creator and Critic agents
-  - Manages workflow and timing
-  - Handles error recovery
-  - Ensures process completion
-  - Logs all coordination steps in DEBUG level
+2. **Critic Agent**
+   - Quality control specialist
+   - Reviews and validates Creator's output
+   - Performs detailed analysis of metadata
+   - Identifies potential issues
+   - Suggests improvements
+   - Ensures content meets quality standards
+
+3. **Manager Agent**
+   - Process orchestrator
+   - Coordinates workflow between Creator and Critic
+   - Ensures timely completion of tasks
+   - Handles error recovery
+   - Resolves conflicts
+   - Makes final decisions on content quality
+
+### Agent Interaction Flow
+
+The agents interact in a structured workflow:
+
+1. **Initialization**
+   - Manager initiates the process
+   - Creator receives file list and requirements
+   - Critic prepares validation criteria
+
+2. **Content Generation**
+   - Creator analyzes each text file
+   - Generates initial metadata including:
+     - Summaries (max 200 words)
+     - Keywords (3-10 terms)
+     - Topics (1-5 main topics)
+     - Entities (2-8 relevant entities)
+   - Structures data in JSON format
+
+3. **Validation Phase**
+   - Critic reviews Creator's output
+   - Validates against requirements:
+     - Summary accuracy and completeness
+     - Keyword relevance and format
+     - Topic hierarchy and coverage
+     - Entity accuracy and categorization
+   - Provides detailed feedback
+
+4. **Improvement Cycle**
+   - Creator receives Critic's feedback
+   - Makes necessary improvements
+   - Resubmits for validation
+   - Process repeats until quality standards are met
+
+5. **Final Approval**
+   - Manager reviews final version
+   - Ensures all requirements are met
+   - Approves for manifest generation
+   - Coordinates final output
+
+### Configuration
+
+The system is configured through `update_manifest_config.json`:
+
+```json
+{
+  "llm_config": {
+    "creator": { ... },
+    "validator": { ... },
+    "manager": { ... }
+  },
+  "agents": {
+    "creator": { ... },
+    "validator": { ... },
+    "manager": { ... }
+  },
+  "metadata_requirements": { ... },
+  "output_format": { ... }
+}
+```
 
 ### Logging System
 
-The system uses a simple and efficient logging system that:
-- Logs to both console and file
-- Uses DEBUG level for detailed troubleshooting
-- Includes timestamps and log levels
-- Captures all system events and user interactions
-- Provides structured logging for analysis
+The system implements comprehensive logging:
 
-#### DEBUG Level Logging Details
+- Log level: DEBUG
+- Output: Both file and console
+- Format: `%(asctime)s - %(name)s - %(levelname)s - %(message)s`
+- Log file: `update_manifest.log`
 
-The system logs all agent operations in DEBUG level, including:
+### Backup System
 
-**Creator Agent Logs:**
-- File analysis steps
-- Content generation process
-- Structure validation
-- Formatting decisions
-- Error handling details
+Automatic backup management:
 
-**Critic Agent Logs:**
-- Content validation steps
-- Improvement suggestions
-- Quality check results
-- Feedback generation
-- Error detection details
-
-**Manager Agent Logs:**
-- Workflow coordination
-- Agent communication
-- Process state changes
-- Error recovery attempts
-- Performance metrics
-
-## Configuration
-
-The system is configured through `update_manifest_config.json`, which includes:
-
-- Agent configurations and settings
-- File manifest settings
-- Logging configuration
-- Metadata requirements
-- Output format specifications
+- Enabled by default
+- Directory: `manifest_backups`
+- Maximum backups: 5
+- Timestamp format: `%Y%m%d_%H%M%S`
+- Automatic cleanup of old backups
 
 ## Usage
 
-1. Configure the system in `update_manifest_config.json`
-2. Run the main script:
+1. Ensure all required dependencies are installed
+2. Set up the OpenAI API key in environment variables
+3. Configure the system in `update_manifest_config.json`
+4. Run the script:
    ```bash
    python update_manifest.py
    ```
-3. The Manager Agent coordinates the process:
-   - Initiates the Creator Agent to process input files
-   - Triggers the Critic Agent for review
-   - Manages the feedback loop
-4. Review the results and provide additional feedback if needed
-
-## Logging
-
-The system logs all operations to `update_manifest.log` with the following information:
-- Timestamps for all events
-- Agent operations and interactions
-- Content creation and validation steps
-- User inputs and feedback
-- System events and errors
-- Detailed DEBUG level information for all agent activities
 
 ## Error Handling
 
 The system includes comprehensive error handling:
-- Graceful error recovery
-- Detailed error logging
-- User-friendly error messages
-- Automatic retry mechanisms
-- Error analysis and reporting
+
+- File access and permission errors
+- JSON parsing and validation errors
+- API communication errors
+- Backup and restore errors
+- Agent interaction errors
 
 ## Development
 
-To contribute to the project:
+### Adding New Features
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+1. Update the configuration file
+2. Modify agent behaviors as needed
+3. Add new validation rules
+4. Update the manifest schema
+
+### Testing
+
+1. Run unit tests
+2. Verify agent interactions
+3. Check error handling
+4. Validate output format
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
