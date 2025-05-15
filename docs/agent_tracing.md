@@ -1,188 +1,188 @@
 # Agent Tracing and Root Cause Analysis
 
-Este documento descreve o sistema de tracing, análise de root cause e analytics para agentes.
+This document describes the tracing system, root cause analysis, and analytics for agents.
 
-## Visão Geral
+## Overview
 
-O sistema consiste em três módulos principais:
+The system consists of three main modules:
 
-1. `agent_tracer.py`: Rastreia eventos e mensagens dos agentes
-2. `root_cause_analyzer.py`: Analisa os traces para identificar problemas
-3. `tool_analytics.py`: Analisa o uso de ferramentas pelos agentes
+1. `agent_tracer.py`: Tracks agent events and messages
+2. `root_cause_analyzer.py`: Analyzes traces to identify issues
+3. `tool_analytics.py`: Analyzes tool usage by agents
 
-## Módulos
+## Modules
 
 ### 1. AgentTracer
 
-O `AgentTracer` é responsável por rastrear todas as interações dos agentes.
+The `AgentTracer` is responsible for tracking all agent interactions.
 
-#### Estrutura de Dados
+#### Data Structures
 
 ```python
 @dataclass
 class TokenUsage:
-    """Estatísticas de uso de tokens do LLM."""
-    prompt_tokens: int      # Tokens usados no prompt
-    completion_tokens: int  # Tokens usados na resposta
-    total_tokens: int       # Total de tokens
-    model: str             # Modelo usado (ex: gpt-4)
+    """LLM token usage statistics."""
+    prompt_tokens: int      # Tokens used in prompt
+    completion_tokens: int  # Tokens used in response
+    total_tokens: int       # Total tokens
+    model: str             # Model used (e.g., gpt-4)
 
 @dataclass
 class AgentEvent:
-    """Evento do agente."""
-    timestamp: str                    # Data/hora do evento
-    agent_name: str                   # Nome do agente
-    event_type: str                   # Tipo (invoke/complete)
-    inputs: List[Dict[str, str]]      # Mensagens de entrada
-    outputs: List[Dict[str, Any]]     # Mensagens de saída
-    metadata: Optional[Dict[str, Any]] # Metadados extras
-    token_usage: Optional[TokenUsage]  # Uso de tokens
+    """Agent event."""
+    timestamp: str                    # Event date/time
+    agent_name: str                   # Agent name
+    event_type: str                   # Type (invoke/complete)
+    inputs: List[Dict[str, str]]      # Input messages
+    outputs: List[Dict[str, Any]]     # Output messages
+    metadata: Optional[Dict[str, Any]] # Extra metadata
+    token_usage: Optional[TokenUsage]  # Token usage
 ```
 
-#### Funcionalidades
+#### Features
 
-1. **Tracing de Eventos**
+1. **Event Tracing**
    ```python
-   # Início do processamento
+   # Start processing
    tracer.on_messages_invoke("WriterAgent", messages, token_usage)
    
-   # Fim do processamento
+   # End processing
    tracer.on_messages_complete("WriterAgent", outputs, token_usage)
    ```
 
-2. **Tracing de Tokens**
-   - Registra tokens de prompt e completion
-   - Identifica o modelo usado
-   - Calcula total de tokens
+2. **Token Tracing**
+   - Records prompt and completion tokens
+   - Identifies model used
+   - Calculates total tokens
 
-3. **Tracing de Tempo**
-   - Tempo de início
-   - Tempo de processamento
-   - Tempo de fim
+3. **Time Tracing**
+   - Start time
+   - Processing time
+   - End time
 
-4. **Persistência**
-   - Salva traces em JSON
-   - Mantém histórico de eventos
-   - Permite análise posterior
+4. **Persistence**
+   - Saves traces to JSON
+   - Maintains event history
+   - Enables later analysis
 
 ### 2. RootCauseAnalyzer
 
-O `RootCauseAnalyzer` analisa os traces para identificar problemas e gerar recomendações.
+The `RootCauseAnalyzer` analyzes traces to identify issues and generate recommendations.
 
-#### Estrutura de Dados
+#### Data Structures
 
 ```python
 @dataclass
 class RootCauseAnalysis:
-    """Resultado da análise de root cause."""
-    summary: str                    # Resumo da análise
-    issues: List[Dict[str, Any]]    # Problemas encontrados
-    recommendations: List[str]      # Recomendações
-    metadata: Optional[Dict[str, Any]] # Metadados extras
+    """Root cause analysis result."""
+    summary: str                    # Analysis summary
+    issues: List[Dict[str, Any]]    # Issues found
+    recommendations: List[str]      # Recommendations
+    metadata: Optional[Dict[str, Any]] # Extra metadata
 ```
 
-#### Tipos de Análise
+#### Analysis Types
 
 1. **Performance**
-   - Tempo de processamento
-   - Uso de tokens
-   - Gargalos de comunicação
+   - Processing time
+   - Token usage
+   - Communication bottlenecks
 
-2. **Comunicação**
-   - Padrões de mensagens
-   - Volume de comunicação
-   - Eficiência do fluxo
+2. **Communication**
+   - Message patterns
+   - Communication volume
+   - Flow efficiency
 
-3. **Erros**
-   - Exceções e erros
-   - Falhas de validação
-   - Problemas de integração
+3. **Errors**
+   - Exceptions and errors
+   - Validation failures
+   - Integration issues
 
-4. **Feedback do Usuário**
-   - Problemas reportados
-   - Sugestões de melhoria
-   - Experiência do usuário
+4. **User Feedback**
+   - Reported issues
+   - Improvement suggestions
+   - User experience
 
-#### Funcionalidades
+#### Features
 
-1. **Análise de Eventos**
+1. **Event Analysis**
    ```python
-   # Análise completa
+   # Complete analysis
    analysis = analyzer.analyze(tracer)
    
-   # Análise com feedback
-   analysis = analyzer.analyze(tracer, user_feedback="Sistema lento")
+   # Analysis with feedback
+   analysis = analyzer.analyze(tracer, user_feedback="System slow")
    ```
 
-2. **Geração de Recomendações**
-   - Baseadas em problemas encontrados
-   - Considerando feedback do usuário
-   - Priorizadas por severidade
+2. **Recommendation Generation**
+   - Based on found issues
+   - Considering user feedback
+   - Prioritized by severity
 
-3. **Persistência**
-   - Salva análises em JSON
-   - Mantém histórico de problemas
-   - Permite tracking de melhorias
+3. **Persistence**
+   - Saves analyses to JSON
+   - Maintains issue history
+   - Enables improvement tracking
 
 ### 3. ToolAnalytics
 
-O `ToolAnalytics` analisa o uso de ferramentas pelos agentes.
+The `ToolAnalytics` analyzes tool usage by agents.
 
-#### Estrutura de Dados
+#### Data Structures
 
 ```python
 @dataclass
 class ToolUsage:
-    """Uso de uma ferramenta."""
-    tool_name: str                  # Nome da ferramenta
-    call_count: int                 # Número de chamadas
-    success_rate: float             # Taxa de sucesso
-    avg_duration: float             # Duração média
-    error_count: int                # Número de erros
-    last_used: str                  # Último uso
+    """Tool usage statistics."""
+    tool_name: str                  # Tool name
+    call_count: int                 # Number of calls
+    success_rate: float             # Success rate
+    avg_duration: float             # Average duration
+    error_count: int                # Error count
+    last_used: str                  # Last used
 ```
 
-#### Tipos de Análise
+#### Analysis Types
 
-1. **Uso de Ferramentas**
-   - Frequência de uso
-   - Taxa de sucesso
-   - Tempo de execução
+1. **Tool Usage**
+   - Usage frequency
+   - Success rate
+   - Execution time
 
-2. **Padrões de Uso**
-   - Sequência de ferramentas
-   - Combinações comuns
-   - Dependências
+2. **Usage Patterns**
+   - Tool sequence
+   - Common combinations
+   - Dependencies
 
-3. **Problemas**
-   - Erros frequentes
+3. **Issues**
+   - Frequent errors
    - Timeouts
-   - Falhas de integração
+   - Integration failures
 
-#### Funcionalidades
+#### Features
 
-1. **Análise de Uso**
+1. **Usage Analysis**
    ```python
-   # Análise de ferramenta
+   # Tool analysis
    usage = analytics.analyze_tool("search_tool")
    
-   # Análise de agente
+   # Agent analysis
    usage = analytics.analyze_agent("WriterAgent")
    ```
 
-2. **Recomendações**
-   - Otimização de uso
-   - Substituição de ferramentas
-   - Melhorias de integração
+2. **Recommendations**
+   - Usage optimization
+   - Tool replacement
+   - Integration improvements
 
-3. **Persistência**
-   - Salva analytics em JSON
-   - Mantém histórico de uso
-   - Permite análise de tendências
+3. **Persistence**
+   - Saves analytics to JSON
+   - Maintains usage history
+   - Enables trend analysis
 
-## Integração
+## Integration
 
-### Configuração
+### Configuration
 
 ```json
 {
@@ -204,15 +204,15 @@ class ToolUsage:
 }
 ```
 
-### Uso em Projetos
+### Usage in Projects
 
-1. **Inicialização**
+1. **Initialization**
    ```python
-   # Carregar configuração
+   # Load configuration
    with open("config.json", "r") as f:
        config = json.load(f)
    
-   # Inicializar módulos
+   # Initialize modules
    tracer = AgentTracer(config)
    analyzer = RootCauseAnalyzer(config)
    analytics = ToolAnalytics(config)
@@ -220,145 +220,145 @@ class ToolUsage:
 
 2. **Tracing**
    ```python
-   # Durante a execução
+   # During execution
    tracer.on_messages_invoke(agent_name, messages, token_usage)
    tracer.on_messages_complete(agent_name, outputs, token_usage)
    ```
 
-3. **Análise**
+3. **Analysis**
    ```python
-   # Análise de root cause
+   # Root cause analysis
    analysis = analyzer.analyze(tracer)
    
-   # Análise de ferramentas
+   # Tool analysis
    tool_analysis = analytics.analyze_tool("search_tool")
    ```
 
-4. **Persistência**
+4. **Persistence**
    ```python
-   # Salvar traces
+   # Save traces
    tracer.save_trace("trace.json")
    
-   # Salvar análises
+   # Save analyses
    analyzer.save_analysis(analysis, "analysis.json")
    analytics.save_analysis(tool_analysis, "tool_analysis.json")
    ```
 
-## Boas Práticas
+## Best Practices
 
 1. **Tracing**
-   - Trace todos os eventos importantes
-   - Inclua metadata relevante
-   - Mantenha os traces organizados
+   - Trace all important events
+   - Include relevant metadata
+   - Keep traces organized
 
-2. **Análise**
-   - Analise traces regularmente
-   - Considere feedback dos usuários
-   - Implemente recomendações
+2. **Analysis**
+   - Analyze traces regularly
+   - Consider user feedback
+   - Implement recommendations
 
-3. **Ferramentas**
-   - Monitore uso de ferramentas
-   - Otimize padrões de uso
-   - Mantenha histórico de problemas
+3. **Tools**
+   - Monitor tool usage
+   - Optimize usage patterns
+   - Maintain issue history
 
-4. **Configuração**
-   - Ajuste thresholds conforme necessário
-   - Configure logging apropriadamente
-   - Mantenha configurações atualizadas
+4. **Configuration**
+   - Adjust thresholds as needed
+   - Configure logging appropriately
+   - Keep configurations updated
 
-## Exemplos
+## Examples
 
-### Trace Completo
+### Complete Trace
 ```python
-# Inicialização
+# Initialization
 tracer = AgentTracer(config)
 analyzer = RootCauseAnalyzer(config)
 analytics = ToolAnalytics(config)
 
-# Durante a execução
+# During execution
 tracer.on_messages_invoke("WriterAgent", messages, token_usage)
 writer_output = writer_agent.process_text()
 tracer.on_messages_complete("WriterAgent", writer_output, token_usage)
 
-# Análise
+# Analysis
 analysis = analyzer.analyze(tracer)
 tool_analysis = analytics.analyze_tool("search_tool")
 
-# Salvar resultados
+# Save results
 tracer.save_trace("trace.json")
 analyzer.save_analysis(analysis, "analysis.json")
 analytics.save_analysis(tool_analysis, "tool_analysis.json")
 ```
 
-### Análise de Erro
+### Error Analysis
 ```python
 try:
-    # Processamento normal
+    # Normal processing
     tracer.on_messages_invoke("WriterAgent", messages)
     writer_output = writer_agent.process_text()
     tracer.on_messages_complete("WriterAgent", writer_output)
 except Exception as e:
-    # Trace do erro
+    # Error trace
     tracer.on_messages_invoke("Error", [{"source": "system", "content": str(e)}])
     tracer.save_trace("error_trace.json")
     
-    # Análise do erro
-    analysis = analyzer.analyze(tracer, user_feedback=f"Erro: {str(e)}")
+    # Error analysis
+    analysis = analyzer.analyze(tracer, user_feedback=f"Error: {str(e)}")
     analyzer.save_analysis(analysis, "error_analysis.json")
     
-    # Análise de ferramentas
+    # Tool analysis
     tool_analysis = analytics.analyze_tool("search_tool")
     analytics.save_analysis(tool_analysis, "error_tool_analysis.json")
 ```
 
-# Agent Tracing e Integração com Autogen
+# Agent Tracing and Autogen Integration
 
-## Visão Geral
+## Overview
 
-O `AgentTracer` é um componente de observabilidade que se integra com os agentes do Autogen para fornecer:
-- Rastreamento de eventos
-- Métricas de uso de tokens
-- Estatísticas de cache
-- Logs detalhados
-- Análise de performance
+The `AgentTracer` is an observability component that integrates with Autogen agents to provide:
+- Event tracking
+- Token usage metrics
+- Cache statistics
+- Detailed logs
+- Performance analysis
 
-## Arquitetura
+## Architecture
 
 ```
 Autogen Agents (AssistantAgent, UserProxyAgent)
         ↓
-AgentTracer (Observador)
+AgentTracer (Observer)
         ↓
-Logs, Métricas, Traces
+Logs, Metrics, Traces
 ```
 
-### Componentes
+### Components
 
-1. **Agentes Autogen**
-   - `AssistantAgent`: Agente principal que processa mensagens
-   - `UserProxyAgent`: Interface com o usuário
-   - `GroupChat`: Coordenação entre agentes
+1. **Autogen Agents**
+   - `AssistantAgent`: Main message processing agent
+   - `UserProxyAgent`: User interface
+   - `GroupChat`: Agent coordination
 
 2. **AgentTracer**
-   - Observador dos agentes
-   - Coletor de métricas
-   - Gerador de logs
-   - Calculador de estatísticas
+   - Agent observer
+   - Metric collector
+   - Log generator
+   - Statistics calculator
 
-3. **Sistema de Logging**
-   - Arquivos de log
+3. **Logging System**
+   - Log files
    - Console output
-   - Formatação personalizada
+   - Custom formatting
 
-## Integração
+## Integration
 
-### 1. Inicialização
+### 1. Initialization
 
 ```python
 from autogen import AssistantAgent, UserProxyAgent
 from agent_tracer import AgentTracer, TokenUsage
 
-# Configuração do tracer
+# Tracer configuration
 config = {
     "logging": {
         "level": "INFO",
@@ -368,10 +368,10 @@ config = {
     }
 }
 
-# Criar tracer
+# Create tracer
 tracer = AgentTracer(config)
 
-# Criar agentes
+# Create agents
 assistant = AssistantAgent(
     name="assistant",
     system_message="You are a helpful assistant.",
@@ -384,10 +384,10 @@ user_proxy = UserProxyAgent(
 )
 ```
 
-### 2. Tracing de Eventos
+### 2. Event Tracing
 
 ```python
-# Antes de processar mensagens
+# Before processing messages
 tracer.on_messages_invoke(
     agent_name="assistant",
     messages=[{"role": "user", "content": "Hello"}],
@@ -400,7 +400,7 @@ tracer.on_messages_invoke(
     cache_hit=False
 )
 
-# Após processar mensagens
+# After processing messages
 tracer.on_messages_complete(
     agent_name="assistant",
     outputs=[{"role": "assistant", "content": "Hi there!"}],
@@ -414,19 +414,19 @@ tracer.on_messages_complete(
 )
 ```
 
-### 3. Integração com Cache
+### 3. Cache Integration
 
 ```python
 from llm_cache import LLMCache
 
-# Inicializar cache
+# Initialize cache
 cache = LLMCache(
     max_size=1000,
     similarity_threshold=0.85,
     expiration_hours=24
 )
 
-# Verificar cache antes de chamar LLM
+# Check cache before LLM call
 cache_key = generate_cache_key(messages)
 cached_response = cache.get(cache_key)
 
@@ -462,19 +462,19 @@ else:
     )
 ```
 
-### 4. Análise de Performance
+### 4. Performance Analysis
 
 ```python
-# Obter estatísticas de cache
+# Get cache statistics
 cache_stats = tracer.get_cache_statistics()
 print(f"Cache hit rate: {cache_stats['savings_percentage']}%")
 print(f"Total tokens saved: {cache_stats['total_savings']}")
 
-# Salvar trace completo
+# Save complete trace
 tracer.save_trace("agent_trace.json")
 ```
 
-## Exemplo Completo
+## Complete Example
 
 ```python
 from autogen import AssistantAgent, UserProxyAgent, GroupChat
@@ -482,7 +482,7 @@ from agent_tracer import AgentTracer, TokenUsage
 from llm_cache import LLMCache
 
 def setup_agents_with_tracing():
-    # Configuração
+    # Configuration
     config = {
         "logging": {
             "level": "INFO",
@@ -492,11 +492,11 @@ def setup_agents_with_tracing():
         }
     }
     
-    # Inicializar componentes
+    # Initialize components
     tracer = AgentTracer(config)
     cache = LLMCache(max_size=1000)
     
-    # Criar agentes
+    # Create agents
     assistant = AssistantAgent(
         name="assistant",
         system_message="You are a helpful assistant.",
@@ -508,19 +508,19 @@ def setup_agents_with_tracing():
         human_input_mode="TERMINATE"
     )
     
-    # Criar group chat
+    # Create group chat
     groupchat = GroupChat(
         agents=[user_proxy, assistant],
         messages=[],
         max_round=10
     )
     
-    # Função wrapper para tracing
+    # Tracing wrapper function
     def traced_chat(agent_name, messages):
-        # Trace início
+        # Start trace
         tracer.on_messages_invoke(agent_name, messages)
         
-        # Verificar cache
+        # Check cache
         cache_key = generate_cache_key(messages)
         cached_response = cache.get(cache_key)
         
@@ -540,11 +540,11 @@ def setup_agents_with_tracing():
             )
             return cached_response
         
-        # Cache miss - processar normalmente
+        # Cache miss - normal processing
         response = assistant.generate_response(messages)
         cache.set(cache_key, response)
         
-        # Trace fim
+        # End trace
         tracer.on_messages_complete(
             agent_name,
             response,
@@ -568,71 +568,71 @@ def setup_agents_with_tracing():
         "traced_chat": traced_chat
     }
 
-# Uso
+# Usage
 def main():
     # Setup
     components = setup_agents_with_tracing()
     
-    # Iniciar chat
+    # Start chat
     components["user_proxy"].initiate_chat(
         components["groupchat"],
         message="Hello, how can you help me?"
     )
     
-    # Análise final
+    # Final analysis
     cache_stats = components["tracer"].get_cache_statistics()
     print(f"Cache hit rate: {cache_stats['savings_percentage']}%")
     print(f"Total tokens saved: {cache_stats['total_savings']}")
     
-    # Salvar trace
+    # Save trace
     components["tracer"].save_trace("chat_trace.json")
 ```
 
-## Boas Práticas
+## Best Practices
 
-1. **Configuração**
-   - Configure o logging apropriadamente
-   - Ajuste os níveis de log conforme necessário
-   - Use formatos de log consistentes
+1. **Configuration**
+   - Configure logging appropriately
+   - Adjust log levels as needed
+   - Use consistent log formats
 
 2. **Tracing**
-   - Trace todos os eventos importantes
-   - Inclua metadata relevante
-   - Mantenha os traces organizados
+   - Trace all important events
+   - Include relevant metadata
+   - Keep traces organized
 
 3. **Cache**
-   - Use chaves de cache consistentes
-   - Monitore hit rates
-   - Ajuste thresholds conforme necessário
+   - Use consistent cache keys
+   - Monitor hit rates
+   - Adjust thresholds as needed
 
 4. **Performance**
-   - Monitore uso de tokens
-   - Acompanhe tempos de resposta
-   - Analise padrões de uso
+   - Monitor token usage
+   - Track response times
+   - Analyze usage patterns
 
-5. **Manutenção**
-   - Limpe traces antigos
-   - Rotacione logs
-   - Mantenha estatísticas atualizadas
+5. **Maintenance**
+   - Clean old traces
+   - Rotate logs
+   - Keep statistics updated
 
 ## Troubleshooting
 
-1. **Logs não aparecem**
-   - Verifique configuração de logging
-   - Confirme níveis de log
-   - Verifique permissões de arquivo
+1. **Logs not appearing**
+   - Check logging configuration
+   - Confirm log levels
+   - Check file permissions
 
-2. **Cache não está funcionando**
-   - Verifique chaves de cache
-   - Confirme thresholds
-   - Monitore hit rates
+2. **Cache not working**
+   - Check cache keys
+   - Confirm thresholds
+   - Monitor hit rates
 
-3. **Performance ruim**
-   - Analise traces
-   - Verifique uso de tokens
-   - Otimize configurações
+3. **Poor performance**
+   - Analyze traces
+   - Check token usage
+   - Optimize configurations
 
-4. **Erros de integração**
-   - Verifique ordem de chamadas
-   - Confirme tipos de dados
-   - Valide configurações 
+4. **Integration errors**
+   - Check call order
+   - Confirm data types
+   - Validate configurations 
