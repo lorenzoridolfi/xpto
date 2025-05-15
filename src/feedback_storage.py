@@ -1,37 +1,11 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional, Any
 from uuid import UUID, uuid4
-import logging
-from logging.handlers import RotatingFileHandler
-import os
 
 from .feedback_protocols import FeedbackEntry
-
-# Configure logging
-logger = logging.getLogger("feedback_storage")
-logger.setLevel(logging.DEBUG)
-
-# Create logs directory if it doesn't exist
-os.makedirs("logs", exist_ok=True)
-
-# Add file handler
-file_handler = RotatingFileHandler(
-    "logs/storage.log",
-    maxBytes=10*1024*1024,  # 10MB
-    backupCount=5
-)
-file_handler.setFormatter(
-    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-)
-logger.addHandler(file_handler)
-
-# Add console handler
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(
-    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-)
-logger.addHandler(console_handler)
+from .logger import LoggerMixin
+from .config import config
 
 class FeedbackStorage(ABC):
     """Abstract base class for feedback storage."""
@@ -66,12 +40,14 @@ class FeedbackStorage(ABC):
         """Purge entries keeping only the last N entries. Returns number of entries purged."""
         ...
 
-class InMemoryFeedbackStorage(FeedbackStorage):
+class InMemoryFeedbackStorage(FeedbackStorage, LoggerMixin):
     """Simple in-memory implementation of FeedbackStorage with logging."""
     
     def __init__(self):
+        super().__init__()
         self._storage: Dict[UUID, FeedbackEntry] = {}
-        logger.info("Initialized InMemoryFeedbackStorage")
+        self._config = config.get_storage_config()
+        self.log_info("Initialized InMemoryFeedbackStorage", config=self._config)
     
     async def store(self, entry_id: UUID, query: str, response: str, metadata: Optional[Dict[str, Any]] = None) -> UUID:
         """Store a query-response pair in memory.
@@ -91,8 +67,12 @@ class InMemoryFeedbackStorage(FeedbackStorage):
         try:
             if entry_id in self._storage:
                 error_msg = f"Entry with ID {entry_id} already exists"
-                logger.error(error_msg)
+                self.log_error(error_msg)
                 raise ValueError(error_msg)
+            
+            # Check if we need to purge old entries
+            if len(self._storage) >= self._config.get("max_entries", 1000):
+                await self.purge_by_count(self._config.get("keep_last_n_entries", 100))
                 
             entry = FeedbackEntry(
                 id=entry_id,
@@ -104,27 +84,22 @@ class InMemoryFeedbackStorage(FeedbackStorage):
             )
             self._storage[entry_id] = entry
             
-            logger.info(
+            self.log_info(
                 "Stored new entry",
-                extra={
-                    "entry_id": str(entry_id),
-                    "query_length": len(query),
-                    "response_length": len(response),
-                    "has_metadata": bool(metadata)
-                }
+                entry_id=str(entry_id),
+                query_length=len(query),
+                response_length=len(response),
+                has_metadata=bool(metadata)
             )
             return entry_id
             
         except Exception as e:
-            logger.error(
+            self.log_error(
                 "Failed to store entry",
-                extra={
-                    "entry_id": str(entry_id),
-                    "error": str(e),
-                    "query_length": len(query),
-                    "response_length": len(response)
-                },
-                exc_info=True
+                entry_id=str(entry_id),
+                error=str(e),
+                query_length=len(query),
+                response_length=len(response)
             )
             raise
     
@@ -133,43 +108,82 @@ class InMemoryFeedbackStorage(FeedbackStorage):
         try:
             entry = self._storage.get(entry_id)
             if entry:
-                logger.info(
+                self.log_info(
                     "Retrieved entry",
-                    extra={
-                        "entry_id": str(entry_id),
-                        "has_feedback": bool(entry.feedback)
-                    }
+                    entry_id=str(entry_id),
+                    has_feedback=bool(entry.feedback)
                 )
             else:
-                logger.warning(
+                self.log_warning(
                     "Entry not found",
-                    extra={"entry_id": str(entry_id)}
+                    entry_id=str(entry_id)
                 )
             return entry
             
         except Exception as e:
-            logger.error(
+            self.log_error(
                 "Failed to retrieve entry",
-                extra={"entry_id": str(entry_id), "error": str(e)},
-                exc_info=True
+                entry_id=str(entry_id),
+                error=str(e)
             )
             raise
     
     async def purge_by_time(self, older_than: datetime) -> int:
-        """Stub implementation - does nothing."""
-        logger.info(
-            "Purge by time called (stub implementation)",
-            extra={"older_than": older_than.isoformat()}
-        )
-        return 0
+        """Purge entries older than the specified time."""
+        try:
+            old_entries = [
+                entry_id for entry_id, entry in self._storage.items()
+                if entry.timestamp < older_than
+            ]
+            for entry_id in old_entries:
+                del self._storage[entry_id]
+            
+            self.log_info(
+                "Purged entries by time",
+                older_than=older_than.isoformat(),
+                purged_count=len(old_entries)
+            )
+            return len(old_entries)
+            
+        except Exception as e:
+            self.log_error(
+                "Failed to purge entries by time",
+                older_than=older_than.isoformat(),
+                error=str(e)
+            )
+            raise
     
     async def purge_by_count(self, keep_last_n: int) -> int:
-        """Stub implementation - does nothing."""
-        logger.info(
-            "Purge by count called (stub implementation)",
-            extra={"keep_last_n": keep_last_n}
-        )
-        return 0
+        """Purge entries keeping only the last N entries."""
+        try:
+            if len(self._storage) <= keep_last_n:
+                return 0
+                
+            # Sort entries by timestamp and keep only the most recent ones
+            sorted_entries = sorted(
+                self._storage.items(),
+                key=lambda x: x[1].timestamp,
+                reverse=True
+            )
+            
+            entries_to_remove = sorted_entries[keep_last_n:]
+            for entry_id, _ in entries_to_remove:
+                del self._storage[entry_id]
+            
+            self.log_info(
+                "Purged entries by count",
+                keep_last_n=keep_last_n,
+                purged_count=len(entries_to_remove)
+            )
+            return len(entries_to_remove)
+            
+        except Exception as e:
+            self.log_error(
+                "Failed to purge entries by count",
+                keep_last_n=keep_last_n,
+                error=str(e)
+            )
+            raise
     
     def __len__(self) -> int:
         """Get the number of stored entries."""
@@ -181,7 +195,10 @@ class InMemoryFeedbackStorage(FeedbackStorage):
             "total_entries": len(self._storage),
             "entries_with_feedback": sum(1 for e in self._storage.values() if e.feedback),
             "oldest_entry": min((e.timestamp for e in self._storage.values()), default=None),
-            "newest_entry": max((e.timestamp for e in self._storage.values()), default=None)
+            "newest_entry": max((e.timestamp for e in self._storage.values()), default=None),
+            "max_entries": self._config.get("max_entries", 1000),
+            "purge_older_than_hours": self._config.get("purge_older_than_hours", 24),
+            "keep_last_n_entries": self._config.get("keep_last_n_entries", 100)
         }
-        logger.info("Retrieved storage stats", extra=stats)
+        self.log_info("Retrieved storage stats", **stats)
         return stats 
