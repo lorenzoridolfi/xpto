@@ -190,7 +190,7 @@ def save_json_file(data: Dict, file_path: str) -> None:
 def load_schema(config: Dict) -> Dict:
     """Load the manifest schema."""
     try:
-        return load_json_file(config["system"]["schema_file"])
+        return load_json_file("manifest_schema.json")
     except Exception as e:
         logger.error(f"Error loading schema: {str(e)}")
         raise
@@ -447,28 +447,29 @@ def create_agents(config: Dict) -> Dict[str, Any]:
     }
 
 def main():
-    """Main function to update the manifest."""
+    """Main entry point."""
     try:
         # Load configuration
-        config = load_json_file("update_manifest_config.json")
-        logger.debug("Configuration loaded")
+        config = load_json_file("update_manifest.json")
         
-        # Setup logging based on config
+        # Setup logging
         setup_logging(config)
-        logger.debug("Logging configured")
         
-        # Get OpenAI configuration
-        openai_config = get_openai_config()
+        # Load schema
+        schema = load_schema(config)
         
-        # Configure agents with OpenAI settings
-        llm_config = {
-            "config_list": [openai_config],
-            "cache_seed": 42
-        }
+        # Process files
+        manifest_data = process_files(config)
+        
+        # Create backup
+        backup_path = create_backup(manifest_data, config)
+        logger.info(f"Created backup at {backup_path}")
         
         # Create agents
         agents = create_agents(config)
-        logger.debug("Agents created and configured")
+        
+        # Start processing
+        logger.info("Starting manifest update process")
         
         # Initialize the process
         agents["user_proxy"].initiate_chat(
@@ -488,11 +489,6 @@ def main():
         if not validate_manifest(manifest, config):
             raise ValueError("Generated manifest failed validation")
         logger.debug("Manifest validated successfully")
-        
-        # Create backup before processing
-        backup_path = create_backup(manifest, config)
-        if backup_path:
-            logger.info(f"Created backup at: {backup_path}")
         
         # Save new manifest
         save_json_file(manifest, config["system"]["manifest_file"])

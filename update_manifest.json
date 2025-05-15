@@ -10,7 +10,7 @@
     "max_rounds": 3,
     "file_manifest": [
         {
-            "filename": "manifest.json",
+            "filename": "update_manifest.json",
             "description": "Main manifest file containing system configuration"
         },
         {
@@ -45,7 +45,7 @@
         }
     },
     "output_files": {
-        "updated_manifest": "manifest.json",
+        "updated_manifest": "update_manifest.json",
         "logging_config": "logging_config.json",
         "logging_guide": "LOGGING.md"
     },

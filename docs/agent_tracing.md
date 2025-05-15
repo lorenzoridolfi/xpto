@@ -1,87 +1,92 @@
 # Agent Tracing and Root Cause Analysis
 
-Este documento descreve o sistema de tracing e análise de root cause para agentes.
+Este documento descreve o sistema de tracing, análise de root cause e analytics para agentes.
 
 ## Visão Geral
 
-O sistema consiste em dois módulos principais:
+O sistema consiste em três módulos principais:
 
 1. `agent_tracer.py`: Rastreia eventos e mensagens dos agentes
-2. `root_cause_analyzer.py`: Analisa os traces para identificar problemas e gerar recomendações
+2. `root_cause_analyzer.py`: Analisa os traces para identificar problemas
+3. `tool_analytics.py`: Analisa o uso de ferramentas pelos agentes
 
 ## Módulos
 
-### AgentTracer
+### 1. AgentTracer
 
 O `AgentTracer` é responsável por rastrear todas as interações dos agentes.
 
-```python
-from agent_tracer import AgentTracer
-
-# Inicialização
-tracer = AgentTracer(config)
-
-# Durante a execução
-tracer.on_messages_invoke(agent_name, messages)
-tracer.on_messages_complete(agent_name, outputs)
-
-# No final
-tracer.save_trace("trace.json")
-```
-
-#### Estrutura de Eventos
-
-Cada evento é representado pela classe `AgentEvent`:
+#### Estrutura de Dados
 
 ```python
 @dataclass
+class TokenUsage:
+    """Estatísticas de uso de tokens do LLM."""
+    prompt_tokens: int      # Tokens usados no prompt
+    completion_tokens: int  # Tokens usados na resposta
+    total_tokens: int       # Total de tokens
+    model: str             # Modelo usado (ex: gpt-4)
+
+@dataclass
 class AgentEvent:
-    timestamp: str
-    agent_name: str
-    event_type: str
-    inputs: List[Dict[str, str]]
-    outputs: List[Dict[str, Any]]
-    metadata: Optional[Dict[str, Any]] = None
+    """Evento do agente."""
+    timestamp: str                    # Data/hora do evento
+    agent_name: str                   # Nome do agente
+    event_type: str                   # Tipo (invoke/complete)
+    inputs: List[Dict[str, str]]      # Mensagens de entrada
+    outputs: List[Dict[str, Any]]     # Mensagens de saída
+    metadata: Optional[Dict[str, Any]] # Metadados extras
+    token_usage: Optional[TokenUsage]  # Uso de tokens
 ```
 
-#### Configuração
+#### Funcionalidades
 
-O `AgentTracer` usa a mesma estrutura de configuração dos outros módulos:
+1. **Tracing de Eventos**
+   ```python
+   # Início do processamento
+   tracer.on_messages_invoke("WriterAgent", messages, token_usage)
+   
+   # Fim do processamento
+   tracer.on_messages_complete("WriterAgent", outputs, token_usage)
+   ```
 
-```json
-{
-    "logging": {
-        "level": "INFO",
-        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "file": "agent_tracer.log",
-        "console": true
-    }
-}
-```
+2. **Tracing de Tokens**
+   - Registra tokens de prompt e completion
+   - Identifica o modelo usado
+   - Calcula total de tokens
 
-### RootCauseAnalyzer
+3. **Tracing de Tempo**
+   - Tempo de início
+   - Tempo de processamento
+   - Tempo de fim
 
-O `RootCauseAnalyzer` analisa os traces dos agentes para identificar problemas e gerar recomendações.
+4. **Persistência**
+   - Salva traces em JSON
+   - Mantém histórico de eventos
+   - Permite análise posterior
+
+### 2. RootCauseAnalyzer
+
+O `RootCauseAnalyzer` analisa os traces para identificar problemas e gerar recomendações.
+
+#### Estrutura de Dados
 
 ```python
-from root_cause_analyzer import RootCauseAnalyzer
-
-# Inicialização
-analyzer = RootCauseAnalyzer(config)
-
-# Análise
-analysis = analyzer.analyze(tracer, user_feedback="O sistema está lento")
-analyzer.save_analysis(analysis, "root_cause.json")
+@dataclass
+class RootCauseAnalysis:
+    """Resultado da análise de root cause."""
+    summary: str                    # Resumo da análise
+    issues: List[Dict[str, Any]]    # Problemas encontrados
+    recommendations: List[str]      # Recomendações
+    metadata: Optional[Dict[str, Any]] # Metadados extras
 ```
 
 #### Tipos de Análise
 
-O analisador identifica vários tipos de problemas:
-
 1. **Performance**
-   - Tempo de processamento dos agentes
+   - Tempo de processamento
+   - Uso de tokens
    - Gargalos de comunicação
-   - Uso de recursos
 
 2. **Comunicação**
    - Padrões de mensagens
@@ -98,105 +103,145 @@ O analisador identifica vários tipos de problemas:
    - Sugestões de melhoria
    - Experiência do usuário
 
-#### Estrutura da Análise
+#### Funcionalidades
 
-A análise é representada pela classe `RootCauseAnalysis`:
+1. **Análise de Eventos**
+   ```python
+   # Análise completa
+   analysis = analyzer.analyze(tracer)
+   
+   # Análise com feedback
+   analysis = analyzer.analyze(tracer, user_feedback="Sistema lento")
+   ```
+
+2. **Geração de Recomendações**
+   - Baseadas em problemas encontrados
+   - Considerando feedback do usuário
+   - Priorizadas por severidade
+
+3. **Persistência**
+   - Salva análises em JSON
+   - Mantém histórico de problemas
+   - Permite tracking de melhorias
+
+### 3. ToolAnalytics
+
+O `ToolAnalytics` analisa o uso de ferramentas pelos agentes.
+
+#### Estrutura de Dados
 
 ```python
 @dataclass
-class RootCauseAnalysis:
-    summary: str
-    issues: List[Dict[str, Any]]
-    recommendations: List[str]
-    metadata: Optional[Dict[str, Any]] = None
+class ToolUsage:
+    """Uso de uma ferramenta."""
+    tool_name: str                  # Nome da ferramenta
+    call_count: int                 # Número de chamadas
+    success_rate: float             # Taxa de sucesso
+    avg_duration: float             # Duração média
+    error_count: int                # Número de erros
+    last_used: str                  # Último uso
 ```
 
-#### Configuração
+#### Tipos de Análise
 
-O analisador usa configurações específicas para cada tipo de análise:
+1. **Uso de Ferramentas**
+   - Frequência de uso
+   - Taxa de sucesso
+   - Tempo de execução
+
+2. **Padrões de Uso**
+   - Sequência de ferramentas
+   - Combinações comuns
+   - Dependências
+
+3. **Problemas**
+   - Erros frequentes
+   - Timeouts
+   - Falhas de integração
+
+#### Funcionalidades
+
+1. **Análise de Uso**
+   ```python
+   # Análise de ferramenta
+   usage = analytics.analyze_tool("search_tool")
+   
+   # Análise de agente
+   usage = analytics.analyze_agent("WriterAgent")
+   ```
+
+2. **Recomendações**
+   - Otimização de uso
+   - Substituição de ferramentas
+   - Melhorias de integração
+
+3. **Persistência**
+   - Salva analytics em JSON
+   - Mantém histórico de uso
+   - Permite análise de tendências
+
+## Integração
+
+### Configuração
 
 ```json
 {
-    "logging": {
-        "level": "INFO",
-        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "file": "root_cause.log",
-        "console": true
-    },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "agent_tracer.log",
+    "console": true
+  },
+  "analysis": {
     "performance": {
-        "response_time_threshold": 5.0,
-        "error_rate_threshold": 0.1
+      "response_time_threshold": 5.0,
+      "error_rate_threshold": 0.1
     },
-    "analysis": {
-        "max_messages_per_agent": 10
+    "token_tracking": {
+      "enabled": true
     }
+  }
 }
 ```
 
-## Integração com Projetos
+### Uso em Projetos
 
-### Configuração do Projeto
-
-1. Adicione as dependências:
+1. **Inicialização**
    ```python
-   from agent_tracer import AgentTracer
-   from root_cause_analyzer import RootCauseAnalyzer
-   ```
-
-2. Configure os módulos:
-   ```python
-   # Carregue a configuração
+   # Carregar configuração
    with open("config.json", "r") as f:
        config = json.load(f)
    
-   # Inicialize os módulos
+   # Inicializar módulos
    tracer = AgentTracer(config)
    analyzer = RootCauseAnalyzer(config)
+   analytics = ToolAnalytics(config)
    ```
 
-3. Integre com os agentes:
+2. **Tracing**
    ```python
-   class MyAgent:
-       def on_messages_invoke(self, messages):
-           tracer.on_messages_invoke(self.name, messages)
-   
-       def on_messages_complete(self, messages):
-           tracer.on_messages_complete(self.name, messages)
+   # Durante a execução
+   tracer.on_messages_invoke(agent_name, messages, token_usage)
+   tracer.on_messages_complete(agent_name, outputs, token_usage)
    ```
 
-### Uso em Diferentes Cenários
-
-1. **Debug e Desenvolvimento**
+3. **Análise**
    ```python
-   # Durante o desenvolvimento
-   tracer.on_messages_invoke(agent_name, messages)
-   tracer.on_messages_complete(agent_name, outputs)
-   
-   # Análise de problemas
+   # Análise de root cause
    analysis = analyzer.analyze(tracer)
-   print(analysis.summary)
+   
+   # Análise de ferramentas
+   tool_analysis = analytics.analyze_tool("search_tool")
    ```
 
-2. **Produção**
+4. **Persistência**
    ```python
-   # Trace completo
+   # Salvar traces
    tracer.save_trace("trace.json")
    
-   # Análise com feedback
-   analysis = analyzer.analyze(tracer, user_feedback="Problema reportado")
-   analyzer.save_analysis(analysis, "root_cause.json")
-   ```
-
-3. **Monitoramento Contínuo**
-   ```python
-   # Trace periódico
-   if time.time() - last_trace > TRACE_INTERVAL:
-       tracer.save_trace(f"trace_{timestamp}.json")
-   
-   # Análise automática
-   if has_issues:
-       analysis = analyzer.analyze(tracer)
-       notify_team(analysis)
+   # Salvar análises
+   analyzer.save_analysis(analysis, "analysis.json")
+   analytics.save_analysis(tool_analysis, "tool_analysis.json")
    ```
 
 ## Boas Práticas
@@ -211,44 +256,57 @@ O analisador usa configurações específicas para cada tipo de análise:
    - Considere feedback dos usuários
    - Implemente recomendações
 
-3. **Configuração**
+3. **Ferramentas**
+   - Monitore uso de ferramentas
+   - Otimize padrões de uso
+   - Mantenha histórico de problemas
+
+4. **Configuração**
    - Ajuste thresholds conforme necessário
    - Configure logging apropriadamente
    - Mantenha configurações atualizadas
 
 ## Exemplos
 
-### Trace Básico
+### Trace Completo
 ```python
 # Inicialização
 tracer = AgentTracer(config)
+analyzer = RootCauseAnalyzer(config)
+analytics = ToolAnalytics(config)
 
 # Durante a execução
-tracer.on_messages_invoke("WriterAgent", messages)
-tracer.on_messages_complete("WriterAgent", outputs)
+tracer.on_messages_invoke("WriterAgent", messages, token_usage)
+writer_output = writer_agent.process_text()
+tracer.on_messages_complete("WriterAgent", writer_output, token_usage)
 
-# Salvar trace
-tracer.save_trace("writer_trace.json")
-```
-
-### Análise Completa
-```python
-# Inicialização
-analyzer = RootCauseAnalyzer(config)
-
-# Análise com feedback
-analysis = analyzer.analyze(
-    tracer,
-    user_feedback="O sistema está lento e com erros"
-)
+# Análise
+analysis = analyzer.analyze(tracer)
+tool_analysis = analytics.analyze_tool("search_tool")
 
 # Salvar resultados
+tracer.save_trace("trace.json")
 analyzer.save_analysis(analysis, "analysis.json")
+analytics.save_analysis(tool_analysis, "tool_analysis.json")
+```
 
-# Usar resultados
-print(analysis.summary)
-for issue in analysis.issues:
-    print(f"- {issue['description']}")
-for rec in analysis.recommendations:
-    print(f"- {rec}")
+### Análise de Erro
+```python
+try:
+    # Processamento normal
+    tracer.on_messages_invoke("WriterAgent", messages)
+    writer_output = writer_agent.process_text()
+    tracer.on_messages_complete("WriterAgent", writer_output)
+except Exception as e:
+    # Trace do erro
+    tracer.on_messages_invoke("Error", [{"source": "system", "content": str(e)}])
+    tracer.save_trace("error_trace.json")
+    
+    # Análise do erro
+    analysis = analyzer.analyze(tracer, user_feedback=f"Erro: {str(e)}")
+    analyzer.save_analysis(analysis, "error_analysis.json")
+    
+    # Análise de ferramentas
+    tool_analysis = analytics.analyze_tool("search_tool")
+    analytics.save_analysis(tool_analysis, "error_tool_analysis.json")
 ``` 
