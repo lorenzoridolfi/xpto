@@ -707,204 +707,135 @@ def get_user_feedback() -> str:
 # -----------------------------------------------------------------------------
 async def main():
     """
-    Main execution function.
+    Main execution function that orchestrates the multi-agent system.
     
-    This function:
-    1. Loads configuration
-    2. Initializes agents
-    3. Processes files
-    4. Handles errors
-    5. Performs root cause analysis
-    6. Generates system improvement report
+    This function implements a two-phase process:
+    1. Normal creation and validation flow with multiple iterations until content is approved
+    2. Single human feedback and root cause analysis
     """
-    try:
-        # Load configuration
-        config = load_json_file("toy_example.json")
+    # Load configuration
+    config = load_json_file("toy_example.json")
+    logger.debug("Configuration loaded")
+    
+    # Setup logging
+    setup_logging(config)
+    logger.debug("Logging configured")
+    
+    # Get OpenAI configuration
+    openai_config = get_openai_config()
+    
+    # Initialize agents
+    file_reader = FileReaderAgent(
+        name="file_reader",
+        description="Reads and processes text files",
+        system_message=config["agents"]["file_reader"]["system_message"]
+    )
+    
+    writer = WriterAgent(
+        name="writer",
+        description="Generates content based on input",
+        system_message=config["agents"]["writer"]["system_message"]
+    )
+    
+    verifier = InformationVerifierAgent(
+        name="verifier",
+        description="Verifies information accuracy",
+        system_message=config["agents"]["verifier"]["system_message"]
+    )
+    
+    quality_checker = TextQualityAgent(
+        name="quality_checker",
+        description="Checks text quality",
+        system_message=config["agents"]["quality_checker"]["system_message"]
+    )
+    
+    coordinator = CoordinatorAgent(
+        name="coordinator",
+        description="Coordinates the workflow",
+        system_message=config["agents"]["coordinator"]["system_message"]
+    )
+    
+    # Process document through normal flow with multiple iterations
+    logger.info("Starting document processing")
+    
+    # Read document
+    document = await file_reader.run(task="Read the input document")
+    logger.info("Document read successfully")
+    
+    # Initialize content and validation flags
+    content = None
+    is_verified = False
+    is_quality_approved = False
+    iteration = 0
+    max_iterations = config.get("max_iterations", 5)
+    
+    # Iterate until content is approved or max iterations reached
+    while not (is_verified and is_quality_approved) and iteration < max_iterations:
+        iteration += 1
+        logger.info(f"Starting iteration {iteration}")
         
-        # Initialize agents
-        file_reader = FileReaderAgent(
-            name="file_reader",
-            description="Reads and processes text files",
-            system_message=config["agents"]["file_reader"]["system_message"]
-        )
-        
-        writer = WriterAgent(
-            name="writer",
-            description="Generates content based on input",
-            system_message=config["agents"]["writer"]["system_message"]
-        )
-        
-        verifier = InformationVerifierAgent(
-            name="verifier",
-            description="Verifies information accuracy",
-            system_message=config["agents"]["verifier"]["system_message"]
-        )
-        
-        quality_checker = TextQualityAgent(
-            name="quality_checker",
-            description="Checks text quality",
-            system_message=config["agents"]["quality_checker"]["system_message"]
-        )
-        
-        analyzer = RootCauseAnalyzerAgent(
-            name="analyzer",
-            description="Analyzes system behavior and generates reports",
-            system_message=config["agents"]["analyzer"]["system_message"]
-        )
-        
-        # Process document
-        logger.info("Starting document processing")
-        
-        # Read document
-        document = await file_reader.run(task="Read the input document")
-        logger.info("Document read successfully")
-        
-        # Generate content
-        content = await writer.run(task=f"Generate content based on: {document}")
-        logger.info("Content generated successfully")
+        # Generate or improve content
+        if content is None:
+            content = await writer.run(task=f"Generate content based on: {document}")
+            logger.info("Initial content generated")
+        else:
+            content = await writer.run(task=f"Improve content based on feedback: {content}")
+            logger.info("Content improved")
         
         # Verify information
         verification = await verifier.run(task=f"Verify information in: {content}")
-        logger.info("Information verified successfully")
+        is_verified = verification.get("verification_status") == "PASS"
+        logger.info(f"Information verification: {'PASS' if is_verified else 'FAIL'}")
         
         # Check quality
         quality = await quality_checker.run(task=f"Check quality of: {content}")
-        logger.info("Quality check completed successfully")
+        is_quality_approved = quality.get("status") == "PASS"
+        logger.info(f"Quality check: {'PASS' if is_quality_approved else 'FAIL'}")
         
-        # Get user feedback
-        feedback = input("Please provide feedback on the generated content: ")
-        logger.info("User feedback received")
-        
-        # Post-feedback analysis
-        logger.info("Starting post-feedback analysis")
-        
-        # Gather system metrics
-        metrics = {
-            "document_metrics": {
-                "size": len(document),
-                "processing_time": time.time() - start_time,
-                "quality_score": quality.get("score", 0)
-            },
-            "agent_metrics": {
-                "file_reader": {
-                    "response_time": file_reader.response_time,
-                    "error_count": file_reader.error_count
-                },
-                "writer": {
-                    "response_time": writer.response_time,
-                    "error_count": writer.error_count
-                },
-                "verifier": {
-                    "response_time": verifier.response_time,
-                    "error_count": verifier.error_count
-                },
-                "quality_checker": {
-                    "response_time": quality_checker.response_time,
-                    "error_count": quality_checker.error_count
-                }
-            },
-            "system_metrics": {
-                "cache_stats": llm_cache.get_stats(),
-                "api_calls": get_api_metrics(),
-                "memory_usage": get_memory_usage()
-            },
-            "user_feedback": feedback
-        }
-        
-        # Analyze interaction flow
-        interaction_analysis = await analyzer.analyze_interaction_flow(metrics)
-        logger.info("Interaction flow analysis completed")
-        
-        # Generate improvement report
-        report_data = {
-            "metrics": metrics,
-            "interaction_analysis": interaction_analysis,
-            "bottlenecks": identify_bottlenecks(metrics),
-            "cache_metrics": llm_cache.get_stats(),
-            "api_metrics": get_api_metrics()
-        }
-        
-        improvement_report = await analyzer.generate_improvement_report(report_data)
-        logger.info("Improvement report generated")
-        
-        # Save report
-        with open("system_improvement_report.json", "w") as f:
-            json.dump(improvement_report, f, indent=2)
-        logger.info("Report saved to system_improvement_report.json")
-        
-        # Log results
-        logger.info("Document processing completed successfully")
-        logger.info(f"Quality score: {quality.get('score', 0)}")
-        logger.info(f"Processing time: {time.time() - start_time:.2f} seconds")
-        
-    except Exception as e:
-        logger.error(f"Error in main execution: {str(e)}")
-        raise
-
-def identify_bottlenecks(metrics: Dict[str, Any]) -> List[str]:
-    """
-    Identify system bottlenecks from metrics.
+        # If not approved, get feedback for improvement
+        if not (is_verified and is_quality_approved):
+            feedback = {
+                "verification": verification.get("feedback", ""),
+                "quality": quality.get("feedback", "")
+            }
+            logger.info(f"Feedback for improvement: {feedback}")
     
-    Args:
-        metrics: Dictionary containing system metrics
-        
-    Returns:
-        List of identified bottlenecks
-    """
-    bottlenecks = []
+    if iteration >= max_iterations:
+        logger.warning(f"Max iterations ({max_iterations}) reached without full approval")
     
-    # Check response times
-    for agent, agent_metrics in metrics["agent_metrics"].items():
-        if agent_metrics["response_time"] > 5.0:  # 5 seconds threshold
-            bottlenecks.append(f"Slow response time for {agent}: {agent_metrics['response_time']:.2f}s")
+    # Get single user feedback after content is finalized
+    print("\nFinal Content:")
+    print(content)
+    user_feedback = input("\nPlease provide feedback on the content: ")
+    logger.info("User feedback received")
     
-    # Check error rates
-    for agent, agent_metrics in metrics["agent_metrics"].items():
-        if agent_metrics["error_count"] > 0:
-            bottlenecks.append(f"High error rate for {agent}: {agent_metrics['error_count']} errors")
+    # Analyze root causes with feedback and message traces
+    root_cause_analyzer = RootCauseAnalyzerAgent(config)
+    analysis = await root_cause_analyzer.analyze(RootCauseInput(
+        config=config,
+        user_feedback=user_feedback,
+        action_log=ACTION_LOG,
+        event_log=ROOT_CAUSE_DATA
+    ))
     
-    # Check cache effectiveness
-    cache_stats = metrics["system_metrics"]["cache_stats"]
-    if cache_stats["hit_ratio"] < 0.5:  # 50% threshold
-        bottlenecks.append(f"Low cache hit ratio: {cache_stats['hit_ratio']:.2%}")
+    # Save analysis
+    save_json_file(analysis, "root_cause_analysis.json")
+    logger.info("Root cause analysis saved")
     
-    # Check memory usage
-    memory_usage = metrics["system_metrics"]["memory_usage"]
-    if memory_usage["percent"] > 80:  # 80% threshold
-        bottlenecks.append(f"High memory usage: {memory_usage['percent']}%")
-    
-    return bottlenecks
-
-def get_api_metrics() -> Dict[str, Any]:
-    """
-    Get API call metrics.
-    
-    Returns:
-        Dictionary containing API metrics
-    """
-    return {
-        "total_calls": llm_cache.total_api_calls,
-        "successful_calls": llm_cache.successful_api_calls,
-        "failed_calls": llm_cache.failed_api_calls,
-        "average_response_time": llm_cache.average_response_time
-    }
-
-def get_memory_usage() -> Dict[str, Any]:
-    """
-    Get current memory usage.
-    
-    Returns:
-        Dictionary containing memory usage metrics
-    """
-    process = psutil.Process()
-    memory_info = process.memory_info()
-    
-    return {
-        "rss": memory_info.rss,  # Resident Set Size
-        "vms": memory_info.vms,  # Virtual Memory Size
-        "percent": process.memory_percent()
-    }
+    # Print summary
+    print("\nProcess Summary:")
+    print(f"Total iterations: {iteration}")
+    print(f"Final verification status: {'PASS' if is_verified else 'FAIL'}")
+    print(f"Final quality status: {'PASS' if is_quality_approved else 'FAIL'}")
+    print(f"User feedback: {user_feedback}")
+    print("\nRoot cause analysis saved to root_cause_analysis.json")
+    print("\nSuggested improvements:")
+    for rec in analysis.get("recommendations", []):
+        print(f"- {rec['description']} (Priority: {rec['priority']})")
 
 if __name__ == "__main__":
-    start_time = time.time()
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+        sys.exit(1)

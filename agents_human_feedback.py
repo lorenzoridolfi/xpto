@@ -29,6 +29,9 @@ from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from analytics_assistant_agent import AnalyticsAssistantAgent
+from tool_analytics import ToolAnalytics, ToolUsageMetrics
+from llm_cache import LLMCache
 
 # -----------------------------------------------------------------------------
 # Configuration Management
@@ -240,17 +243,23 @@ class RootCauseInput:
     action_log: List[Dict[str, Any]]
     event_log: List[Dict[str, Any]]
 
-class RootCauseAnalyzerAgent:
+class RootCauseAnalyzerAgent(AnalyticsAssistantAgent):
     """
     Analyzes system behavior and user feedback to identify root causes and recommendations.
     
-    Attributes:
-        config: Configuration dictionary
-        system_message: System message defining the agent's behavior
+    This agent combines configuration data, user feedback, and system logs to provide
+    insights into system behavior and potential improvements.
     """
     def __init__(self, config: dict):
+        super().__init__(
+            name="root_cause_analyzer",
+            model_client=OpenAIChatCompletionClient(),
+            system_message=self._create_system_message(),
+            tools=None,
+            reflect_on_tool_use=True,
+            cache=LLMCache() if config.get("cache", {}).get("enabled", False) else None
+        )
         self.config = config
-        self.system_message = self._create_system_message()
 
     def _create_system_message(self) -> str:
         """Create the system message defining the agent's behavior and output format."""
@@ -274,7 +283,172 @@ class RootCauseAnalyzerAgent:
             "confidence_score": float
         }"""
 
-    def analyze(self, input_data: RootCauseInput) -> Dict[str, Any]:
+    async def analyze_interaction_flow(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze the entire interaction flow between agents.
+        
+        Args:
+            metrics: Dictionary containing metrics from all agents
+            
+        Returns:
+            Dictionary containing interaction analysis results
+        """
+        log_event(self.name, "analyze_interaction_flow_start", metrics, [])
+        
+        # Prepare analysis prompt
+        prompt = f"""
+        Analyze the following agent interaction metrics and provide insights:
+        
+        Metrics:
+        {json.dumps(metrics, indent=2)}
+        
+        Please provide a detailed analysis in JSON format with the following structure:
+        {{
+            "interaction_patterns": [
+                {{
+                    "pattern": "string",
+                    "frequency": "number",
+                    "impact": "high|medium|low",
+                    "suggestion": "string"
+                }}
+            ],
+            "communication_efficiency": {{
+                "score": "number",
+                "bottlenecks": ["string"],
+                "improvements": ["string"]
+            }},
+            "workflow_optimization": {{
+                "current_flow": ["string"],
+                "suggested_flow": ["string"],
+                "expected_improvements": ["string"]
+            }},
+            "agent_collaboration": {{
+                "strengths": ["string"],
+                "weaknesses": ["string"],
+                "improvement_areas": ["string"]
+            }}
+        }}
+        """
+        
+        # Get analysis response
+        response = await self.run(task=prompt)
+        
+        log_event(self.name, "analyze_interaction_flow_complete", metrics, response)
+        return response
+
+    async def generate_improvement_report(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate a comprehensive system improvement report.
+        
+        Args:
+            data: Dictionary containing system metrics and analysis data
+            
+        Returns:
+            Dictionary containing improvement recommendations
+        """
+        log_event(self.name, "generate_improvement_report_start", data, [])
+        
+        # Prepare report prompt
+        prompt = f"""
+        Generate a comprehensive system improvement report based on the following data:
+        
+        Data:
+        {json.dumps(data, indent=2)}
+        
+        Please provide a detailed report in JSON format with the following structure:
+        {{
+            "data_analysis": {{
+                "input_quality": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "recommendations": ["string"]
+                }},
+                "processing_efficiency": {{
+                    "score": "number",
+                    "bottlenecks": ["string"],
+                    "optimizations": ["string"]
+                }},
+                "transformation_accuracy": {{
+                    "score": "number",
+                    "errors": ["string"],
+                    "improvements": ["string"]
+                }},
+                "validation_results": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "enhancements": ["string"]
+                }}
+            }},
+            "agent_performance": {{
+                "response_accuracy": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "improvements": ["string"]
+                }},
+                "processing_speed": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "optimizations": ["string"]
+                }},
+                "error_rates": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "error_patterns": ["string"],
+                    "prevention_strategies": ["string"]
+                }}
+            }},
+            "system_optimization": {{
+                "resource_utilization": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "recommendations": ["string"]
+                }},
+                "processing_bottlenecks": {{
+                    "identified": ["string"],
+                    "solutions": ["string"]
+                }},
+                "cache_effectiveness": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "optimizations": ["string"]
+                }},
+                "api_efficiency": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "improvements": ["string"]
+                }},
+                "memory_usage": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "optimizations": ["string"]
+                }}
+            }},
+            "recommendations": [
+                {{
+                    "area": "string",
+                    "priority": "high|medium|low",
+                    "description": "string",
+                    "implementation_steps": ["string"],
+                    "expected_impact": "string"
+                }}
+            ],
+            "summary": "string"
+        }}
+        """
+        
+        # Get report response
+        response = await self.run(task=prompt)
+        
+        log_event(self.name, "generate_improvement_report_complete", data, response)
+        return response
+
+    async def analyze(self, input_data: RootCauseInput) -> Dict[str, Any]:
         """
         Analyze the input data and return structured results.
         
@@ -284,8 +458,36 @@ class RootCauseAnalyzerAgent:
         Returns:
             Dictionary containing root causes and recommendations
         """
-        # Implementation would go here
-        pass
+        # Combine all analysis methods
+        interaction_analysis = await self.analyze_interaction_flow(input_data.action_log)
+        
+        report_data = {
+            "config": input_data.config,
+            "user_feedback": input_data.user_feedback,
+            "action_log": input_data.action_log,
+            "event_log": input_data.event_log,
+            "interaction_analysis": interaction_analysis
+        }
+        
+        improvement_report = await self.generate_improvement_report(report_data)
+        
+        return {
+            "root_causes": improvement_report.get("data_analysis", {}),
+            "recommendations": improvement_report.get("recommendations", []),
+            "confidence_score": self._calculate_confidence_score(improvement_report)
+        }
+
+    def _calculate_confidence_score(self, report: Dict[str, Any]) -> float:
+        """Calculate confidence score based on report data."""
+        scores = []
+        
+        # Extract scores from different sections
+        for section in ["input_quality", "processing_efficiency", "transformation_accuracy", "validation_results"]:
+            if section in report.get("data_analysis", {}):
+                scores.append(report["data_analysis"][section].get("score", 0))
+        
+        # Calculate average score
+        return sum(scores) / len(scores) if scores else 0.0
 
 # -----------------------------------------------------------------------------
 # Logging Setup

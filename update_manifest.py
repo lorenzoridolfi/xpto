@@ -12,9 +12,140 @@ import jsonschema
 import shutil
 import logging
 import glob
+import asyncio
+import datetime
+import psutil
+import time
 
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
+from autogen_agentchat.base import Response
+from autogen_agentchat.messages import TextMessage, BaseChatMessage
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from json_validator_tool import get_tool_for_agent
+from tool_analytics import ToolAnalytics, ToolUsageMetrics
+from analytics_assistant_agent import AnalyticsAssistantAgent
+from llm_cache import LLMCache
 from load_openai import get_openai_config
+
+# -----------------------------------------------------------------------------
+# Global logs and cache
+# -----------------------------------------------------------------------------
+# Lists to store system-wide logging information
+ROOT_CAUSE_DATA: List[dict] = []  # Stores detailed event data for root cause analysis
+FILE_LOG: List[str] = []         # Tracks file operations
+ACTION_LOG: List[str] = []       # Records agent actions and decisions
+
+# Global logger instance
+logger = logging.getLogger("update_manifest")
+
+# Initialize LLM cache
+llm_cache = LLMCache(
+    max_size=1000,
+    similarity_threshold=0.85,
+    expiration_hours=24
+)
+
+# -----------------------------------------------------------------------------
+# Event logger
+# -----------------------------------------------------------------------------
+def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], outputs) -> None:
+    """
+    Log an event in the system with detailed information about inputs and outputs.
+
+    Args:
+        agent_name (str): Name of the agent generating the event
+        event_type (str): Type of event (e.g., 'on_messages_invoke', 'on_messages_complete')
+        inputs (List[BaseChatMessage]): Input messages to the agent
+        outputs: Output from the agent (can be Response, list of Responses, or other types)
+    """
+    entry = {
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "agent": agent_name,
+        "event": event_type,
+        "inputs": [{"source": m.source, "content": m.content} for m in inputs],
+    }
+    
+    if isinstance(outputs, Response):
+        cm = outputs.chat_message
+        try:
+            # Try to parse JSON content
+            content = json.loads(cm.content)
+            # Validate against schema
+            if not validate_agent_output(agent_name, content):
+                logger.warning(f"Invalid output format from {agent_name}")
+            entry["outputs"] = [{"source": cm.source, "content": content}]
+        except json.JSONDecodeError:
+            # If not JSON, store as is
+            entry["outputs"] = [{"source": cm.source, "content": cm.content}]
+    elif isinstance(outputs, list) and all(isinstance(o, Response) for o in outputs):
+        entry["outputs"] = []
+        for o in outputs:
+            try:
+                content = json.loads(o.chat_message.content)
+                if not validate_agent_output(agent_name, content):
+                    logger.warning(f"Invalid output format from {agent_name}")
+                entry["outputs"].append({"source": o.chat_message.source, "content": content})
+            except json.JSONDecodeError:
+                entry["outputs"].append({"source": o.chat_message.source, "content": o.chat_message.content})
+    elif isinstance(outputs, list) and all(isinstance(o, BaseChatMessage) for o in outputs):
+        entry["outputs"] = []
+        for o in outputs:
+            try:
+                content = json.loads(o.content)
+                if not validate_agent_output(agent_name, content):
+                    logger.warning(f"Invalid output format from {agent_name}")
+                entry["outputs"].append({"source": o.source, "content": content})
+            except json.JSONDecodeError:
+                entry["outputs"].append({"source": o.source, "content": o.content})
+    else:
+        entry["outputs"] = outputs
+        
+    # Log the event
+    logger.debug(f"Event: {json.dumps(entry, indent=2)}")
+    ROOT_CAUSE_DATA.append(entry)
+
+# -----------------------------------------------------------------------------
+# Schema validation
+# -----------------------------------------------------------------------------
+def load_schemas() -> Dict[str, Any]:
+    """
+    Load JSON schemas for agent output validation.
+    
+    Returns:
+        Dict[str, Any]: Dictionary containing all agent schemas
+    """
+    try:
+        with open("agent_schemas.json", "r", encoding="utf-8") as f:
+            return json.load(f)["schemas"]
+    except Exception as e:
+        logger.error(f"Error loading schemas: {e}")
+        return {}
+
+def validate_agent_output(agent_name: str, output: Dict[str, Any]) -> bool:
+    """
+    Validate agent output against its schema.
+    
+    Args:
+        agent_name (str): Name of the agent
+        output (Dict[str, Any]): Output to validate
+        
+    Returns:
+        bool: True if validation passes, False otherwise
+    """
+    schemas = load_schemas()
+    schema = schemas.get(agent_name.lower().replace(" ", "_"))
+    
+    if not schema:
+        logger.warning(f"No schema found for agent: {agent_name}")
+        return True
+        
+    try:
+        validate(instance=output, schema=schema)
+        return True
+    except jsonschema.exceptions.ValidationError as e:
+        logger.error(f"Schema validation failed for {agent_name}: {e}")
+        return False
 
 # Constants
 MANIFEST_VERSION = "1.0.0"
