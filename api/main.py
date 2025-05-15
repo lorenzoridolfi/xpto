@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Literal
 import secrets
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 import uuid
 import time
 
@@ -90,7 +90,7 @@ class ErrorResponse(BaseModel):
 
 def generate_question_id() -> str:
     """Generate a unique question ID."""
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     unique_id = str(uuid.uuid4())[:8]
     return f"q_{timestamp}_{unique_id}"
 
@@ -157,7 +157,7 @@ async def ask_question(
             "answer": response,
             "rationale": rationale,
             "critic": critic,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(UTC)
         }
         
         return QuestionResponse(
@@ -165,7 +165,7 @@ async def ask_question(
             answer=response,
             rationale=rationale,
             critic=critic,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             question_type=request.question_type
         )
     except Exception as e:
@@ -220,7 +220,7 @@ async def submit_feedback(
         return FeedbackResponse(
             root_cause_analysis={"analysis": analysis},
             recommendations=[rec.strip() for rec in recommendations.split("\n") if rec.strip()],
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(UTC)
         )
     except HTTPException:
         raise
