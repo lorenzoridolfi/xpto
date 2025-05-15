@@ -1,466 +1,218 @@
 """
-Tool Analytics System
+Tool Analytics and Optimization System
 
-This module provides comprehensive analytics for tool usage and performance.
-It includes:
-
-- Usage tracking and metrics
-- Performance monitoring
-- Error analysis
-- Cost tracking
-- Trend analysis
+This module provides advanced analytics and optimization for agent tool usage,
+including detailed reflection criteria, usage optimization, and performance tracking.
 """
 
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 import json
-import time
+import datetime
+from typing import Dict, List, Any, Tuple
+from dataclasses import dataclass
 from collections import defaultdict
+from abc import ABC, abstractmethod
 
 @dataclass
-class ToolUsage:
-    """
-    Represents a tool usage event.
-    
-    Attributes:
-        timestamp (datetime): When the tool was used
-        tool_name (str): Name of the tool
-        parameters (Dict[str, Any]): Tool parameters
-        duration (float): Execution duration in seconds
-        success (bool): Whether the tool call succeeded
-        error (Optional[str]): Error message if failed
-        cost (Optional[float]): Cost of the tool call
-    """
-    timestamp: datetime
-    tool_name: str
-    parameters: Dict[str, Any]
-    duration: float
-    success: bool
-    error: Optional[str] = None
-    cost: Optional[float] = None
+class BaseMetrics:
+    """Base class for all metrics tracking."""
+    total_calls: int = 0
+    successful_calls: int = 0
+    failed_calls: int = 0
+    average_response_time: float = 0.0
+    success_rate: float = 0.0
 
 @dataclass
-class ToolMetrics:
-    """
-    Represents aggregated tool metrics.
-    
-    Attributes:
-        total_calls (int): Total number of calls
-        success_rate (float): Rate of successful calls
-        avg_duration (float): Average call duration
-        total_cost (float): Total cost of calls
-        error_count (int): Number of errors
-        error_types (Dict[str, int]): Count of error types
-    """
-    total_calls: int
-    success_rate: float
-    avg_duration: float
-    total_cost: float
-    error_count: int
-    error_types: Dict[str, int]
+class ToolUsageMetrics(BaseMetrics):
+    """Metrics for tracking tool usage effectiveness."""
+    impact_score: float = 0.0
+    context_relevance: float = 0.0
 
-class ToolAnalytics:
-    """
-    Analyzes tool usage and performance.
-    
-    This class provides:
-    - Usage tracking and metrics
-    - Performance monitoring
-    - Error analysis
-    - Cost tracking
-    - Trend analysis
-    
-    Attributes:
-        usages (List[ToolUsage]): List of tool usage events
-        metrics (Dict[str, ToolMetrics]): Aggregated metrics per tool
-        error_patterns (Dict[str, List[str]]): Known error patterns
-        cost_rates (Dict[str, float]): Cost rates per tool
-    """
+class BaseAnalytics(ABC):
+    """Base class for all analytics systems."""
     
     def __init__(self):
-        """Initialize the tool analytics system."""
-        self.usages: List[ToolUsage] = []
-        self.metrics: Dict[str, ToolMetrics] = {}
-        self.error_patterns = {}
-        self.cost_rates = {}
-
-    def record_usage(self, usage: ToolUsage) -> None:
-        """
-        Record a tool usage event.
-
-        Args:
-            usage (ToolUsage): Tool usage event to record
-
-        Raises:
-            ValueError: If usage is invalid
-        """
-        if not isinstance(usage, ToolUsage):
-            raise ValueError("Invalid usage object")
-            
-        if usage.duration < 0:
-            raise ValueError("Duration must be non-negative")
-            
-        if usage.cost is not None and usage.cost < 0:
-            raise ValueError("Cost must be non-negative")
-            
-        self.usages.append(usage)
-        self._update_metrics(usage)
-
-    def _update_metrics(self, usage: ToolUsage) -> None:
-        """
-        Update metrics for a tool.
-
-        Args:
-            usage (ToolUsage): Tool usage event
-        """
-        if usage.tool_name not in self.metrics:
-            self.metrics[usage.tool_name] = ToolMetrics(
-                total_calls=0,
-                success_rate=0.0,
-                avg_duration=0.0,
-                total_cost=0.0,
-                error_count=0,
-                error_types={}
-            )
-            
-        metrics = self.metrics[usage.tool_name]
+        self.metrics = defaultdict(BaseMetrics)
+        self.usage_patterns = defaultdict(list)
+        self.performance_history = []
         
-        # Update counts
-        metrics.total_calls += 1
-        if not usage.success:
-            metrics.error_count += 1
-            if usage.error:
-                metrics.error_types[usage.error] = metrics.error_types.get(usage.error, 0) + 1
-                
-        # Update rates
-        metrics.success_rate = (
-            (metrics.total_calls - metrics.error_count) /
-            metrics.total_calls
-        )
+    @abstractmethod
+    def update_metrics(self, *args, **kwargs):
+        """Update metrics for an interaction."""
+        pass
         
-        # Update duration
-        metrics.avg_duration = (
-            (metrics.avg_duration * (metrics.total_calls - 1) + usage.duration) /
-            metrics.total_calls
-        )
+    @abstractmethod
+    def analyze_usage(self, *args, **kwargs) -> Dict[str, Any]:
+        """Analyze usage patterns and effectiveness."""
+        pass
         
-        # Update cost
-        if usage.cost is not None:
-            metrics.total_cost += usage.cost
-
-    def get_tool_metrics(self,
-                        tool_name: str,
-                        start_time: Optional[datetime] = None,
-                        end_time: Optional[datetime] = None) -> Optional[ToolMetrics]:
-        """
-        Get metrics for a specific tool.
-
-        Args:
-            tool_name (str): Name of the tool
-            start_time (Optional[datetime]): Start time for metrics
-            end_time (Optional[datetime]): End time for metrics
-
-        Returns:
-            Optional[ToolMetrics]: Tool metrics if found
-
-        Raises:
-            ValueError: If time range is invalid
-        """
-        if start_time and end_time and start_time > end_time:
-            raise ValueError("Start time must be before end time")
-            
-        if tool_name not in self.metrics:
-            return None
-            
-        # Filter usages
-        filtered_usages = [
-            usage for usage in self.usages
-            if usage.tool_name == tool_name and
-               (not start_time or usage.timestamp >= start_time) and
-               (not end_time or usage.timestamp <= end_time)
-        ]
+    @abstractmethod
+    def get_optimization_suggestions(self) -> List[Dict[str, Any]]:
+        """Get optimization suggestions based on usage patterns."""
+        pass
         
-        if not filtered_usages:
-            return None
-            
-        # Calculate metrics
-        total_calls = len(filtered_usages)
-        success_count = sum(1 for u in filtered_usages if u.success)
-        error_count = total_calls - success_count
-        
-        error_types = defaultdict(int)
-        for usage in filtered_usages:
-            if not usage.success and usage.error:
-                error_types[usage.error] += 1
-                
-        return ToolMetrics(
-            total_calls=total_calls,
-            success_rate=success_count / total_calls if total_calls > 0 else 0.0,
-            avg_duration=sum(u.duration for u in filtered_usages) / total_calls if total_calls > 0 else 0.0,
-            total_cost=sum(u.cost or 0.0 for u in filtered_usages),
-            error_count=error_count,
-            error_types=dict(error_types)
-        )
-
-    def get_all_metrics(self,
-                       start_time: Optional[datetime] = None,
-                       end_time: Optional[datetime] = None) -> Dict[str, ToolMetrics]:
-        """
-        Get metrics for all tools.
-
-        Args:
-            start_time (Optional[datetime]): Start time for metrics
-            end_time (Optional[datetime]): End time for metrics
-
-        Returns:
-            Dict[str, ToolMetrics]: Dictionary of tool metrics
-
-        Raises:
-            ValueError: If time range is invalid
-        """
-        if start_time and end_time and start_time > end_time:
-            raise ValueError("Start time must be before end time")
-            
+    def get_performance_dashboard(self) -> Dict[str, Any]:
+        """Generate a performance dashboard."""
         return {
-            tool_name: self.get_tool_metrics(tool_name, start_time, end_time)
-            for tool_name in self.metrics.keys()
-        }
-
-    def analyze_errors(self,
-                      tool_name: Optional[str] = None,
-                      start_time: Optional[datetime] = None,
-                      end_time: Optional[datetime] = None) -> Dict[str, Any]:
-        """
-        Analyze tool errors.
-
-        Args:
-            tool_name (Optional[str]): Name of the tool to analyze
-            start_time (Optional[datetime]): Start time for analysis
-            end_time (Optional[datetime]): End time for analysis
-
-        Returns:
-            Dict[str, Any]: Error analysis including:
-                - total_errors: Total number of errors
-                - error_types: Count of error types
-                - error_trend: Error trend over time
-                - common_errors: Most common errors
-                - error_patterns: Identified error patterns
-
-        Raises:
-            ValueError: If time range is invalid
-        """
-        if start_time and end_time and start_time > end_time:
-            raise ValueError("Start time must be before end time")
-            
-        # Filter usages
-        filtered_usages = [
-            usage for usage in self.usages
-            if (not tool_name or usage.tool_name == tool_name) and
-               (not start_time or usage.timestamp >= start_time) and
-               (not end_time or usage.timestamp <= end_time) and
-               not usage.success
-        ]
-        
-        if not filtered_usages:
-            return {
-                "total_errors": 0,
-                "error_types": {},
-                "error_trend": [],
-                "common_errors": [],
-                "error_patterns": []
-            }
-            
-        # Count error types
-        error_types = defaultdict(int)
-        for usage in filtered_usages:
-            if usage.error:
-                error_types[usage.error] += 1
-                
-        # Calculate error trend
-        if start_time and end_time:
-            time_range = end_time - start_time
-            interval = time_range / 10  # 10 intervals
-            
-            error_trend = []
-            for i in range(10):
-                interval_start = start_time + (interval * i)
-                interval_end = interval_start + interval
-                
-                interval_errors = sum(
-                    1 for u in filtered_usages
-                    if interval_start <= u.timestamp < interval_end
-                )
-                
-                error_trend.append({
-                    "timestamp": interval_start.isoformat(),
-                    "count": interval_errors
-                })
-        else:
-            error_trend = []
-            
-        # Find common errors
-        common_errors = sorted(
-            error_types.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:5]
-        
-        # Identify error patterns
-        error_patterns = []
-        for pattern_name, patterns in self.error_patterns.items():
-            matches = sum(
-                1 for usage in filtered_usages
-                if usage.error and any(p in usage.error for p in patterns)
-            )
-            if matches > 0:
-                error_patterns.append({
-                    "pattern": pattern_name,
-                    "matches": matches
-                })
-                
-        return {
-            "total_errors": len(filtered_usages),
-            "error_types": dict(error_types),
-            "error_trend": error_trend,
-            "common_errors": common_errors,
-            "error_patterns": error_patterns
-        }
-
-    def analyze_performance(self,
-                          tool_name: Optional[str] = None,
-                          start_time: Optional[datetime] = None,
-                          end_time: Optional[datetime] = None) -> Dict[str, Any]:
-        """
-        Analyze tool performance.
-
-        Args:
-            tool_name (Optional[str]): Name of the tool to analyze
-            start_time (Optional[datetime]): Start time for analysis
-            end_time (Optional[datetime]): End time for analysis
-
-        Returns:
-            Dict[str, Any]: Performance analysis including:
-                - avg_duration: Average call duration
-                - duration_trend: Duration trend over time
-                - slow_calls: Slowest calls
-                - throughput: Calls per time unit
-                - cost_efficiency: Cost per successful call
-
-        Raises:
-            ValueError: If time range is invalid
-        """
-        if start_time and end_time and start_time > end_time:
-            raise ValueError("Start time must be before end time")
-            
-        # Filter usages
-        filtered_usages = [
-            usage for usage in self.usages
-            if (not tool_name or usage.tool_name == tool_name) and
-               (not start_time or usage.timestamp >= start_time) and
-               (not end_time or usage.timestamp <= end_time)
-        ]
-        
-        if not filtered_usages:
-            return {
-                "avg_duration": 0.0,
-                "duration_trend": [],
-                "slow_calls": [],
-                "throughput": 0.0,
-                "cost_efficiency": 0.0
-            }
-            
-        # Calculate average duration
-        avg_duration = sum(u.duration for u in filtered_usages) / len(filtered_usages)
-        
-        # Calculate duration trend
-        if start_time and end_time:
-            time_range = end_time - start_time
-            interval = time_range / 10  # 10 intervals
-            
-            duration_trend = []
-            for i in range(10):
-                interval_start = start_time + (interval * i)
-                interval_end = interval_start + interval
-                
-                interval_usages = [
-                    u for u in filtered_usages
-                    if interval_start <= u.timestamp < interval_end
-                ]
-                
-                if interval_usages:
-                    avg_interval_duration = sum(u.duration for u in interval_usages) / len(interval_usages)
-                    duration_trend.append({
-                        "timestamp": interval_start.isoformat(),
-                        "avg_duration": avg_interval_duration
-                    })
-        else:
-            duration_trend = []
-            
-        # Find slowest calls
-        slow_calls = sorted(
-            filtered_usages,
-            key=lambda x: x.duration,
-            reverse=True
-        )[:5]
-        
-        # Calculate throughput
-        if start_time and end_time:
-            time_range = (end_time - start_time).total_seconds()
-            throughput = len(filtered_usages) / time_range if time_range > 0 else 0
-        else:
-            throughput = 0
-            
-        # Calculate cost efficiency
-        successful_calls = [u for u in filtered_usages if u.success]
-        total_cost = sum(u.cost or 0.0 for u in successful_calls)
-        cost_efficiency = total_cost / len(successful_calls) if successful_calls else 0
-        
-        return {
-            "avg_duration": avg_duration,
-            "duration_trend": duration_trend,
-            "slow_calls": [
-                {
-                    "timestamp": u.timestamp.isoformat(),
-                    "tool": u.tool_name,
-                    "duration": u.duration,
-                    "parameters": u.parameters
+            "overall_metrics": {
+                "total_items": len(self.metrics),
+                "total_calls": sum(m.total_calls for m in self.metrics.values()),
+                "average_success_rate": sum(m.success_rate for m in self.metrics.values()) / len(self.metrics) if self.metrics else 0
+            },
+            "item_metrics": {
+                name: {
+                    "total_calls": metrics.total_calls,
+                    "success_rate": metrics.success_rate,
+                    "average_response_time": metrics.average_response_time
                 }
-                for u in slow_calls
-            ],
-            "throughput": throughput,
-            "cost_efficiency": cost_efficiency
+                for name, metrics in self.metrics.items()
+            },
+            "usage_patterns": self.usage_patterns
         }
 
-    def get_statistics(self) -> Dict[str, Any]:
-        """
-        Get overall statistics.
-
-        Returns:
-            Dict[str, Any]: Statistics including:
-                - total_calls: Total number of tool calls
-                - tool_count: Number of unique tools
-                - success_rate: Overall success rate
-                - total_cost: Total cost of all calls
-                - avg_duration: Average call duration
-        """
-        if not self.usages:
-            return {
-                "total_calls": 0,
-                "tool_count": 0,
-                "success_rate": 0.0,
-                "total_cost": 0.0,
-                "avg_duration": 0.0
-            }
-            
-        total_calls = len(self.usages)
-        success_count = sum(1 for u in self.usages if u.success)
-        total_cost = sum(u.cost or 0.0 for u in self.usages)
+class ToolAnalytics(BaseAnalytics):
+    """Analytics system for tracking and optimizing tool usage."""
+    
+    def __init__(self):
+        super().__init__()
+        self.metrics = defaultdict(ToolUsageMetrics)
+        self.optimization_suggestions = []
         
-        return {
-            "total_calls": total_calls,
-            "tool_count": len(self.metrics),
-            "success_rate": success_count / total_calls if total_calls > 0 else 0.0,
-            "total_cost": total_cost,
-            "avg_duration": sum(u.duration for u in self.usages) / total_calls if total_calls > 0 else 0.0
-        } 
+    def update_metrics(self, tool_name: str, success: bool, response_time: float,
+                      impact_score: float, context_relevance: float):
+        """Update metrics for a tool usage."""
+        metrics = self.metrics[tool_name]
+        metrics.total_calls += 1
+        if success:
+            metrics.successful_calls += 1
+        else:
+            metrics.failed_calls += 1
+            
+        # Update averages
+        metrics.average_response_time = (
+            (metrics.average_response_time * (metrics.total_calls - 1) + response_time)
+            / metrics.total_calls
+        )
+        metrics.success_rate = metrics.successful_calls / metrics.total_calls
+        metrics.impact_score = impact_score
+        metrics.context_relevance = context_relevance
+        
+    def analyze_usage(self, tool_calls: List[Dict]) -> Dict[str, Any]:
+        """Analyze tool usage patterns and effectiveness."""
+        analysis = {
+            "tool_usage_patterns": [],
+            "effectiveness_metrics": {},
+            "optimization_suggestions": [],
+            "context_analysis": {}
+        }
+        
+        for tool_call in tool_calls:
+            tool_name = tool_call.get("name")
+            metrics = self.metrics[tool_name]
+            
+            # Analyze usage pattern
+            pattern = {
+                "tool": tool_name,
+                "success_rate": metrics.success_rate,
+                "average_response_time": metrics.average_response_time,
+                "impact_score": metrics.impact_score,
+                "context_relevance": metrics.context_relevance
+            }
+            analysis["tool_usage_patterns"].append(pattern)
+            
+            # Generate optimization suggestions
+            if metrics.success_rate < 0.7:
+                analysis["optimization_suggestions"].append({
+                    "tool": tool_name,
+                    "suggestion": "Consider alternative approaches or tool combinations",
+                    "reason": f"Low success rate: {metrics.success_rate:.2%}"
+                })
+                
+        return analysis
+        
+    def get_optimization_suggestions(self) -> List[Dict[str, Any]]:
+        """Get optimization suggestions based on usage patterns."""
+        suggestions = []
+        for tool_name, metrics in self.metrics.items():
+            if metrics.success_rate < 0.7:
+                suggestions.append({
+                    "tool": tool_name,
+                    "type": "success_rate",
+                    "suggestion": "Consider using alternative tools or approaches",
+                    "metrics": {
+                        "success_rate": metrics.success_rate,
+                        "average_response_time": metrics.average_response_time
+                    }
+                })
+            if metrics.context_relevance < 0.6:
+                suggestions.append({
+                    "tool": tool_name,
+                    "type": "context_relevance",
+                    "suggestion": "Improve context awareness when using this tool",
+                    "metrics": {
+                        "context_relevance": metrics.context_relevance
+                    }
+                })
+        return suggestions
+        
+    def generate_reflection_prompt(self, tool_calls: List[Dict]) -> str:
+        """Generate a detailed reflection prompt for tool usage."""
+        analysis = self.analyze_usage(tool_calls)
+        
+        prompt = f"""
+        Analyze the following tool usage and provide comprehensive insights:
+        
+        Tool Calls:
+        {json.dumps(tool_calls, indent=2)}
+        
+        Usage Analysis:
+        {json.dumps(analysis, indent=2)}
+        
+        Consider the following aspects:
+        
+        1. Effectiveness:
+           - Success rate of each tool
+           - Impact on the final output
+           - Response time and efficiency
+        
+        2. Context Awareness:
+           - Was each tool used at the optimal time?
+           - Did the tool usage align with the task context?
+           - Were there better alternatives available?
+        
+        3. Error Analysis:
+           - What went wrong in failed tool calls?
+           - How could errors have been prevented?
+           - What patterns emerge in successful vs failed calls?
+        
+        4. Learning Points:
+           - What worked well and should be repeated?
+           - What patterns should be avoided?
+           - How can tool usage be optimized?
+        
+        5. Optimization Opportunities:
+           - Could the task have been completed with fewer tool calls?
+           - Are there more efficient tool combinations?
+           - How can tool usage be streamlined?
+        
+        Provide a detailed reflection focusing on actionable improvements and specific recommendations.
+        """
+        
+        return prompt
+        
+    def get_performance_dashboard(self) -> Dict[str, Any]:
+        """Generate a performance dashboard for tool usage."""
+        dashboard = super().get_performance_dashboard()
+        dashboard.update({
+            "tool_metrics": {
+                name: {
+                    "total_calls": metrics.total_calls,
+                    "success_rate": metrics.success_rate,
+                    "average_response_time": metrics.average_response_time,
+                    "impact_score": metrics.impact_score,
+                    "context_relevance": metrics.context_relevance
+                }
+                for name, metrics in self.metrics.items()
+            },
+            "optimization_suggestions": self.get_optimization_suggestions()
+        })
+        return dashboard 
