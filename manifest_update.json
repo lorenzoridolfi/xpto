@@ -1,26 +1,17 @@
 {
-    "task_description": "Generate a comprehensive text about {subject}",
+    "task_description": "Update manifest files with proper logging configuration and system structure",
     "hierarchy": [
         "CoordinatorAgent",
         "FileReaderAgent",
-        "WriterAgent",
-        "InformationVerifierAgent",
-        "TextQualityAgent",
-        "RootCauseAnalyzerAgent"
+        "ManifestUpdaterAgent",
+        "LoggingConfigAgent",
+        "ValidationAgent"
     ],
-    "max_rounds": 5,
+    "max_rounds": 3,
     "file_manifest": [
         {
-            "filename": "input.txt",
-            "description": "Main input file containing the subject matter"
-        },
-        {
-            "filename": "reference.txt",
-            "description": "Reference material for verification"
-        },
-        {
-            "filename": "manifest_analysis.md",
-            "description": "Critical analysis of the manifest files and system architecture"
+            "filename": "manifest.json",
+            "description": "Main manifest file containing system configuration"
         },
         {
             "filename": "logging_config.json",
@@ -32,10 +23,9 @@
         }
     ],
     "output_files": {
-        "agent_config": "agent_config.json",
-        "agents_configuration": "agents_configuration.json",
-        "root_cause": "root_cause.json",
-        "system_improvement": "system_improvement_report.json"
+        "updated_manifest": "manifest.json",
+        "logging_config": "logging_config.json",
+        "logging_guide": "LOGGING.md"
     },
     "llm_config": {
         "model": "gpt-4",
@@ -46,25 +36,25 @@
         "presence_penalty": 0.0
     },
     "cache_config": {
-        "use_gpu": true,
-        "gpu_memory_fraction": 0.8,
-        "batch_size": 32,
+        "use_gpu": false,
+        "gpu_memory_fraction": 0.0,
+        "batch_size": 1,
         "similarity_threshold": 0.85,
-        "max_size": 1000,
+        "max_size": 100,
         "expiration_hours": 24,
         "language": "en",
         "cleaning": {
             "mode": "expired",
             "min_similarity": 0.99,
             "max_age_hours": 48,
-            "min_hits": 5,
-            "max_size": 800
+            "min_hits": 1,
+            "max_size": 50
         }
     },
     "cache": {
         "enabled": true,
         "ttl": 3600,
-        "max_size": 1000,
+        "max_size": 100,
         "storage": {
             "type": "memory",
             "persistent": false
