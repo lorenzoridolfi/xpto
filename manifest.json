@@ -1,0 +1,84 @@
+{
+    "task_description": "Generate a comprehensive text about {subject}",
+    "hierarchy": [
+        "CoordinatorAgent",
+        "FileReaderAgent",
+        "WriterAgent",
+        "InformationVerifierAgent",
+        "TextQualityAgent",
+        "RootCauseAnalyzerAgent"
+    ],
+    "max_rounds": 5,
+    "file_manifest": [
+        {
+            "filename": "input.txt",
+            "description": "Main input file containing the subject matter"
+        },
+        {
+            "filename": "reference.txt",
+            "description": "Reference material for verification"
+        },
+        {
+            "filename": "manifest_analysis.md",
+            "description": "Critical analysis of the manifest files and system architecture"
+        },
+        {
+            "filename": "logging_config.json",
+            "description": "Unified logging configuration for all systems"
+        },
+        {
+            "filename": "LOGGING.md",
+            "description": "Developer guide for the logging system"
+        }
+    ],
+    "output_files": {
+        "agent_config": "agent_config.json",
+        "agents_configuration": "agents_configuration.json",
+        "root_cause": "root_cause.json",
+        "system_improvement": "system_improvement_report.json"
+    },
+    "llm_config": {
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
+    },
+    "cache_config": {
+        "use_gpu": true,
+        "gpu_memory_fraction": 0.8,
+        "batch_size": 32,
+        "similarity_threshold": 0.85,
+        "max_size": 1000,
+        "expiration_hours": 24,
+        "language": "en",
+        "cleaning": {
+            "mode": "expired",
+            "min_similarity": 0.99,
+            "max_age_hours": 48,
+            "min_hits": 5,
+            "max_size": 800
+        }
+    },
+    "cache": {
+        "enabled": true,
+        "ttl": 3600,
+        "max_size": 1000,
+        "storage": {
+            "type": "memory",
+            "persistent": false
+        }
+    },
+    "api": {
+        "timeout": 30,
+        "max_retries": 3,
+        "retry_delay": 1
+    },
+    "performance": {
+        "response_time_threshold": 5.0,
+        "error_rate_threshold": 0.1,
+        "cache_hit_ratio_threshold": 0.5,
+        "memory_usage_threshold": 80
+    }
+} 

@@ -17,6 +17,10 @@
         {
             "filename": "reference.txt",
             "description": "Reference material for verification"
+        },
+        {
+            "filename": "manifest_analysis.md",
+            "description": "Critical analysis of the manifest files and system architecture"
         }
     ],
     "agents": {

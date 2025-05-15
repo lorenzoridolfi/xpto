@@ -1,0 +1,127 @@
+{
+    "logging": {
+        "base_config": {
+            "level": "DEBUG",
+            "format": "%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+            "console": true,
+            "file_rotation": {
+                "enabled": true,
+                "max_size_mb": 10,
+                "backup_count": 5
+            }
+        },
+        "categories": {
+            "agent_communication": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [AGENT] %(name)s -> %(target)s: %(message)s"
+            },
+            "agent_state": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [STATE] %(name)s: %(state)s - %(details)s"
+            },
+            "performance": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [PERF] %(name)s: %(metric)s = %(value)s %(unit)s"
+            },
+            "error": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [ERROR] %(name)s: %(error_type)s - %(message)s\nStack: %(stack_trace)s"
+            },
+            "manifest": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [MANIFEST] %(operation)s: %(details)s"
+            },
+            "system": {
+                "level": "DEBUG",
+                "format": "%(asctime)s [SYSTEM] %(component)s: %(message)s"
+            }
+        },
+        "programs": {
+            "toy_example": {
+                "log_dir": "logs/toy_example",
+                "main_log": "toy_example.log",
+                "enabled_categories": [
+                    "agent_communication",
+                    "agent_state",
+                    "performance",
+                    "error",
+                    "system"
+                ],
+                "category_files": {
+                    "agent_communication": "toy_example_agent_comm.log",
+                    "agent_state": "toy_example_agent_state.log",
+                    "performance": "toy_example_performance.log",
+                    "error": "toy_example_error.log",
+                    "system": "toy_example_system.log"
+                }
+            },
+            "update_manifest": {
+                "log_dir": "logs/update_manifest",
+                "main_log": "update_manifest.log",
+                "enabled_categories": [
+                    "manifest",
+                    "performance",
+                    "error",
+                    "system"
+                ],
+                "category_files": {
+                    "manifest": "update_manifest_operations.log",
+                    "performance": "update_manifest_performance.log",
+                    "error": "update_manifest_error.log",
+                    "system": "update_manifest_system.log"
+                }
+            }
+        },
+        "filters": {
+            "exclude_patterns": [
+                "password",
+                "api_key",
+                "secret"
+            ],
+            "include_patterns": [
+                "debug",
+                "info",
+                "warning",
+                "error",
+                "critical"
+            ]
+        },
+        "handlers": {
+            "console": {
+                "enabled": true,
+                "colorize": true,
+                "level": "DEBUG"
+            },
+            "file": {
+                "enabled": true,
+                "level": "DEBUG",
+                "encoding": "utf-8"
+            },
+            "email": {
+                "enabled": false,
+                "level": "ERROR",
+                "smtp_server": "smtp.example.com",
+                "from_addr": "system@example.com",
+                "to_addrs": ["admin@example.com"]
+            }
+        },
+        "formatters": {
+            "default": {
+                "format": "%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S"
+            },
+            "detailed": {
+                "format": "%(asctime)s [%(levelname)s] %(name)s - %(message)s\nFile: %(pathname)s:%(lineno)d\nFunction: %(funcName)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S"
+            }
+        },
+        "developer_notes": {
+            "agent_communication": "Logs de comunicação entre agentes. Útil para entender o fluxo de dados e decisões.",
+            "agent_state": "Logs de mudanças de estado dos agentes. Ajuda a debugar o comportamento dos agentes.",
+            "performance": "Métricas de performance. Use para identificar gargalos e otimizações.",
+            "error": "Logs de erro detalhados com stack trace. Essencial para debugging.",
+            "manifest": "Logs de operações no manifest. Ajuda a rastrear mudanças e validações.",
+            "system": "Logs gerais do sistema. Inclui inicialização, configuração e eventos importantes."
+        }
+    }
+} 
