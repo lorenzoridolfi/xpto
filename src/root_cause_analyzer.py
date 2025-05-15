@@ -4,7 +4,8 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
-from agent_tracer import AgentTracer, AgentEvent
+from src.agent_tracer import AgentTracer, AgentEvent
+from src.analytics_assistant_agent import AnalyticsAssistantAgent
 
 @dataclass
 class RootCauseAnalysis:

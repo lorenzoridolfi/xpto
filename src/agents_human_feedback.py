@@ -29,9 +29,10 @@ from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from analytics_assistant_agent import AnalyticsAssistantAgent
-from tool_analytics import ToolAnalytics, ToolUsageMetrics
-from llm_cache import LLMCache
+from src.analytics_assistant_agent import AnalyticsAssistantAgent
+from src.tool_analytics import ToolAnalytics, ToolUsageMetrics
+from src.llm_cache import LLMCache
+from src.config import DEFAULT_CONFIG, load_config, save_config
 
 # -----------------------------------------------------------------------------
 # Configuration Management
@@ -61,7 +62,7 @@ class ConfigVersion:
             'timestamp': self.timestamp
         }
 
-def load_config_with_versioning(config_path: str, default_config: dict) -> tuple[dict, ConfigVersion]:
+def load_config_with_versioning(config_path: str, default_config: dict = DEFAULT_CONFIG) -> tuple[dict, ConfigVersion]:
     """
     Load configuration with versioning support and handle updates.
     
@@ -579,7 +580,7 @@ async def main():
     5. Performs root cause analysis if needed
     """
     # Load configuration with versioning
-    config, version = load_config_with_versioning('agent_config.json', DEFAULT_CONFIG)
+    config, version = load_config_with_versioning('agent_config.json')
     
     # Initialize agents
     file_reader = FileReaderAgent(config)

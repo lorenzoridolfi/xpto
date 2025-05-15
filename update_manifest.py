@@ -8,22 +8,23 @@ logging configuration and system structure. The system uses multiple specialized
 to read, analyze, and update manifest files.
 """
 
+import json
 import logging
 from typing import Dict, List, Any
 from pathlib import Path
 
-from autogen import AssistantAgent
+from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_agentchat.base import Response
 
-from base_agent_system import (
+from src.base_agent_system import (
     setup_logging, log_event, create_base_agents, create_group_chat,
     load_json_file, save_json_file, FILE_LOG, ROOT_CAUSE_DATA
 )
-from llm_cache import LLMCache
-from tool_analytics import ToolAnalytics
-from analytics_assistant_agent import AnalyticsAssistantAgent
+from src.llm_cache import LLMCache
+from src.tool_analytics import ToolAnalytics
+from src.analytics_assistant_agent import AnalyticsAssistantAgent
 
 # Global logger instance
 logger = logging.getLogger("update_manifest")
@@ -32,25 +33,95 @@ class FileReaderAgent(BaseChatAgent):
     """Agent responsible for reading and processing manifest files."""
     
     def __init__(self, name: str, description: str, manifest: List[dict], file_log: List[str]):
+        """
+        Initialize the FileReaderAgent.
+
+        Args:
+            name (str): Name of the agent
+            description (str): Description of the agent's role
+            manifest (List[dict]): List of files the agent can read
+            file_log (List[str]): List to store file operation logs
+        """
         super().__init__(name, description=description)
+        self._name = name
+        self._description = description
         self.manifest = {f["filename"] for f in manifest}
         self.files_read = []
         self.file_log = file_log
 
     @property
+    def name(self):
+        return self._name
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
     def produced_message_types(self):
+        """Return the types of messages this agent can produce."""
         return (TextMessage,)
 
+    @property
+    def consumed_message_types(self):
+        """Return the types of messages this agent can consume."""
+        return (TextMessage,)
+
+    async def run(self, task: str) -> str:
+        """
+        Run a task with logging.
+
+        Args:
+            task (str): The task to run
+
+        Returns:
+            str: The result of running the task
+        """
+        log_event(logger, self.name, "run_invoke", [], [])
+        
+        # Process the task as a file request
+        requested = [fn.strip() for fn in task.split(",") if fn.strip()]
+        valid = [fn for fn in requested if fn in self.manifest and fn not in self.files_read]
+        
+        if not valid:
+            result = "NO_FILE"
+        else:
+            combined = []
+            for fname in valid:
+                try:
+                    text = open(fname, encoding="utf-8").read()
+                except Exception as e:
+                    text = f"<error reading {fname}: {e}>"
+                self.files_read.append(fname)
+                self.file_log.append(f"{self.name}: read {fname}")
+                combined.append(f"--- {fname} ---\n{text}")
+            result = "\n\n".join(combined)
+        
+        log_event(logger, self.name, "run_complete", [], result)
+        return result
+
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+        """
+        Process file reading requests.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages containing file requests
+            cancellation_token: Token for cancellation support
+
+        Returns:
+            Response: Content of requested files or "NO_FILE" if no valid files requested
+        """
         log_event(logger, self.name, "on_messages_invoke", messages, [])
         instr = messages[-1].content.strip()
         
+        # Handle explicit "NO_FILE" request
         if instr.upper() == "NO_FILE":
             self.file_log.append(f"{self.name}: no more files")
             resp = Response(chat_message=TextMessage(content="NO_FILE", source=self.name))
             log_event(logger, self.name, "on_messages_complete", messages, resp)
             return resp
 
+        # Process file requests
         requested = [fn.strip() for fn in instr.split(",") if fn.strip()]
         valid = [fn for fn in requested if fn in self.manifest and fn not in self.files_read]
         
@@ -59,6 +130,7 @@ class FileReaderAgent(BaseChatAgent):
             log_event(logger, self.name, "on_messages_complete", messages, resp)
             return resp
 
+        # Read and combine file contents
         combined = []
         for fname in valid:
             try:
@@ -74,9 +146,19 @@ class FileReaderAgent(BaseChatAgent):
         log_event(logger, self.name, "on_messages_complete", messages, resp)
         return resp
 
-    @property
-    def consumed_message_types(self):
-        return (TextMessage,)
+    async def on_messages_stream(self, messages: List[BaseChatMessage], cancellation_token):
+        """
+        Process messages in a streaming fashion.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages to process
+            cancellation_token: Token for cancellation support
+
+        Yields:
+            Response chunks as they are generated
+        """
+        response = await self.on_messages(messages, cancellation_token)
+        yield response
 
 class ManifestUpdaterAgent(AnalyticsAssistantAgent):
     """Agent responsible for updating manifest files."""

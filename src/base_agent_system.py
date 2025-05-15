@@ -19,8 +19,8 @@ from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_agentchat.base import Response
-from llm_cache import LLMCache
-from tool_analytics import ToolAnalytics
+from src.llm_cache import LLMCache
+from src.tool_analytics import ToolAnalytics
 
 # Global logs and cache
 ROOT_CAUSE_DATA: List[dict] = []  # Stores detailed event data for root cause analysis
