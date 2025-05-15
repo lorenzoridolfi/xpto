@@ -30,9 +30,9 @@ components:
           example: "What is the capital of France?"
         question_type:
           type: string
-          description: Optional type of question to help guide the response
-          enum: [factual, analytical, creative, technical, general]
-          example: "factual"
+          description: Type of question to help guide the response
+          enum: ["Synthetic User", "Personas"]
+          example: "Synthetic User"
 
     QuestionResponse:
       type: object

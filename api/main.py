@@ -57,14 +57,14 @@ agent = AnalyticsAssistantAgent(
 question_store: Dict[str, Dict[str, Any]] = {}
 
 # Question types
-QuestionType = Literal["factual", "analytical", "creative", "technical", "general"]
+QuestionType = Literal["Synthetic User", "Personas"]
 
 # Pydantic models for request/response
 class QuestionRequest(BaseModel):
     question: str = Field(..., description="The question to ask the agent system")
-    question_type: Optional[QuestionType] = Field(
-        None,
-        description="Optional type of question to help guide the response"
+    question_type: QuestionType = Field(
+        ...,
+        description="Type of question to help guide the response"
     )
 
 class QuestionResponse(BaseModel):
@@ -73,7 +73,7 @@ class QuestionResponse(BaseModel):
     rationale: str = Field(..., description="The reasoning behind the answer")
     critic: str = Field(..., description="Critical analysis of the answer")
     timestamp: datetime = Field(..., description="When the response was generated")
-    question_type: Optional[QuestionType] = Field(None, description="Type of question that was asked")
+    question_type: QuestionType = Field(..., description="Type of question that was asked")
 
 class FeedbackRequest(BaseModel):
     question_id: str = Field(..., description="ID of the question being feedbacked")
@@ -131,7 +131,7 @@ async def ask_question(
     Ask a question to the agent system.
     
     Args:
-        request: QuestionRequest containing the question and optional question type
+        request: QuestionRequest containing the question and question type
         
     Returns:
         QuestionResponse with answer, rationale, and critic
@@ -140,10 +140,8 @@ async def ask_question(
         # Generate unique question ID
         question_id = generate_question_id()
         
-        # Prepare the question with type context if provided
-        question_prompt = request.question
-        if request.question_type:
-            question_prompt = f"[{request.question_type.upper()}] {request.question}"
+        # Prepare the question with type context
+        question_prompt = f"[{request.question_type}] {request.question}"
         
         # Process the question
         response = await agent.run(question_prompt)
