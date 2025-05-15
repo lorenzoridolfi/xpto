@@ -2,24 +2,31 @@
 
 import json
 import logging
-import datetime
-from typing import Dict, List, Any, Optional, Union
+import time
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
-from autogen_agentchat.base import Response
-from autogen_agentchat.messages import BaseChatMessage
+
+@dataclass
+class TokenUsage:
+    """Represents token usage statistics for an LLM call."""
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    model: str
 
 @dataclass
 class AgentEvent:
-    """Represents a single event in the agent's execution."""
+    """Represents an event in the agent's execution."""
     timestamp: str
     agent_name: str
     event_type: str
     inputs: List[Dict[str, str]]
     outputs: List[Dict[str, Any]]
     metadata: Optional[Dict[str, Any]] = None
+    token_usage: Optional[TokenUsage] = None
 
 class AgentTracer:
-    """Handles tracing of agent events and messages for root cause analysis."""
+    """Tracks agent events and messages."""
     
     def __init__(self, config: Dict[str, Any]):
         """
@@ -28,16 +35,12 @@ class AgentTracer:
         Args:
             config (Dict[str, Any]): Configuration dictionary containing:
                 - logging: Logging configuration
-                - cache: Cache configuration
-                - analytics: Analytics configuration
         """
         self.config = config
-        self.events: List[AgentEvent] = []
         self.logger = logging.getLogger("agent_tracer")
-        
-        # Setup logging
         self._setup_logging()
-        
+        self.events: List[AgentEvent] = []
+    
     def _setup_logging(self) -> None:
         """Configure logging based on the configuration."""
         log_config = self.config.get("logging", {})
@@ -55,123 +58,79 @@ class AgentTracer:
             console_handler.setFormatter(logging.Formatter(log_config.get("format")))
             self.logger.addHandler(console_handler)
     
-    def on_messages_invoke(self, agent_name: str, inputs: List[BaseChatMessage]) -> None:
+    def on_messages_invoke(self, agent_name: str, messages: List[Dict[str, str]], 
+                          token_usage: Optional[TokenUsage] = None) -> None:
         """
-        Called when an agent starts processing messages.
+        Record when an agent starts processing messages.
         
         Args:
             agent_name (str): Name of the agent
-            inputs (List[BaseChatMessage]): Input messages
+            messages (List[Dict[str, str]]): List of messages
+            token_usage (Optional[TokenUsage]): Token usage statistics if available
         """
-        self.logger.debug(f"Agent {agent_name} starting to process messages")
-        # Store initial state for later use in on_messages_complete
-        self._current_event = {
-            "agent_name": agent_name,
-            "inputs": inputs,
-            "start_time": datetime.datetime.utcnow()
-        }
-    
-    def on_messages_complete(self, agent_name: str, outputs: Union[Response, List[Response], List[BaseChatMessage]]) -> None:
-        """
-        Called when an agent finishes processing messages.
-        
-        Args:
-            agent_name (str): Name of the agent
-            outputs: Output from the agent (can be Response, list of Responses, or list of BaseChatMessage)
-        """
-        if not hasattr(self, '_current_event'):
-            self.logger.warning(f"No matching on_messages_invoke found for {agent_name}")
-            return
-            
-        # Create event entry
         event = AgentEvent(
-            timestamp=datetime.datetime.utcnow().isoformat() + "Z",
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
             agent_name=agent_name,
-            event_type="message_complete",
-            inputs=[{"source": m.source, "content": m.content} for m in self._current_event["inputs"]],
-            outputs=self._process_outputs(outputs),
-            metadata={
-                "processing_time": (datetime.datetime.utcnow() - self._current_event["start_time"]).total_seconds()
-            }
+            event_type="invoke",
+            inputs=messages,
+            outputs=[],
+            metadata={"start_time": time.time()},
+            token_usage=token_usage
         )
         
-        # Store event
         self.events.append(event)
+        self.logger.info(f"Agent {agent_name} started processing {len(messages)} messages")
         
-        # Log event
-        self.logger.debug(f"Agent {agent_name} completed processing: {json.dumps(asdict(event), indent=2)}")
-        
-        # Cleanup
-        delattr(self, '_current_event')
+        if token_usage:
+            self.logger.info(f"Token usage: {token_usage.prompt_tokens} prompt, "
+                           f"{token_usage.completion_tokens} completion, "
+                           f"{token_usage.total_tokens} total")
     
-    def _process_outputs(self, outputs: Union[Response, List[Response], List[BaseChatMessage]]) -> List[Dict[str, Any]]:
+    def on_messages_complete(self, agent_name: str, outputs: List[Dict[str, Any]],
+                           token_usage: Optional[TokenUsage] = None) -> None:
         """
-        Process agent outputs into a standardized format.
+        Record when an agent completes processing messages.
         
         Args:
-            outputs: Output from the agent
-            
-        Returns:
-            List[Dict[str, Any]]: Processed outputs in standardized format
+            agent_name (str): Name of the agent
+            outputs (List[Dict[str, Any]]): List of outputs
+            token_usage (Optional[TokenUsage]): Token usage statistics if available
         """
-        processed_outputs = []
+        # Find the corresponding invoke event
+        invoke_event = next((e for e in reversed(self.events) 
+                           if e.agent_name == agent_name and e.event_type == "invoke"), None)
         
-        if isinstance(outputs, Response):
-            cm = outputs.chat_message
-            try:
-                content = json.loads(cm.content)
-                processed_outputs.append({
-                    "source": cm.source,
-                    "content": content,
-                    "type": "json"
-                })
-            except json.JSONDecodeError:
-                processed_outputs.append({
-                    "source": cm.source,
-                    "content": cm.content,
-                    "type": "text"
-                })
-                
-        elif isinstance(outputs, list):
-            for output in outputs:
-                if isinstance(output, Response):
-                    cm = output.chat_message
-                    try:
-                        content = json.loads(cm.content)
-                        processed_outputs.append({
-                            "source": cm.source,
-                            "content": content,
-                            "type": "json"
-                        })
-                    except json.JSONDecodeError:
-                        processed_outputs.append({
-                            "source": cm.source,
-                            "content": cm.content,
-                            "type": "text"
-                        })
-                elif isinstance(output, BaseChatMessage):
-                    try:
-                        content = json.loads(output.content)
-                        processed_outputs.append({
-                            "source": output.source,
-                            "content": content,
-                            "type": "json"
-                        })
-                    except json.JSONDecodeError:
-                        processed_outputs.append({
-                            "source": output.source,
-                            "content": output.content,
-                            "type": "text"
-                        })
-        
-        return processed_outputs
+        if invoke_event:
+            processing_time = time.time() - invoke_event.metadata["start_time"]
+            
+            event = AgentEvent(
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
+                agent_name=agent_name,
+                event_type="complete",
+                inputs=invoke_event.inputs,
+                outputs=outputs,
+                metadata={
+                    "processing_time": processing_time,
+                    "start_time": invoke_event.metadata["start_time"],
+                    "end_time": time.time()
+                },
+                token_usage=token_usage
+            )
+            
+            self.events.append(event)
+            self.logger.info(f"Agent {agent_name} completed processing in {processing_time:.2f}s")
+            
+            if token_usage:
+                self.logger.info(f"Token usage: {token_usage.prompt_tokens} prompt, "
+                               f"{token_usage.completion_tokens} completion, "
+                               f"{token_usage.total_tokens} total")
     
     def get_trace(self) -> List[Dict[str, Any]]:
         """
-        Get the complete trace of agent events.
+        Get the complete trace of events.
         
         Returns:
-            List[Dict[str, Any]]: List of agent events
+            List[Dict[str, Any]]: List of events
         """
         return [asdict(event) for event in self.events]
     
