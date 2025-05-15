@@ -6,6 +6,23 @@ Manifest Update System
 This module implements a multi-agent system for updating manifest files with proper
 logging configuration and system structure. The system uses multiple specialized agents
 to read, analyze, and update manifest files.
+
+Key Components:
+- FileReaderAgent: Reads and processes manifest files
+- ManifestUpdaterAgent: Updates manifest content based on analysis
+- LoggingConfigAgent: Configures logging settings
+- ValidationAgent: Validates manifest and logging configuration
+- CoordinatorAgent: Orchestrates the workflow
+
+The system operates in a coordinated manner:
+1. FileReader reads the manifest files
+2. ManifestUpdater analyzes and updates the manifest
+3. LoggingConfig sets up logging configuration
+4. Validator ensures everything is correct
+5. Coordinator manages the overall process
+
+Each agent has specific responsibilities and communicates through a structured message system.
+The system includes comprehensive logging and error handling throughout the process.
 """
 
 import json
@@ -30,7 +47,18 @@ from src.analytics_assistant_agent import AnalyticsAssistantAgent
 logger = logging.getLogger("update_manifest")
 
 class FileReaderAgent(BaseChatAgent):
-    """Agent responsible for reading and processing manifest files."""
+    """
+    Agent responsible for reading and processing manifest files.
+    
+    This agent maintains a list of files it has read and can process multiple files
+    in a single request. It handles file reading errors gracefully and logs all
+    file operations.
+    
+    Attributes:
+        manifest (set): Set of filenames the agent can read
+        files_read (list): List of files that have been read
+        file_log (list): List to store file operation logs
+    """
     
     def __init__(self, name: str, description: str, manifest: List[dict], file_log: List[str]):
         """
@@ -51,10 +79,12 @@ class FileReaderAgent(BaseChatAgent):
 
     @property
     def name(self):
+        """Return the agent's name."""
         return self._name
 
     @property
     def description(self):
+        """Return the agent's description."""
         return self._description
 
     @property
@@ -72,10 +102,10 @@ class FileReaderAgent(BaseChatAgent):
         Run a task with logging.
 
         Args:
-            task (str): The task to run
+            task (str): The task to run, expected to be a comma-separated list of filenames
 
         Returns:
-            str: The result of running the task
+            str: The combined content of requested files or "NO_FILE" if no valid files requested
         """
         log_event(self.name, "run_invoke", [], [])
         
@@ -161,9 +191,27 @@ class FileReaderAgent(BaseChatAgent):
         yield response
 
 class ManifestUpdaterAgent(AnalyticsAssistantAgent):
-    """Agent responsible for updating manifest files."""
+    """
+    Agent responsible for updating manifest files.
+    
+    This agent analyzes manifest content and generates updates based on the analysis.
+    It ensures that the manifest structure is maintained and all required fields are present.
+    
+    Attributes:
+        name (str): Name of the agent
+        description (str): Description of the agent's role
+        llm_config (Dict): Configuration for the LLM model
+    """
     
     def __init__(self, name: str, description: str, llm_config: Dict):
+        """
+        Initialize the ManifestUpdaterAgent.
+
+        Args:
+            name (str): Name of the agent
+            description (str): Description of the agent's role
+            llm_config (Dict): Configuration for the LLM model
+        """
         super().__init__(
             name=name,
             description=description,
@@ -171,6 +219,15 @@ class ManifestUpdaterAgent(AnalyticsAssistantAgent):
         )
 
     async def update_manifest(self, content: str) -> Dict[str, Any]:
+        """
+        Update the manifest based on the provided content.
+
+        Args:
+            content (str): The content to analyze and update
+
+        Returns:
+            Dict[str, Any]: Update results including status and any issues found
+        """
         prompt = f"""
         Please update the manifest based on the following content:
         
@@ -184,6 +241,16 @@ class ManifestUpdaterAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+        """
+        Process manifest update requests.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages containing content to update
+            cancellation_token: Token for cancellation support
+
+        Returns:
+            Response: Update results or termination message
+        """
         log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         update_results = await self.update_manifest(content)
@@ -198,9 +265,27 @@ class ManifestUpdaterAgent(AnalyticsAssistantAgent):
         return resp
 
 class LoggingConfigAgent(AnalyticsAssistantAgent):
-    """Agent responsible for configuring logging settings."""
+    """
+    Agent responsible for configuring logging settings.
+    
+    This agent analyzes the system requirements and generates appropriate logging
+    configuration. It ensures that logging is properly set up for all components.
+    
+    Attributes:
+        name (str): Name of the agent
+        description (str): Description of the agent's role
+        llm_config (Dict): Configuration for the LLM model
+    """
     
     def __init__(self, name: str, description: str, llm_config: Dict):
+        """
+        Initialize the LoggingConfigAgent.
+
+        Args:
+            name (str): Name of the agent
+            description (str): Description of the agent's role
+            llm_config (Dict): Configuration for the LLM model
+        """
         super().__init__(
             name=name,
             description=description,
@@ -208,6 +293,15 @@ class LoggingConfigAgent(AnalyticsAssistantAgent):
         )
 
     async def configure_logging(self, content: str) -> Dict[str, Any]:
+        """
+        Configure logging based on the provided content.
+
+        Args:
+            content (str): The content to analyze for logging configuration
+
+        Returns:
+            Dict[str, Any]: Configuration results including status and any issues found
+        """
         prompt = f"""
         Please configure logging based on the following content:
         
@@ -221,6 +315,16 @@ class LoggingConfigAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+        """
+        Process logging configuration requests.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages containing content to configure
+            cancellation_token: Token for cancellation support
+
+        Returns:
+            Response: Configuration results or termination message
+        """
         log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         config_results = await self.configure_logging(content)
@@ -235,9 +339,27 @@ class LoggingConfigAgent(AnalyticsAssistantAgent):
         return resp
 
 class ValidationAgent(AnalyticsAssistantAgent):
-    """Agent responsible for validating manifest and logging configuration."""
+    """
+    Agent responsible for validating manifest and logging configuration.
+    
+    This agent performs comprehensive validation of both manifest and logging
+    configuration to ensure they meet all requirements and are properly structured.
+    
+    Attributes:
+        name (str): Name of the agent
+        description (str): Description of the agent's role
+        llm_config (Dict): Configuration for the LLM model
+    """
     
     def __init__(self, name: str, description: str, llm_config: Dict):
+        """
+        Initialize the ValidationAgent.
+
+        Args:
+            name (str): Name of the agent
+            description (str): Description of the agent's role
+            llm_config (Dict): Configuration for the LLM model
+        """
         super().__init__(
             name=name,
             description=description,
@@ -245,6 +367,15 @@ class ValidationAgent(AnalyticsAssistantAgent):
         )
 
     async def validate_configuration(self, content: str) -> Dict[str, Any]:
+        """
+        Validate the configuration based on the provided content.
+
+        Args:
+            content (str): The content to validate
+
+        Returns:
+            Dict[str, Any]: Validation results including status and any issues found
+        """
         prompt = f"""
         Please validate the following configuration:
         
@@ -258,6 +389,16 @@ class ValidationAgent(AnalyticsAssistantAgent):
         return json.loads(response)
 
     async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+        """
+        Process validation requests.
+
+        Args:
+            messages (List[BaseChatMessage]): List of messages containing content to validate
+            cancellation_token: Token for cancellation support
+
+        Returns:
+            Response: Validation results or termination message
+        """
         log_event(self.name, "on_messages_invoke", messages, [])
         content = messages[-1].content
         validation_results = await self.validate_configuration(content)
@@ -272,7 +413,15 @@ class ValidationAgent(AnalyticsAssistantAgent):
         return resp
 
 def create_agents(config: Dict) -> Dict[str, Any]:
-    """Create and configure the agents using settings from config file."""
+    """
+    Create and configure the agents using settings from config file.
+    
+    Args:
+        config (Dict): Configuration dictionary containing agent settings
+        
+    Returns:
+        Dict[str, Any]: Dictionary containing all created agents
+    """
     logger.debug("Creating agents...")
     
     # Create base agents (user proxy and supervisor)
@@ -337,7 +486,16 @@ def create_agents(config: Dict) -> Dict[str, Any]:
     }
 
 def main():
-    """Main entry point."""
+    """
+    Main entry point for the manifest update system.
+    
+    This function:
+    1. Loads the configuration
+    2. Sets up logging
+    3. Creates all necessary agents
+    4. Initializes the manifest update process
+    5. Handles any errors that occur during execution
+    """
     try:
         # Load configuration
         config = load_json_file("update_manifest.json")

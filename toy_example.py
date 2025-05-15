@@ -5,7 +5,7 @@ This module implements a multi-agent system for processing and analyzing text co
 The system uses multiple specialized agents to read, analyze, and generate content, with a focus on
 quality control and human-in-the-loop feedback.
 
-The system consists of the following components:
+Key Components:
 - FileReaderAgent: Reads and processes input files
 - WriterAgent: Generates content based on input
 - InformationVerifierAgent: Validates information accuracy
@@ -14,7 +14,17 @@ The system consists of the following components:
 - RootCauseAnalyzerAgent: Analyzes feedback and system behavior
 
 The system operates in iterative rounds, with each round potentially improving the content
-based on agent feedback and human input.
+based on agent feedback and human input. The workflow is as follows:
+1. FileReader reads the input files
+2. Writer generates initial content
+3. Verifier checks information accuracy
+4. Quality agent ensures high standards
+5. Human provides feedback
+6. RootCauseAnalyzer processes feedback
+7. System iterates if needed
+
+Each agent has specific responsibilities and communicates through a structured message system.
+The system includes comprehensive logging, error handling, and validation throughout the process.
 """
 
 import os
@@ -201,11 +211,16 @@ def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], o
 # -----------------------------------------------------------------------------
 class FileReaderAgent(BaseChatAgent):
     """
-    Agent responsible for reading and processing files from the manifest.
+    Agent responsible for reading and processing input files.
     
     This agent maintains a list of files it has read and can process multiple files
     in a single request. It handles file reading errors gracefully and logs all
     file operations.
+    
+    Attributes:
+        manifest (set): Set of filenames the agent can read
+        files_read (list): List of files that have been read
+        file_log (list): List to store file operation logs
     """
 
     def __init__(self, name: str, description: str, manifest: List[dict], file_log: List[str]):
@@ -299,6 +314,11 @@ class RootCauseAnalyzerAgent(AnalyticsAssistantAgent):
     
     This agent combines configuration data, user feedback, and system logs to provide
     insights into system behavior and potential improvements.
+    
+    Attributes:
+        name (str): Name of the agent
+        description (str): Description of the agent's role
+        llm_config (Dict): Configuration for the LLM model
     """
 
     async def analyze_interaction_flow(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
@@ -475,6 +495,13 @@ class InformationVerifierAgent(AnalyticsAssistantAgent):
     2. Not contradicted by the source material
     3. Properly supported by the sources
     4. Free from hallucinations or additions not present in the sources
+    
+    Attributes:
+        name (str): Name of the agent
+        description (str): Description of the agent's role
+        llm_config (Dict): Configuration for the LLM model
+        source_files (list): List of source files to verify against
+        source_content (dict): Dictionary mapping filenames to their content
     """
 
     def __init__(self, name: str, description: str, llm_config: Dict):
@@ -484,7 +511,7 @@ class InformationVerifierAgent(AnalyticsAssistantAgent):
         Args:
             name (str): Name of the agent
             description (str): Description of the agent's role
-            llm_config (Dict): Configuration for the agent
+            llm_config (Dict): Configuration for the LLM model
         """
         super().__init__(
             name=name,
@@ -692,7 +719,15 @@ def get_user_feedback() -> str:
 # Main orchestration
 # -----------------------------------------------------------------------------
 def create_agents(config: Dict) -> Dict[str, Any]:
-    """Create and configure the agents using settings from config file."""
+    """
+    Create and configure the agents using settings from config file.
+    
+    Args:
+        config (Dict): Configuration dictionary containing agent settings
+        
+    Returns:
+        Dict[str, Any]: Dictionary containing all created agents
+    """
     logger.debug("Creating agents...")
     
     # Create base agents (user proxy and supervisor)
@@ -757,7 +792,16 @@ def create_agents(config: Dict) -> Dict[str, Any]:
     }
 
 def main():
-    """Main entry point."""
+    """
+    Main entry point for the multi-agent human feedback system.
+    
+    This function:
+    1. Loads the configuration
+    2. Sets up logging
+    3. Creates all necessary agents
+    4. Initializes the text processing workflow
+    5. Handles any errors that occur during execution
+    """
     try:
         # Load configuration
         config = load_json_file("toy_example.json")
