@@ -31,10 +31,12 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 import psutil
 import time
+from pathlib import Path
 
-from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
-from autogen_agentchat.base import Response
+from autogen import AssistantAgent
+from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
+from autogen_agentchat.base import Response
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from json_validator_tool import get_tool_for_agent
 from tool_analytics import ToolAnalytics, ToolUsageMetrics
@@ -42,6 +44,11 @@ from analytics_assistant_agent import AnalyticsAssistantAgent
 from llm_cache import LLMCache
 import autogen
 from autogen import UserProxyAgent, GroupChat, GroupChatManager
+
+from base_agent_system import (
+    setup_logging, log_event, create_base_agents, create_group_chat,
+    load_json_file, save_json_file, FILE_LOG, ROOT_CAUSE_DATA
+)
 
 # -----------------------------------------------------------------------------
 # Global logs and cache
@@ -475,38 +482,22 @@ class InformationVerifierAgent(AnalyticsAssistantAgent):
     4. Free from hallucinations or additions not present in the sources
     """
 
-    def __init__(self, name: str, model_client, system_message: str, tools: Optional[List[Dict]] = None, cache: Optional[LLMCache] = None):
+    def __init__(self, name: str, description: str, llm_config: Dict):
         """
         Initialize the InformationVerifierAgent.
 
         Args:
             name (str): Name of the agent
-            model_client: The model client to use
-            system_message (str): System message for the agent
-            tools (Optional[List[Dict]]): List of tools available to the agent
-            cache (Optional[LLMCache]): Cache instance to use for response caching
+            description (str): Description of the agent's role
+            llm_config (Dict): Configuration for the agent
         """
         super().__init__(
             name=name,
-            model_client=model_client,
-            system_message=system_message,
-            tools=tools,
-            reflect_on_tool_use=True,
-            cache=cache
+            description=description,
+            llm_config=llm_config
         )
         self.source_files = []
         self.source_content = {}
-
-    def set_source_files(self, files: List[str], content: Dict[str, str]):
-        """
-        Set the source files and their content for verification.
-
-        Args:
-            files (List[str]): List of source file names
-            content (Dict[str, str]): Dictionary mapping file names to their content
-        """
-        self.source_files = files
-        self.source_content = content
 
     async def verify_content(self, content: str) -> Dict[str, Any]:
         """
@@ -705,137 +696,103 @@ def get_user_feedback() -> str:
 # -----------------------------------------------------------------------------
 # Main orchestration
 # -----------------------------------------------------------------------------
-async def main():
-    """
-    Main execution function that orchestrates the multi-agent system.
+def create_agents(config: Dict) -> Dict[str, Any]:
+    """Create and configure the agents using settings from config file."""
+    logger.debug("Creating agents...")
     
-    This function implements a two-phase process:
-    1. Normal creation and validation flow with multiple iterations until content is approved
-    2. Single human feedback and root cause analysis
-    """
-    # Load configuration
-    config = load_json_file("toy_example.json")
-    logger.debug("Configuration loaded")
+    # Create base agents (user proxy and supervisor)
+    base_agents = create_base_agents(config, logger)
     
-    # Setup logging
-    setup_logging(config)
-    logger.debug("Logging configured")
-    
-    # Get OpenAI configuration
-    openai_config = get_openai_config()
-    
-    # Initialize agents
+    # Create File Reader Agent
+    file_reader_config = config["agents"]["FileReaderAgent"]
     file_reader = FileReaderAgent(
-        name="file_reader",
-        description="Reads and processes text files",
-        system_message=config["agents"]["file_reader"]["system_message"]
+        name=file_reader_config["name"],
+        description=file_reader_config["description"],
+        manifest=config["file_manifest"],
+        file_log=FILE_LOG
     )
+    logger.debug(f"File Reader Agent created: {file_reader_config['description']}")
     
-    writer = WriterAgent(
-        name="writer",
-        description="Generates content based on input",
-        system_message=config["agents"]["writer"]["system_message"]
+    # Create Writer Agent
+    writer_config = config["agents"]["WriterAgent"]
+    writer = AssistantAgent(
+        name=writer_config["name"],
+        system_message=writer_config["system_message"],
+        llm_config=config["llm_config"]["writer"]
     )
+    logger.debug(f"Writer Agent created: {writer_config['description']}")
     
+    # Create Information Verifier Agent
+    verifier_config = config["agents"]["InformationVerifierAgent"]
     verifier = InformationVerifierAgent(
-        name="verifier",
-        description="Verifies information accuracy",
-        system_message=config["agents"]["verifier"]["system_message"]
+        name=verifier_config["name"],
+        description=verifier_config["description"],
+        llm_config=config["llm_config"]["verifier"]
     )
+    logger.debug(f"Information Verifier Agent created: {verifier_config['description']}")
     
-    quality_checker = TextQualityAgent(
-        name="quality_checker",
-        description="Checks text quality",
-        system_message=config["agents"]["quality_checker"]["system_message"]
+    # Create Text Quality Agent
+    quality_config = config["agents"]["TextQualityAgent"]
+    quality = AssistantAgent(
+        name=quality_config["name"],
+        system_message=quality_config["system_message"],
+        llm_config=config["llm_config"]["quality"]
     )
+    logger.debug(f"Text Quality Agent created: {quality_config['description']}")
     
-    coordinator = CoordinatorAgent(
-        name="coordinator",
-        description="Coordinates the workflow",
-        system_message=config["agents"]["coordinator"]["system_message"]
-    )
+    # Create Group Chat Manager
+    all_agents = [
+        base_agents["user_proxy"],
+        file_reader,
+        writer,
+        verifier,
+        quality,
+        base_agents["supervisor"]
+    ]
+    group_chat_manager = create_group_chat(all_agents, config, logger)
     
-    # Process document through normal flow with multiple iterations
-    logger.info("Starting document processing")
-    
-    # Read document
-    document = await file_reader.run(task="Read the input document")
-    logger.info("Document read successfully")
-    
-    # Initialize content and validation flags
-    content = None
-    is_verified = False
-    is_quality_approved = False
-    iteration = 0
-    max_iterations = config.get("max_iterations", 5)
-    
-    # Iterate until content is approved or max iterations reached
-    while not (is_verified and is_quality_approved) and iteration < max_iterations:
-        iteration += 1
-        logger.info(f"Starting iteration {iteration}")
+    return {
+        "file_reader": file_reader,
+        "writer": writer,
+        "verifier": verifier,
+        "quality": quality,
+        "user_proxy": base_agents["user_proxy"],
+        "supervisor": base_agents["supervisor"],
+        "group_chat_manager": group_chat_manager
+    }
+
+def main():
+    """Main entry point."""
+    try:
+        # Load configuration
+        config = load_json_file("toy_example.json")
         
-        # Generate or improve content
-        if content is None:
-            content = await writer.run(task=f"Generate content based on: {document}")
-            logger.info("Initial content generated")
-        else:
-            content = await writer.run(task=f"Improve content based on feedback: {content}")
-            logger.info("Content improved")
+        # Setup logging
+        setup_logging(config)
         
-        # Verify information
-        verification = await verifier.run(task=f"Verify information in: {content}")
-        is_verified = verification.get("verification_status") == "PASS"
-        logger.info(f"Information verification: {'PASS' if is_verified else 'FAIL'}")
+        # Create agents
+        agents = create_agents(config)
         
-        # Check quality
-        quality = await quality_checker.run(task=f"Check quality of: {content}")
-        is_quality_approved = quality.get("status") == "PASS"
-        logger.info(f"Quality check: {'PASS' if is_quality_approved else 'FAIL'}")
+        # Start processing
+        logger.info("Starting text processing with human feedback")
         
-        # If not approved, get feedback for improvement
-        if not (is_verified and is_quality_approved):
-            feedback = {
-                "verification": verification.get("feedback", ""),
-                "quality": quality.get("feedback", "")
-            }
-            logger.info(f"Feedback for improvement: {feedback}")
-    
-    if iteration >= max_iterations:
-        logger.warning(f"Max iterations ({max_iterations}) reached without full approval")
-    
-    # Get single user feedback after content is finalized
-    print("\nFinal Content:")
-    print(content)
-    user_feedback = input("\nPlease provide feedback on the content: ")
-    logger.info("User feedback received")
-    
-    # Analyze root causes with feedback and message traces
-    root_cause_analyzer = RootCauseAnalyzerAgent(config)
-    analysis = await root_cause_analyzer.analyze(RootCauseInput(
-        config=config,
-        user_feedback=user_feedback,
-        action_log=ACTION_LOG,
-        event_log=ROOT_CAUSE_DATA
-    ))
-    
-    # Save analysis
-    save_json_file(analysis, "root_cause_analysis.json")
-    logger.info("Root cause analysis saved")
-    
-    # Print summary
-    print("\nProcess Summary:")
-    print(f"Total iterations: {iteration}")
-    print(f"Final verification status: {'PASS' if is_verified else 'FAIL'}")
-    print(f"Final quality status: {'PASS' if is_quality_approved else 'FAIL'}")
-    print(f"User feedback: {user_feedback}")
-    print("\nRoot cause analysis saved to root_cause_analysis.json")
-    print("\nSuggested improvements:")
-    for rec in analysis.get("recommendations", []):
-        print(f"- {rec['description']} (Priority: {rec['priority']})")
+        # Initialize the process
+        agents["user_proxy"].initiate_chat(
+            agents["group_chat_manager"],
+            message="""Let's process and analyze the text content.
+            The Supervisor should coordinate the process:
+            1. FileReader should read the input files
+            2. Writer should generate content
+            3. Verifier should check accuracy
+            4. Quality agent should ensure high standards
+            5. Supervisor should ensure the process completes successfully"""
+        )
+        
+        logger.info("Text processing completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Error in main process: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logger.error(f"Fatal error: {e}")
-        sys.exit(1)
+    main()

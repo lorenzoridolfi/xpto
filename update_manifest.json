@@ -1,7 +1,7 @@
 {
     "task_description": "Update manifest files with proper logging configuration and system structure",
     "hierarchy": [
-        "CoordinatorAgent",
+        "SupervisorAgent",
         "FileReaderAgent",
         "ManifestUpdaterAgent",
         "LoggingConfigAgent",
@@ -23,13 +23,13 @@
         }
     ],
     "agents": {
-        "CoordinatorAgent": {
+        "SupervisorAgent": {
             "description": "Coordinates the workflow between agents",
-            "system_message": "You are a coordinator agent. Your role is to manage the workflow between different agents. You should instruct the FileReaderAgent to read files in a logical order, and ensure that the ManifestUpdaterAgent, LoggingConfigAgent, and ValidationAgent work together effectively. Your goal is to update the manifest files with proper logging configuration and system structure."
+            "system_message": "You are a supervisor agent responsible for coordinating the workflow between different agents. Your role includes task distribution, process monitoring, and ensuring quality control. You should instruct the FileReaderAgent to read files in a logical order, and ensure that the ManifestUpdaterAgent, LoggingConfigAgent, and ValidationAgent work together effectively. Your goal is to update the manifest files with proper logging configuration and system structure."
         },
         "FileReaderAgent": {
             "description": "Reads and processes input files",
-            "system_message": "You are a file reader agent. Your role is to read and process input files as instructed by the CoordinatorAgent. You should read files in the order specified and provide their contents to other agents."
+            "system_message": "You are a file reader agent. Your role is to read and process input files as instructed by the SupervisorAgent. You should read files in the order specified and provide their contents to other agents."
         },
         "ManifestUpdaterAgent": {
             "description": "Updates manifest files",
@@ -56,12 +56,21 @@
         "console": true
     },
     "llm_config": {
-        "model": "gpt-4",
-        "temperature": 0.7,
-        "max_tokens": 4096,
-        "top_p": 1.0,
-        "frequency_penalty": 0.0,
-        "presence_penalty": 0.0
+        "supervisor": {
+            "model": "gpt-4",
+            "temperature": 0.7,
+            "max_tokens": 4096
+        },
+        "creator": {
+            "model": "gpt-4",
+            "temperature": 0.7,
+            "max_tokens": 4096
+        },
+        "validator": {
+            "model": "gpt-4",
+            "temperature": 0.7,
+            "max_tokens": 4096
+        }
     },
     "cache_config": {
         "use_gpu": false,
@@ -99,5 +108,17 @@
     "analytics": {
         "enabled": true,
         "metrics": ["performance", "usage", "errors"]
+    },
+    "system": {
+        "user_proxy": {
+            "name": "user_proxy",
+            "human_input_mode": "TERMINATE",
+            "max_consecutive_auto_reply": 0
+        },
+        "group_chat": {
+            "max_round": 10,
+            "speaker_selection_method": "round_robin",
+            "allow_repeat_speaker": false
+        }
     }
 } 
