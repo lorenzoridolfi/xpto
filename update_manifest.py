@@ -19,13 +19,6 @@ from load_openai import get_openai_config
 # Constants
 MANIFEST_VERSION = "1.0.0"
 
-def get_openai_api_key() -> str:
-    """Get OpenAI API key from environment variable."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable not set")
-    return api_key
-
 def setup_logging(config: Dict) -> None:
     """Configure logging based on the configuration file."""
     log_config = config["logging"]
@@ -256,12 +249,12 @@ def create_agents(config: Dict) -> Dict[str, Any]:
     """Create and configure the agents using settings from config file."""
     logger.debug("Creating agents...")
     
-    # Get OpenAI API key
-    api_key = get_openai_api_key()
+    # Get OpenAI configuration
+    openai_config = get_openai_config()
     
-    # Update LLM configs with API key
+    # Update LLM configs with OpenAI settings
     for agent_type in ["creator", "validator", "manager"]:
-        config["llm_config"][agent_type]["api_key"] = api_key
+        config["llm_config"][agent_type].update(openai_config)
     
     # Create Creator Agent
     creator_config = config["agents"]["creator"]
