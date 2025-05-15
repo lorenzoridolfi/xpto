@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 import secrets
 import logging
 from datetime import datetime
@@ -56,9 +56,16 @@ agent = AnalyticsAssistantAgent(
 # Store for question-answer pairs
 question_store: Dict[str, Dict[str, Any]] = {}
 
+# Question types
+QuestionType = Literal["factual", "analytical", "creative", "technical", "general"]
+
 # Pydantic models for request/response
 class QuestionRequest(BaseModel):
     question: str = Field(..., description="The question to ask the agent system")
+    question_type: Optional[QuestionType] = Field(
+        None,
+        description="Optional type of question to help guide the response"
+    )
 
 class QuestionResponse(BaseModel):
     question_id: str = Field(..., description="Unique identifier for the question-answer pair")
@@ -66,6 +73,7 @@ class QuestionResponse(BaseModel):
     rationale: str = Field(..., description="The reasoning behind the answer")
     critic: str = Field(..., description="Critical analysis of the answer")
     timestamp: datetime = Field(..., description="When the response was generated")
+    question_type: Optional[QuestionType] = Field(None, description="Type of question that was asked")
 
 class FeedbackRequest(BaseModel):
     question_id: str = Field(..., description="ID of the question being feedbacked")
@@ -123,7 +131,7 @@ async def ask_question(
     Ask a question to the agent system.
     
     Args:
-        request: QuestionRequest containing the question
+        request: QuestionRequest containing the question and optional question type
         
     Returns:
         QuestionResponse with answer, rationale, and critic
@@ -132,8 +140,13 @@ async def ask_question(
         # Generate unique question ID
         question_id = generate_question_id()
         
+        # Prepare the question with type context if provided
+        question_prompt = request.question
+        if request.question_type:
+            question_prompt = f"[{request.question_type.upper()}] {request.question}"
+        
         # Process the question
-        response = await agent.run(request.question)
+        response = await agent.run(question_prompt)
         
         # Generate rationale and critic
         rationale = await agent.run(f"Explain your reasoning for the answer: {response}")
@@ -142,6 +155,7 @@ async def ask_question(
         # Store the question-answer pair
         question_store[question_id] = {
             "question": request.question,
+            "question_type": request.question_type,
             "answer": response,
             "rationale": rationale,
             "critic": critic,
@@ -153,7 +167,8 @@ async def ask_question(
             answer=response,
             rationale=rationale,
             critic=critic,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
+            question_type=request.question_type
         )
     except Exception as e:
         logging.error(f"Error processing question: {str(e)}")

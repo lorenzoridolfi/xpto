@@ -28,6 +28,11 @@ components:
           type: string
           description: The question to ask the agent system
           example: "What is the capital of France?"
+        question_type:
+          type: string
+          description: Optional type of question to help guide the response
+          enum: [factual, analytical, creative, technical, general]
+          example: "factual"
 
     QuestionResponse:
       type: object
