@@ -8,11 +8,13 @@ including authentication, question answering, feedback, and system reset capabil
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import secrets
 import logging
 from datetime import datetime
+import uuid
+import time
 
 from src.analytics_assistant_agent import AnalyticsAssistantAgent
 from src.tool_analytics import ToolAnalytics
@@ -51,28 +53,42 @@ agent = AnalyticsAssistantAgent(
     llm_cache=llm_cache
 )
 
+# Store for question-answer pairs
+question_store: Dict[str, Dict[str, Any]] = {}
+
 # Pydantic models for request/response
 class QuestionRequest(BaseModel):
-    question: str
+    question: str = Field(..., description="The question to ask the agent system")
 
 class QuestionResponse(BaseModel):
-    answer: str
-    rationale: str
-    critic: str
-    timestamp: datetime
+    question_id: str = Field(..., description="Unique identifier for the question-answer pair")
+    answer: str = Field(..., description="The answer provided by the agent")
+    rationale: str = Field(..., description="The reasoning behind the answer")
+    critic: str = Field(..., description="Critical analysis of the answer")
+    timestamp: datetime = Field(..., description="When the response was generated")
 
 class FeedbackRequest(BaseModel):
-    question_id: str
-    feedback: str
-    rating: Optional[int] = None
+    question_id: str = Field(..., description="ID of the question being feedbacked")
+    feedback: str = Field(..., description="User feedback about the answer")
+    rating: Optional[int] = Field(None, ge=1, le=5, description="Optional rating from 1 to 5")
 
 class FeedbackResponse(BaseModel):
-    root_cause_analysis: Dict[str, Any]
-    recommendations: list[str]
-    timestamp: datetime
+    root_cause_analysis: Dict[str, Any] = Field(..., description="Analysis of the feedback")
+    recommendations: list[str] = Field(..., description="List of improvement recommendations")
+    timestamp: datetime = Field(..., description="When the analysis was generated")
 
 class ErrorResponse(BaseModel):
-    detail: str
+    detail: str = Field(..., description="Error message")
+
+def generate_question_id() -> str:
+    """Generate a unique question ID."""
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    unique_id = str(uuid.uuid4())[:8]
+    return f"q_{timestamp}_{unique_id}"
+
+def validate_question_id(question_id: str) -> bool:
+    """Validate if a question ID exists in the store."""
+    return question_id in question_store
 
 # Authentication dependency
 def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
@@ -113,6 +129,9 @@ async def ask_question(
         QuestionResponse with answer, rationale, and critic
     """
     try:
+        # Generate unique question ID
+        question_id = generate_question_id()
+        
         # Process the question
         response = await agent.run(request.question)
         
@@ -120,7 +139,17 @@ async def ask_question(
         rationale = await agent.run(f"Explain your reasoning for the answer: {response}")
         critic = await agent.run(f"Critically analyze this answer: {response}")
         
+        # Store the question-answer pair
+        question_store[question_id] = {
+            "question": request.question,
+            "answer": response,
+            "rationale": rationale,
+            "critic": critic,
+            "timestamp": datetime.utcnow()
+        }
+        
         return QuestionResponse(
+            question_id=question_id,
             answer=response,
             rationale=rationale,
             critic=critic,
@@ -148,10 +177,21 @@ async def submit_feedback(
         FeedbackResponse with root cause analysis and recommendations
     """
     try:
+        # Validate question ID
+        if not validate_question_id(request.question_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Question ID not found"
+            )
+        
+        # Get the original question-answer pair
+        qa_pair = question_store[request.question_id]
+        
         # Process feedback
         feedback_prompt = f"""
         Analyze the following feedback:
-        Question ID: {request.question_id}
+        Question: {qa_pair['question']}
+        Original Answer: {qa_pair['answer']}
         Feedback: {request.feedback}
         Rating: {request.rating if request.rating else 'Not provided'}
         
@@ -169,6 +209,8 @@ async def submit_feedback(
             recommendations=[rec.strip() for rec in recommendations.split("\n") if rec.strip()],
             timestamp=datetime.utcnow()
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error processing feedback: {str(e)}")
         raise HTTPException(
@@ -190,6 +232,9 @@ async def reset_system(username: str = Depends(get_current_user)):
         
         # Reset analytics
         tool_analytics.reset()
+        
+        # Clear question store
+        question_store.clear()
         
         return {"status": "success", "message": "System reset successful"}
     except Exception as e:

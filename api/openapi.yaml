@@ -1,0 +1,243 @@
+openapi: 3.0.0
+info:
+  title: Agent System API
+  description: API for interacting with the multi-agent system
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication with username and password
+
+  schemas:
+    QuestionRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          description: The question to ask the agent system
+          example: "What is the capital of France?"
+
+    QuestionResponse:
+      type: object
+      required:
+        - question_id
+        - answer
+        - rationale
+        - critic
+        - timestamp
+      properties:
+        question_id:
+          type: string
+          description: Unique identifier for the question-answer pair
+          example: "q_20240320103000_123"
+        answer:
+          type: string
+          description: The answer provided by the agent
+          example: "Paris"
+        rationale:
+          type: string
+          description: The reasoning behind the answer
+          example: "Paris has been the capital of France since 987 CE..."
+        critic:
+          type: string
+          description: Critical analysis of the answer
+          example: "The answer is correct but could have included more historical context..."
+        timestamp:
+          type: string
+          format: date-time
+          description: When the response was generated
+          example: "2024-03-20T10:30:00Z"
+
+    FeedbackRequest:
+      type: object
+      required:
+        - question_id
+        - feedback
+      properties:
+        question_id:
+          type: string
+          description: ID of the question being feedbacked (must match a previously returned question_id)
+          example: "q_20240320103000_123"
+        feedback:
+          type: string
+          description: User feedback about the answer
+          example: "The answer was helpful but could be more detailed"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Optional rating from 1 to 5
+          example: 4
+
+    FeedbackResponse:
+      type: object
+      required:
+        - root_cause_analysis
+        - recommendations
+        - timestamp
+      properties:
+        root_cause_analysis:
+          type: object
+          description: Analysis of the feedback
+          properties:
+            analysis:
+              type: string
+              example: "The feedback indicates a need for more detailed responses..."
+        recommendations:
+          type: array
+          items:
+            type: string
+          description: List of improvement recommendations
+          example: ["Provide more historical context", "Include relevant statistics"]
+        timestamp:
+          type: string
+          format: date-time
+          description: When the analysis was generated
+          example: "2024-03-20T10:35:00Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Error processing question"
+
+paths:
+  /login:
+    post:
+      summary: Authenticate user
+      description: Authenticate user with basic authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "authenticated"
+                  message:
+                    type: string
+                    example: "Login successful"
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /question:
+    post:
+      summary: Ask a question
+      description: Ask a question to the agent system and get an answer with rationale and critic
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /feedback:
+    post:
+      summary: Submit feedback
+      description: Submit feedback for a previous answer and get root cause analysis
+      security:
+        - BasicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: Successful feedback processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reset:
+    post:
+      summary: Reset system
+      description: Reset the agent system's memory and cache
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: Successful reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "System reset successful"
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse' 
