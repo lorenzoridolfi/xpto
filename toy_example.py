@@ -31,8 +31,6 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 import psutil
 import time
-from logging.handlers import RotatingFileHandler
-import traceback
 
 from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
@@ -111,59 +109,28 @@ def validate_agent_output(agent_name: str, output: Dict[str, Any]) -> bool:
 def setup_logging(config: dict) -> None:
     """
     Configure logging based on configuration settings.
-    Designed for developers with programming experience but new to AI agents.
 
     Args:
         config (dict): Configuration dictionary containing logging settings
     """
     log_config = config["logging"]
     
-    # Set up root logger
+    # Set up logger
     logger.setLevel(getattr(logging, log_config["level"]))
     
-    # Create formatters for different categories
-    formatters = {
-        "default": logging.Formatter(log_config["format"]),
-        "agent_communication": logging.Formatter(log_config["categories"]["agent_communication"]["format"]),
-        "agent_state": logging.Formatter(log_config["categories"]["agent_state"]["format"]),
-        "performance": logging.Formatter(log_config["categories"]["performance"]["format"]),
-        "error": logging.Formatter(log_config["categories"]["error"]["format"])
-    }
+    # Create formatter
+    formatter = logging.Formatter(log_config["format"])
     
-    # Console handler with color support
+    # Console handler
     if log_config.get("console", True):
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatters["default"])
+        console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
-    # File handler with rotation
-    if log_config["file_rotation"]["enabled"]:
-        file_handler = RotatingFileHandler(
-            log_config["file"],
-            maxBytes=log_config["file_rotation"]["max_size_mb"] * 1024 * 1024,
-            backupCount=log_config["file_rotation"]["backup_count"]
-        )
-    else:
-        file_handler = logging.FileHandler(log_config["file"])
-    
-    file_handler.setFormatter(formatters["default"])
+    # File handler
+    file_handler = logging.FileHandler(log_config["file"])
+    file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-    
-    # Create category-specific loggers
-    for category, settings in log_config["categories"].items():
-        category_logger = logging.getLogger(f"toy_example.{category}")
-        category_logger.setLevel(getattr(logging, settings["level"]))
-        
-        # Add console handler for this category
-        if log_config.get("console", True):
-            category_console = logging.StreamHandler()
-            category_console.setFormatter(formatters[category])
-            category_logger.addHandler(category_console)
-        
-        # Add file handler for this category
-        category_file = logging.FileHandler(f"toy_example_{category}.log")
-        category_file.setFormatter(formatters[category])
-        category_logger.addHandler(category_file)
     
     # Don't propagate to root logger to avoid duplicate logs
     logger.propagate = False
@@ -174,60 +141,13 @@ def setup_logging(config: dict) -> None:
 def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], outputs) -> None:
     """
     Log an event in the system with detailed information about inputs and outputs.
-    Enhanced for developer debugging.
 
     Args:
         agent_name (str): Name of the agent generating the event
         event_type (str): Type of event (e.g., 'on_messages_invoke', 'on_messages_complete')
         inputs (List[BaseChatMessage]): Input messages to the agent
-        outputs: Output from the agent
+        outputs: Output from the agent (can be Response, list of Responses, or other types)
     """
-    # Get appropriate logger based on event type
-    if event_type.startswith("on_messages"):
-        event_logger = logging.getLogger("toy_example.agent_communication")
-    elif event_type.endswith("_state"):
-        event_logger = logging.getLogger("toy_example.agent_state")
-    else:
-        event_logger = logger
-
-    # Log agent state
-    state_logger = logging.getLogger("toy_example.agent_state")
-    state_logger.debug(
-        f"Agent {agent_name} state change",
-        extra={
-            "state": event_type,
-            "details": {
-                "input_count": len(inputs),
-                "output_type": type(outputs).__name__
-            }
-        }
-    )
-
-    # Log performance metrics if available
-    if hasattr(outputs, "processing_time"):
-        perf_logger = logging.getLogger("toy_example.performance")
-        perf_logger.info(
-            f"Processing time for {agent_name}",
-            extra={
-                "metric": "processing_time",
-                "value": outputs.processing_time,
-                "unit": "seconds"
-            }
-        )
-
-    # Log error if present
-    if isinstance(outputs, Exception):
-        error_logger = logging.getLogger("toy_example.error")
-        error_logger.error(
-            f"Error in {agent_name}",
-            extra={
-                "error_type": type(outputs).__name__,
-                "message": str(outputs),
-                "stack_trace": traceback.format_exc()
-            }
-        )
-
-    # Log the actual event
     entry = {
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         "agent": agent_name,
@@ -238,35 +158,41 @@ def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], o
     if isinstance(outputs, Response):
         cm = outputs.chat_message
         try:
+            # Try to parse JSON content
             content = json.loads(cm.content)
+            # Validate against schema
             if not validate_agent_output(agent_name, content):
-                event_logger.warning(f"Invalid output format from {agent_name}")
+                logger.warning(f"Invalid output format from {agent_name}")
             entry["outputs"] = [{"source": cm.source, "content": content}]
         except json.JSONDecodeError:
+            # If not JSON, store as is
             entry["outputs"] = [{"source": cm.source, "content": cm.content}]
-    elif isinstance(outputs, list):
+    elif isinstance(outputs, list) and all(isinstance(o, Response) for o in outputs):
         entry["outputs"] = []
         for o in outputs:
-            if isinstance(o, (Response, BaseChatMessage)):
-                try:
-                    content = json.loads(o.content if isinstance(o, BaseChatMessage) else o.chat_message.content)
-                    entry["outputs"].append({
-                        "source": o.source if isinstance(o, BaseChatMessage) else o.chat_message.source,
-                        "content": content
-                    })
-                except json.JSONDecodeError:
-                    entry["outputs"].append({
-                        "source": o.source if isinstance(o, BaseChatMessage) else o.chat_message.source,
-                        "content": o.content if isinstance(o, BaseChatMessage) else o.chat_message.content
-                    })
+            try:
+                content = json.loads(o.chat_message.content)
+                if not validate_agent_output(agent_name, content):
+                    logger.warning(f"Invalid output format from {agent_name}")
+                entry["outputs"].append({"source": o.chat_message.source, "content": content})
+            except json.JSONDecodeError:
+                entry["outputs"].append({"source": o.chat_message.source, "content": o.chat_message.content})
+    elif isinstance(outputs, list) and all(isinstance(o, BaseChatMessage) for o in outputs):
+        entry["outputs"] = []
+        for o in outputs:
+            try:
+                content = json.loads(o.content)
+                if not validate_agent_output(agent_name, content):
+                    logger.warning(f"Invalid output format from {agent_name}")
+                entry["outputs"].append({"source": o.source, "content": content})
+            except json.JSONDecodeError:
+                entry["outputs"].append({"source": o.source, "content": o.content})
     else:
         entry["outputs"] = outputs
-
-    # Log with appropriate level and format
-    if event_type.endswith("_complete"):
-        event_logger.info(f"Event completed: {json.dumps(entry, indent=2)}")
-    else:
-        event_logger.debug(f"Event started: {json.dumps(entry, indent=2)}")
+    
+    # Log the event
+    logger.debug(f"Event: {json.dumps(entry, indent=2)}")
+    ROOT_CAUSE_DATA.append(entry)
 
 # -----------------------------------------------------------------------------
 # Agents
