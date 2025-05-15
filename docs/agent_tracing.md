@@ -309,4 +309,330 @@ except Exception as e:
     # Análise de ferramentas
     tool_analysis = analytics.analyze_tool("search_tool")
     analytics.save_analysis(tool_analysis, "error_tool_analysis.json")
-``` 
+```
+
+# Agent Tracing e Integração com Autogen
+
+## Visão Geral
+
+O `AgentTracer` é um componente de observabilidade que se integra com os agentes do Autogen para fornecer:
+- Rastreamento de eventos
+- Métricas de uso de tokens
+- Estatísticas de cache
+- Logs detalhados
+- Análise de performance
+
+## Arquitetura
+
+```
+Autogen Agents (AssistantAgent, UserProxyAgent)
+        ↓
+AgentTracer (Observador)
+        ↓
+Logs, Métricas, Traces
+```
+
+### Componentes
+
+1. **Agentes Autogen**
+   - `AssistantAgent`: Agente principal que processa mensagens
+   - `UserProxyAgent`: Interface com o usuário
+   - `GroupChat`: Coordenação entre agentes
+
+2. **AgentTracer**
+   - Observador dos agentes
+   - Coletor de métricas
+   - Gerador de logs
+   - Calculador de estatísticas
+
+3. **Sistema de Logging**
+   - Arquivos de log
+   - Console output
+   - Formatação personalizada
+
+## Integração
+
+### 1. Inicialização
+
+```python
+from autogen import AssistantAgent, UserProxyAgent
+from agent_tracer import AgentTracer, TokenUsage
+
+# Configuração do tracer
+config = {
+    "logging": {
+        "level": "INFO",
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "file": "agent_trace.log",
+        "console": true
+    }
+}
+
+# Criar tracer
+tracer = AgentTracer(config)
+
+# Criar agentes
+assistant = AssistantAgent(
+    name="assistant",
+    system_message="You are a helpful assistant.",
+    llm_config={"config_list": [{"model": "gpt-4"}]}
+)
+
+user_proxy = UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="TERMINATE"
+)
+```
+
+### 2. Tracing de Eventos
+
+```python
+# Antes de processar mensagens
+tracer.on_messages_invoke(
+    agent_name="assistant",
+    messages=[{"role": "user", "content": "Hello"}],
+    token_usage=TokenUsage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        model="gpt-4"
+    ),
+    cache_hit=False
+)
+
+# Após processar mensagens
+tracer.on_messages_complete(
+    agent_name="assistant",
+    outputs=[{"role": "assistant", "content": "Hi there!"}],
+    token_usage=TokenUsage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        model="gpt-4"
+    ),
+    cache_hit=True
+)
+```
+
+### 3. Integração com Cache
+
+```python
+from llm_cache import LLMCache
+
+# Inicializar cache
+cache = LLMCache(
+    max_size=1000,
+    similarity_threshold=0.85,
+    expiration_hours=24
+)
+
+# Verificar cache antes de chamar LLM
+cache_key = generate_cache_key(messages)
+cached_response = cache.get(cache_key)
+
+if cached_response:
+    # Cache hit
+    tracer.on_messages_complete(
+        agent_name="assistant",
+        outputs=cached_response,
+        token_usage=TokenUsage(
+            prompt_tokens=10,
+            completion_tokens=20,
+            total_tokens=30,
+            model="gpt-4"
+        ),
+        cache_hit=True,
+        cache_key=cache_key
+    )
+else:
+    # Cache miss
+    response = assistant.generate_response(messages)
+    cache.set(cache_key, response)
+    
+    tracer.on_messages_complete(
+        agent_name="assistant",
+        outputs=response,
+        token_usage=TokenUsage(
+            prompt_tokens=10,
+            completion_tokens=20,
+            total_tokens=30,
+            model="gpt-4"
+        ),
+        cache_hit=False
+    )
+```
+
+### 4. Análise de Performance
+
+```python
+# Obter estatísticas de cache
+cache_stats = tracer.get_cache_statistics()
+print(f"Cache hit rate: {cache_stats['savings_percentage']}%")
+print(f"Total tokens saved: {cache_stats['total_savings']}")
+
+# Salvar trace completo
+tracer.save_trace("agent_trace.json")
+```
+
+## Exemplo Completo
+
+```python
+from autogen import AssistantAgent, UserProxyAgent, GroupChat
+from agent_tracer import AgentTracer, TokenUsage
+from llm_cache import LLMCache
+
+def setup_agents_with_tracing():
+    # Configuração
+    config = {
+        "logging": {
+            "level": "INFO",
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "file": "agent_trace.log",
+            "console": true
+        }
+    }
+    
+    # Inicializar componentes
+    tracer = AgentTracer(config)
+    cache = LLMCache(max_size=1000)
+    
+    # Criar agentes
+    assistant = AssistantAgent(
+        name="assistant",
+        system_message="You are a helpful assistant.",
+        llm_config={"config_list": [{"model": "gpt-4"}]}
+    )
+    
+    user_proxy = UserProxyAgent(
+        name="user_proxy",
+        human_input_mode="TERMINATE"
+    )
+    
+    # Criar group chat
+    groupchat = GroupChat(
+        agents=[user_proxy, assistant],
+        messages=[],
+        max_round=10
+    )
+    
+    # Função wrapper para tracing
+    def traced_chat(agent_name, messages):
+        # Trace início
+        tracer.on_messages_invoke(agent_name, messages)
+        
+        # Verificar cache
+        cache_key = generate_cache_key(messages)
+        cached_response = cache.get(cache_key)
+        
+        if cached_response:
+            # Cache hit
+            tracer.on_messages_complete(
+                agent_name,
+                cached_response,
+                token_usage=TokenUsage(
+                    prompt_tokens=10,
+                    completion_tokens=20,
+                    total_tokens=30,
+                    model="gpt-4"
+                ),
+                cache_hit=True,
+                cache_key=cache_key
+            )
+            return cached_response
+        
+        # Cache miss - processar normalmente
+        response = assistant.generate_response(messages)
+        cache.set(cache_key, response)
+        
+        # Trace fim
+        tracer.on_messages_complete(
+            agent_name,
+            response,
+            token_usage=TokenUsage(
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                model="gpt-4"
+            ),
+            cache_hit=False
+        )
+        
+        return response
+    
+    return {
+        "tracer": tracer,
+        "cache": cache,
+        "assistant": assistant,
+        "user_proxy": user_proxy,
+        "groupchat": groupchat,
+        "traced_chat": traced_chat
+    }
+
+# Uso
+def main():
+    # Setup
+    components = setup_agents_with_tracing()
+    
+    # Iniciar chat
+    components["user_proxy"].initiate_chat(
+        components["groupchat"],
+        message="Hello, how can you help me?"
+    )
+    
+    # Análise final
+    cache_stats = components["tracer"].get_cache_statistics()
+    print(f"Cache hit rate: {cache_stats['savings_percentage']}%")
+    print(f"Total tokens saved: {cache_stats['total_savings']}")
+    
+    # Salvar trace
+    components["tracer"].save_trace("chat_trace.json")
+```
+
+## Boas Práticas
+
+1. **Configuração**
+   - Configure o logging apropriadamente
+   - Ajuste os níveis de log conforme necessário
+   - Use formatos de log consistentes
+
+2. **Tracing**
+   - Trace todos os eventos importantes
+   - Inclua metadata relevante
+   - Mantenha os traces organizados
+
+3. **Cache**
+   - Use chaves de cache consistentes
+   - Monitore hit rates
+   - Ajuste thresholds conforme necessário
+
+4. **Performance**
+   - Monitore uso de tokens
+   - Acompanhe tempos de resposta
+   - Analise padrões de uso
+
+5. **Manutenção**
+   - Limpe traces antigos
+   - Rotacione logs
+   - Mantenha estatísticas atualizadas
+
+## Troubleshooting
+
+1. **Logs não aparecem**
+   - Verifique configuração de logging
+   - Confirme níveis de log
+   - Verifique permissões de arquivo
+
+2. **Cache não está funcionando**
+   - Verifique chaves de cache
+   - Confirme thresholds
+   - Monitore hit rates
+
+3. **Performance ruim**
+   - Analise traces
+   - Verifique uso de tokens
+   - Otimize configurações
+
+4. **Erros de integração**
+   - Verifique ordem de chamadas
+   - Confirme tipos de dados
+   - Valide configurações 
