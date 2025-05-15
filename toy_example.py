@@ -29,6 +29,8 @@ import sys
 from prompt_toolkit import prompt
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
+import psutil
+import time
 
 from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
@@ -297,46 +299,169 @@ class RootCauseAnalyzerAgent(AnalyticsAssistantAgent):
     insights into system behavior and potential improvements.
     """
 
-    async def on_messages(self, messages: List[BaseChatMessage], cancellation_token) -> Response:
+    async def analyze_interaction_flow(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Analyze system behavior and user feedback.
-
+        Analyze the entire interaction flow between agents.
+        
         Args:
-            messages (List[BaseChatMessage]): List of messages containing user feedback
-            cancellation_token: Token for cancellation support
-
+            metrics: Dictionary containing metrics from all agents
+            
         Returns:
-            Response: Analysis of system behavior and recommendations
+            Dictionary containing interaction analysis results
         """
-        log_event(self.name, "on_messages_invoke", messages, [])
+        log_event(self.name, "analyze_interaction_flow_start", metrics, [])
         
-        # Combine configuration and user feedback for analysis
-        with open("agents_configuration.json", encoding="utf-8") as cfgf:
-            config_content = cfgf.read()
-        prompt = f"Configuration:\n{config_content}\n\nUser feedback and logs:\n{messages[-1].content}"
+        # Prepare analysis prompt
+        prompt = f"""
+        Analyze the following agent interaction metrics and provide insights:
         
-        # Try to get response from cache
-        cached_response = llm_cache.get(
-            messages=[{"role": "system", "content": prompt}],
-            query_text=prompt
-        )
+        Metrics:
+        {json.dumps(metrics, indent=2)}
         
-        if cached_response:
-            logger.info(f"Cache hit for {self.name}")
-            response = cached_response
-        else:
-            response = await super().run(task=prompt)
-            # Cache the response
-            llm_cache.put(
-                messages=[{"role": "system", "content": prompt}],
-                response=response,
-                metadata={
-                    "agent": self.name,
-                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
-                }
-            )
+        Please provide a detailed analysis in JSON format with the following structure:
+        {{
+            "interaction_patterns": [
+                {{
+                    "pattern": "string",
+                    "frequency": "number",
+                    "impact": "high|medium|low",
+                    "suggestion": "string"
+                }}
+            ],
+            "communication_efficiency": {{
+                "score": "number",
+                "bottlenecks": ["string"],
+                "improvements": ["string"]
+            }},
+            "workflow_optimization": {{
+                "current_flow": ["string"],
+                "suggested_flow": ["string"],
+                "expected_improvements": ["string"]
+            }},
+            "agent_collaboration": {{
+                "strengths": ["string"],
+                "weaknesses": ["string"],
+                "improvement_areas": ["string"]
+            }}
+        }}
+        """
         
-        log_event(self.name, "on_messages_complete", messages, response)
+        # Get analysis response
+        response = await self.run(task=prompt)
+        
+        log_event(self.name, "analyze_interaction_flow_complete", metrics, response)
+        return response
+
+    async def generate_improvement_report(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate a comprehensive system improvement report.
+        
+        Args:
+            data: Dictionary containing system metrics and analysis data
+            
+        Returns:
+            Dictionary containing improvement recommendations
+        """
+        log_event(self.name, "generate_improvement_report_start", data, [])
+        
+        # Prepare report prompt
+        prompt = f"""
+        Generate a comprehensive system improvement report based on the following data:
+        
+        Data:
+        {json.dumps(data, indent=2)}
+        
+        Please provide a detailed report in JSON format with the following structure:
+        {{
+            "data_analysis": {{
+                "input_quality": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "recommendations": ["string"]
+                }},
+                "processing_efficiency": {{
+                    "score": "number",
+                    "bottlenecks": ["string"],
+                    "optimizations": ["string"]
+                }},
+                "transformation_accuracy": {{
+                    "score": "number",
+                    "errors": ["string"],
+                    "improvements": ["string"]
+                }},
+                "validation_results": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "enhancements": ["string"]
+                }}
+            }},
+            "agent_performance": {{
+                "response_accuracy": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "improvements": ["string"]
+                }},
+                "processing_speed": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "optimizations": ["string"]
+                }},
+                "error_rates": {{
+                    "overall_score": "number",
+                    "agent_scores": {{
+                        "agent_name": "number"
+                    }},
+                    "error_patterns": ["string"],
+                    "prevention_strategies": ["string"]
+                }}
+            }},
+            "system_optimization": {{
+                "resource_utilization": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "recommendations": ["string"]
+                }},
+                "processing_bottlenecks": {{
+                    "identified": ["string"],
+                    "solutions": ["string"]
+                }},
+                "cache_effectiveness": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "optimizations": ["string"]
+                }},
+                "api_efficiency": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "improvements": ["string"]
+                }},
+                "memory_usage": {{
+                    "score": "number",
+                    "issues": ["string"],
+                    "optimizations": ["string"]
+                }}
+            }},
+            "recommendations": [
+                {{
+                    "area": "string",
+                    "priority": "high|medium|low",
+                    "description": "string",
+                    "implementation_steps": ["string"],
+                    "expected_impact": "string"
+                }}
+            ],
+            "summary": "string"
+        }}
+        """
+        
+        # Get report response
+        response = await self.run(task=prompt)
+        
+        log_event(self.name, "generate_improvement_report_complete", data, response)
         return response
 
 class InformationVerifierAgent(AnalyticsAssistantAgent):
@@ -582,113 +707,204 @@ def get_user_feedback() -> str:
 # -----------------------------------------------------------------------------
 async def main():
     """
-    Main function to run the multi-agent system.
+    Main execution function.
+    
+    This function:
+    1. Loads configuration
+    2. Initializes agents
+    3. Processes files
+    4. Handles errors
+    5. Performs root cause analysis
+    6. Generates system improvement report
     """
     try:
         # Load configuration
-        logger.info("Loading configuration from update_manifest_config.json")
-        with open("update_manifest_config.json", "r") as f:
-            config = json.load(f)
-        
-        # Setup logging
-        logger.info("Setting up logging system")
-        setup_logging(config)
-        
-        # Get document selection from user
-        logger.info("Prompting user for document selection")
-        selected_document = get_document_selection()
-        logger.info(f"User selected document: {selected_document}")
+        config = load_json_file("toy_example.json")
         
         # Initialize agents
-        logger.info("Initializing agents")
-        logger.debug("Creating FileReader agent")
         file_reader = FileReaderAgent(
-            name="FileReader",
-            description="Reads and processes input files",
-            manifest=config["file_manifest"],
-            file_log=FILE_LOG
+            name="file_reader",
+            description="Reads and processes text files",
+            system_message=config["agents"]["file_reader"]["system_message"]
         )
         
-        logger.debug("Creating Writer agent")
         writer = WriterAgent(
-            name="Writer",
+            name="writer",
             description="Generates content based on input",
-            model_client=OpenAIChatCompletionClient(),
             system_message=config["agents"]["writer"]["system_message"]
         )
         
-        logger.debug("Creating Verifier agent")
         verifier = InformationVerifierAgent(
-            name="Verifier",
-            description="Validates information accuracy",
-            model_client=OpenAIChatCompletionClient(),
+            name="verifier",
+            description="Verifies information accuracy",
             system_message=config["agents"]["verifier"]["system_message"]
         )
         
-        logger.debug("Creating Quality agent")
-        quality_agent = TextQualityAgent(
-            name="QualityAgent",
-            description="Ensures content quality",
-            model_client=OpenAIChatCompletionClient(),
-            system_message=config["agents"]["quality"]["system_message"]
+        quality_checker = TextQualityAgent(
+            name="quality_checker",
+            description="Checks text quality",
+            system_message=config["agents"]["quality_checker"]["system_message"]
         )
         
-        logger.debug("Creating Coordinator agent")
-        coordinator = CoordinatorAgent(
-            name="Coordinator",
-            description="Orchestrates the workflow",
-            model_client=OpenAIChatCompletionClient(),
-            system_message=config["agents"]["coordinator"]["system_message"]
-        )
-        
-        logger.debug("Creating Analyzer agent")
         analyzer = RootCauseAnalyzerAgent(
-            name="Analyzer",
-            description="Analyzes feedback and system behavior",
-            model_client=OpenAIChatCompletionClient(),
+            name="analyzer",
+            description="Analyzes system behavior and generates reports",
             system_message=config["agents"]["analyzer"]["system_message"]
         )
         
-        # Process the selected document
-        logger.info(f"Starting document processing for: {selected_document}")
+        # Process document
+        logger.info("Starting document processing")
         
-        # Read the document
-        logger.debug(f"Reading document: {selected_document}")
-        file_content = await file_reader.on_messages(
-            [TextMessage(content=selected_document, source="User")],
-            None
-        )
+        # Read document
+        document = await file_reader.run(task="Read the input document")
+        logger.info("Document read successfully")
         
         # Generate content
-        logger.debug("Generating content")
-        generated_text = await writer.generate_content(file_content.chat_message.content)
+        content = await writer.run(task=f"Generate content based on: {document}")
+        logger.info("Content generated successfully")
         
         # Verify information
-        logger.debug("Verifying content")
-        verification_result = await verifier.verify_content(generated_text)
+        verification = await verifier.run(task=f"Verify information in: {content}")
+        logger.info("Information verified successfully")
         
         # Check quality
-        logger.debug("Checking content quality")
-        quality_result = await quality_agent.check_quality(generated_text)
+        quality = await quality_checker.run(task=f"Check quality of: {content}")
+        logger.info("Quality check completed successfully")
         
         # Get user feedback
-        logger.info("Requesting user feedback")
-        user_feedback = get_user_feedback()
-        logger.info(f"User feedback received: {user_feedback}")
+        feedback = input("Please provide feedback on the generated content: ")
+        logger.info("User feedback received")
         
-        # Analyze feedback
-        logger.debug("Analyzing user feedback")
-        analysis_result = await analyzer.analyze_feedback(user_feedback)
+        # Post-feedback analysis
+        logger.info("Starting post-feedback analysis")
+        
+        # Gather system metrics
+        metrics = {
+            "document_metrics": {
+                "size": len(document),
+                "processing_time": time.time() - start_time,
+                "quality_score": quality.get("score", 0)
+            },
+            "agent_metrics": {
+                "file_reader": {
+                    "response_time": file_reader.response_time,
+                    "error_count": file_reader.error_count
+                },
+                "writer": {
+                    "response_time": writer.response_time,
+                    "error_count": writer.error_count
+                },
+                "verifier": {
+                    "response_time": verifier.response_time,
+                    "error_count": verifier.error_count
+                },
+                "quality_checker": {
+                    "response_time": quality_checker.response_time,
+                    "error_count": quality_checker.error_count
+                }
+            },
+            "system_metrics": {
+                "cache_stats": llm_cache.get_stats(),
+                "api_calls": get_api_metrics(),
+                "memory_usage": get_memory_usage()
+            },
+            "user_feedback": feedback
+        }
+        
+        # Analyze interaction flow
+        interaction_analysis = await analyzer.analyze_interaction_flow(metrics)
+        logger.info("Interaction flow analysis completed")
+        
+        # Generate improvement report
+        report_data = {
+            "metrics": metrics,
+            "interaction_analysis": interaction_analysis,
+            "bottlenecks": identify_bottlenecks(metrics),
+            "cache_metrics": llm_cache.get_stats(),
+            "api_metrics": get_api_metrics()
+        }
+        
+        improvement_report = await analyzer.generate_improvement_report(report_data)
+        logger.info("Improvement report generated")
+        
+        # Save report
+        with open("system_improvement_report.json", "w") as f:
+            json.dump(improvement_report, f, indent=2)
+        logger.info("Report saved to system_improvement_report.json")
         
         # Log results
         logger.info("Document processing completed successfully")
-        logger.info(f"Verification result: {verification_result}")
-        logger.info(f"Quality result: {quality_result}")
-        logger.info(f"Analysis result: {analysis_result}")
+        logger.info(f"Quality score: {quality.get('score', 0)}")
+        logger.info(f"Processing time: {time.time() - start_time:.2f} seconds")
         
     except Exception as e:
-        logger.error(f"Error processing document: {e}", exc_info=True)
+        logger.error(f"Error in main execution: {str(e)}")
         raise
 
+def identify_bottlenecks(metrics: Dict[str, Any]) -> List[str]:
+    """
+    Identify system bottlenecks from metrics.
+    
+    Args:
+        metrics: Dictionary containing system metrics
+        
+    Returns:
+        List of identified bottlenecks
+    """
+    bottlenecks = []
+    
+    # Check response times
+    for agent, agent_metrics in metrics["agent_metrics"].items():
+        if agent_metrics["response_time"] > 5.0:  # 5 seconds threshold
+            bottlenecks.append(f"Slow response time for {agent}: {agent_metrics['response_time']:.2f}s")
+    
+    # Check error rates
+    for agent, agent_metrics in metrics["agent_metrics"].items():
+        if agent_metrics["error_count"] > 0:
+            bottlenecks.append(f"High error rate for {agent}: {agent_metrics['error_count']} errors")
+    
+    # Check cache effectiveness
+    cache_stats = metrics["system_metrics"]["cache_stats"]
+    if cache_stats["hit_ratio"] < 0.5:  # 50% threshold
+        bottlenecks.append(f"Low cache hit ratio: {cache_stats['hit_ratio']:.2%}")
+    
+    # Check memory usage
+    memory_usage = metrics["system_metrics"]["memory_usage"]
+    if memory_usage["percent"] > 80:  # 80% threshold
+        bottlenecks.append(f"High memory usage: {memory_usage['percent']}%")
+    
+    return bottlenecks
+
+def get_api_metrics() -> Dict[str, Any]:
+    """
+    Get API call metrics.
+    
+    Returns:
+        Dictionary containing API metrics
+    """
+    return {
+        "total_calls": llm_cache.total_api_calls,
+        "successful_calls": llm_cache.successful_api_calls,
+        "failed_calls": llm_cache.failed_api_calls,
+        "average_response_time": llm_cache.average_response_time
+    }
+
+def get_memory_usage() -> Dict[str, Any]:
+    """
+    Get current memory usage.
+    
+    Returns:
+        Dictionary containing memory usage metrics
+    """
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    
+    return {
+        "rss": memory_info.rss,  # Resident Set Size
+        "vms": memory_info.vms,  # Virtual Memory Size
+        "percent": process.memory_percent()
+    }
+
 if __name__ == "__main__":
+    start_time = time.time()
     asyncio.run(main())

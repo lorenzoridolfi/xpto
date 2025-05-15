@@ -43,6 +43,31 @@
         "RootCauseAnalyzerAgent": {
             "description": "Analyzes feedback and system behavior",
             "system_message": "You are a root cause analyzer agent. Your role is to analyze the feedback provided by users and the behavior of the system. You should identify patterns, suggest improvements, and help optimize the system's performance."
+        },
+        "file_reader": {
+            "name": "file_reader",
+            "description": "Reads and processes text files",
+            "system_message": "You are a file reader agent responsible for reading and processing text files. Your tasks include:\n1. Reading input files\n2. Removing markdown formatting\n3. Extracting relevant content\n4. Logging operations"
+        },
+        "writer": {
+            "name": "writer",
+            "description": "Generates content based on input",
+            "system_message": "You are a writer agent responsible for generating content. Your tasks include:\n1. Analyzing input content\n2. Generating appropriate responses\n3. Maintaining context\n4. Ensuring quality"
+        },
+        "verifier": {
+            "name": "verifier",
+            "description": "Verifies information accuracy",
+            "system_message": "You are a verifier agent responsible for validating information. Your tasks include:\n1. Checking information accuracy\n2. Validating content\n3. Identifying inconsistencies\n4. Providing verification results"
+        },
+        "quality_checker": {
+            "name": "quality_checker",
+            "description": "Checks text quality",
+            "system_message": "You are a quality checker agent responsible for ensuring content quality. Your tasks include:\n1. Evaluating text quality\n2. Checking grammar and style\n3. Assessing readability\n4. Providing quality scores"
+        },
+        "analyzer": {
+            "name": "analyzer",
+            "description": "Analyzes system behavior and generates reports",
+            "system_message": "You are an analyzer agent responsible for analyzing system behavior and generating reports. Your tasks include:\n1. Analyzing interaction flows\n2. Identifying bottlenecks\n3. Generating improvement reports\n4. Providing recommendations"
         }
     },
     "output_files": {
@@ -53,7 +78,7 @@
     "logging": {
         "level": "INFO",
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "file": "multi_agent_system.log"
+        "file": "toy_example.log"
     },
     "llm_config": {
         "model": "gpt-4",
@@ -78,5 +103,25 @@
             "min_hits": 5,
             "max_size": 800
         }
+    },
+    "cache": {
+        "enabled": true,
+        "ttl": 3600,
+        "max_size": 1000,
+        "storage": {
+            "type": "memory",
+            "persistent": false
+        }
+    },
+    "api": {
+        "timeout": 30,
+        "max_retries": 3,
+        "retry_delay": 1
+    },
+    "performance": {
+        "response_time_threshold": 5.0,
+        "error_rate_threshold": 0.1,
+        "cache_hit_ratio_threshold": 0.5,
+        "memory_usage_threshold": 80
     }
 } 
