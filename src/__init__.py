@@ -11,4 +11,8 @@ __all__ = [
     'ToolUsageMetrics',
     'LLMCache',
     'AnalyticsAssistantAgent'
-] 
+]
+
+"""
+This module contains the core functionality for the OpenAI integration.
+""" 
