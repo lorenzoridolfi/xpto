@@ -14,6 +14,7 @@ import logging
 import glob
 
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+from load_openai import get_openai_config
 
 # Constants
 MANIFEST_VERSION = "1.0.0"
@@ -331,6 +332,15 @@ def main():
         # Setup logging based on config
         setup_logging(config)
         logger.debug("Logging configured")
+        
+        # Get OpenAI configuration
+        openai_config = get_openai_config()
+        
+        # Configure agents with OpenAI settings
+        llm_config = {
+            "config_list": [openai_config],
+            "cache_seed": 42
+        }
         
         # Create agents
         agents = create_agents(config)
