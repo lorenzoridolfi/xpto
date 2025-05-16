@@ -3,6 +3,7 @@
 import sys
 import os
 from pathlib import Path
+import unittest
 
 # Add project root to Python path
 project_root = str(Path(__file__).parent.parent)
@@ -13,91 +14,93 @@ from src.load_openai import get_openai_config
 import requests
 from typing import Dict, Any
 
-def test_openai_connection() -> Dict[str, Any]:
-    """
-    Test OpenAI connection and return detailed status information.
-    Returns a dictionary with test results and any error messages.
-    """
-    try:
-        # Get OpenAI configuration
-        config = get_openai_config()
-        
-        # Initialize OpenAI client
-        client = OpenAI(api_key=config["api_key"])
-        
-        # Test simple completion
-        response = client.chat.completions.create(
-            model=config["model"],
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Bom dia! Como você está?"}
-            ],
-            temperature=0.7,
-            max_tokens=50
-        )
-        
-        return {
-            "status": "success",
-            "message": "Conexão com OpenAI estabelecida com sucesso!",
-            "response": response.choices[0].message.content,
-            "model": response.model,
-            "usage": response.usage
-        }
-        
-    except Exception as e:
-        error_type = type(e).__name__
-        if "AuthenticationError" in error_type:
+class TestOpenAI(unittest.TestCase):
+    """Test cases for OpenAI integration."""
+    
+    def setUp(self):
+        """Set up test environment."""
+        self.config = get_openai_config()
+        self.client = OpenAI(api_key=self.config["api_key"])
+    
+    def test_openai_connection(self):
+        """Test OpenAI connection and basic functionality."""
+        try:
+            # Test simple completion
+            response = self.client.chat.completions.create(
+                model=self.config["model"],
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Bom dia! Como você está?"}
+                ],
+                temperature=0.7,
+                max_tokens=50
+            )
+            
+            # Assert response structure
+            self.assertIsNotNone(response.choices)
+            self.assertIsNotNone(response.choices[0].message.content)
+            self.assertEqual(response.model, self.config["model"])
+            self.assertIsNotNone(response.usage)
+            
             return {
-                "status": "error",
-                "message": "Erro de autenticação: A chave da API é inválida ou expirou.",
-                "details": "Verifique se a chave OPENAI_API_KEY no arquivo .env está correta."
+                "status": "success",
+                "message": "Conexão com OpenAI estabelecida com sucesso!",
+                "response": response.choices[0].message.content,
+                "model": response.model,
+                "usage": response.usage
             }
-        elif "RateLimitError" in error_type:
-            return {
+            
+        except Exception as e:
+            error_type = type(e).__name__
+            error_info = {
                 "status": "error",
-                "message": "Erro de limite de taxa: Você atingiu o limite de requisições da OpenAI.",
-                "details": "Verifique seus créditos e limites de uso na plataforma OpenAI."
+                "message": "",
+                "details": ""
             }
-        elif "APIError" in error_type:
-            return {
-                "status": "error",
-                "message": f"Erro na API da OpenAI: {str(e)}",
-                "details": "Pode ser um problema temporário com a API da OpenAI."
-            }
-        elif "ConnectionError" in error_type:
-            return {
-                "status": "error",
-                "message": "Erro de conexão: Não foi possível conectar à API da OpenAI.",
-                "details": "Verifique sua conexão com a internet e se a API da OpenAI está acessível."
-            }
-        else:
-            return {
-                "status": "error",
-                "message": f"Erro inesperado: {str(e)}",
-                "details": "Ocorreu um erro não tratado durante o teste."
-            }
+            
+            if "AuthenticationError" in error_type:
+                error_info.update({
+                    "message": "Erro de autenticação: A chave da API é inválida ou expirou.",
+                    "details": "Verifique se a chave OPENAI_API_KEY no arquivo .env está correta."
+                })
+            elif "RateLimitError" in error_type:
+                error_info.update({
+                    "message": "Erro de limite de taxa: Você atingiu o limite de requisições da OpenAI.",
+                    "details": "Verifique seus créditos e limites de uso na plataforma OpenAI."
+                })
+            elif "APIError" in error_type:
+                error_info.update({
+                    "message": f"Erro na API da OpenAI: {str(e)}",
+                    "details": "Pode ser um problema temporário com a API da OpenAI."
+                })
+            elif "ConnectionError" in error_type:
+                error_info.update({
+                    "message": "Erro de conexão: Não foi possível conectar à API da OpenAI.",
+                    "details": "Verifique sua conexão com a internet e se a API da OpenAI está acessível."
+                })
+            else:
+                error_info.update({
+                    "message": f"Erro inesperado: {str(e)}",
+                    "details": "Ocorreu um erro não tratado durante o teste."
+                })
+            
+            self.fail(f"{error_info['message']}\n{error_info['details']}")
 
-def main():
-    """Main function to run the OpenAI connection test."""
+def run_openai_test():
+    """Run OpenAI tests independently."""
     print("Testando conexão com a OpenAI...")
     print("-" * 50)
     
-    result = test_openai_connection()
+    # Create test suite
+    suite = unittest.TestSuite()
+    suite.addTest(TestOpenAI('test_openai_connection'))
     
-    if result["status"] == "success":
-        print("\n✅", result["message"])
-        print("\nResposta do modelo:")
-        print("-" * 50)
-        print(result["response"])
-        print("-" * 50)
-        print(f"\nModelo usado: {result['model']}")
-        print(f"Tokens usados: {result['usage'].total_tokens}")
-    else:
-        print("\n❌", result["message"])
-        print("\nDetalhes do erro:")
-        print("-" * 50)
-        print(result["details"])
-        sys.exit(1)
+    # Run tests
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    
+    return result.wasSuccessful()
 
 if __name__ == "__main__":
-    main() 
+    success = run_openai_test()
+    sys.exit(0 if success else 1) 
