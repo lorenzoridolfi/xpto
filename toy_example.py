@@ -63,8 +63,27 @@ from src.base_agent_system import (
 # -----------------------------------------------------------------------------
 # Global logs and cache
 # -----------------------------------------------------------------------------
-# Load configuration
-config = load_json_file("toy_example.json")
+def load_config():
+    """Load configuration from the new config directory structure."""
+    config = {}
+    
+    # Load shared configurations
+    shared_configs = [
+        'config/shared/global_settings.json',
+        'config/shared/base_config.json',
+        'config/shared/agent_settings.json',
+        'config/shared/logging_settings.json'
+    ]
+    
+    for config_file in shared_configs:
+        with open(config_file) as f:
+            config.update(json.load(f))
+    
+    # Load program-specific configuration
+    with open('config/toy_example/program_config.json') as f:
+        config.update(json.load(f))
+    
+    return config
 
 # Global logger instance
 logger = logging.getLogger("toy_example")
@@ -79,19 +98,10 @@ llm_cache = LLMCache(
 # -----------------------------------------------------------------------------
 # Schema validation
 # -----------------------------------------------------------------------------
-def load_schemas() -> Dict[str, Any]:
-    """
-    Load JSON schemas for agent output validation.
-    
-    Returns:
-        Dict[str, Any]: Dictionary containing all agent schemas
-    """
-    try:
-        with open("agent_schemas.json", "r", encoding="utf-8") as f:
-            return json.load(f)["schemas"]
-    except Exception as e:
-        logger.error(f"Error loading schemas: {e}")
-        return {}
+def load_schemas():
+    """Load validation schemas from the new config directory structure."""
+    with open('config/shared/agent_validation_schema.json') as f:
+        return json.load(f)["schemas"]
 
 def validate_agent_output(agent_name: str, output: Dict[str, Any]) -> bool:
     """
@@ -807,7 +817,7 @@ def main():
     """
     try:
         # Load configuration
-        config = load_json_file("toy_example.json")
+        config = load_config()
         
         # Setup logging
         setup_logging(config)

@@ -8,9 +8,18 @@ skinparam class {
     BorderColor Black
 }
 
-' Agent System Components
+' Core Agent Components
+class BaseChatAgent {
+    + name: String
+    + description: String
+    + produced_message_types: Tuple
+    + consumed_message_types: Tuple
+    + on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+    + on_messages_stream(messages: List[BaseChatMessage], cancellation_token): Response
+}
+
 class EnhancedAgent {
-    + base_agent: BaseAgent
+    + base_agent: BaseChatAgent
     + capabilities: List[String]
     + state: Dict
     + process_message(message: Dict): Dict
@@ -18,7 +27,7 @@ class EnhancedAgent {
 }
 
 class AdaptiveAgent {
-    + base_agent: BaseAgent
+    + base_agent: BaseChatAgent
     + role: String
     + capabilities: List[String]
     + learning_rate: Float
@@ -32,55 +41,6 @@ class BehaviorMonitor {
     + monitor_behavior(agent: EnhancedAgent): Dict
     + detect_anomalies(behavior: Dict): List[Dict]
     + generate_report(): String
-}
-
-' Human Feedback Components
-class HumanFeedbackAgent {
-    + feedback_channels: List[String]
-    + feedback_history: List[Dict]
-    + collect_feedback(context: Dict): Dict
-    + process_feedback(feedback: Dict): Dict
-    + store_feedback(feedback: Dict): void
-}
-
-class FeedbackProcessor {
-    + feedback_rules: Dict
-    + processing_pipeline: List[Function]
-    + process_feedback(feedback: Dict): Dict
-    + validate_feedback(feedback: Dict): Boolean
-    + aggregate_feedback(feedback_list: List[Dict]): Dict
-}
-
-class LearningManager {
-    + learning_strategies: Dict
-    + performance_metrics: Dict
-    + adapt_behavior(feedback: Dict): void
-    + update_strategies(performance: Dict): void
-    + generate_learning_report(): String
-}
-
-' Learning and Adaptation Components
-class LearningAgent {
-    + knowledge_base: KnowledgeBase
-    + learning_rate: Float
-    + learn_from_experience(experience: Dict): void
-    + apply_learning(context: Dict): Dict
-    + evaluate_performance(): Dict
-}
-
-class StrategyRefiner {
-    + strategies: Dict
-    + performance_history: List[Dict]
-    + refine_strategy(context: Dict): Dict
-    + evaluate_strategy(strategy: Dict): Float
-    + optimize_strategy(strategy: Dict): Dict
-}
-
-class KnowledgeBase {
-    + knowledge: Dict
-    + update_knowledge(new_knowledge: Dict): void
-    + query_knowledge(query: Dict): Dict
-    + validate_knowledge(knowledge: Dict): Boolean
 }
 
 ' State Management Components
@@ -127,20 +87,6 @@ class WorkflowOrchestrator {
     + handle_timeout(task: Dict): void
 }
 
-class ResourceManager {
-    + resources: Dict
-    + allocate_resources(requirements: Dict): Dict
-    + release_resources(resources: Dict): void
-    + monitor_usage(): Dict
-}
-
-class WorkflowOptimizer {
-    + optimization_strategies: Dict
-    + optimize_execution(workflow: CollaborativeWorkflow): void
-    + improve_efficiency(metrics: Dict): Dict
-    + balance_resources(usage: Dict): Dict
-}
-
 ' Development Tools Components
 class MockLLM {
     + responses: Dict
@@ -164,18 +110,12 @@ class PerformanceMonitor {
 }
 
 ' Relationships
+BaseChatAgent <|-- EnhancedAgent
 EnhancedAgent <|-- AdaptiveAgent
 
 ' Agent System Relationships
 BehaviorMonitor --> EnhancedAgent : monitors
 BehaviorMonitor --> AdaptiveAgent : monitors
-
-' Feedback System Relationships
-HumanFeedbackAgent --> FeedbackProcessor : uses
-FeedbackProcessor --> LearningManager : feeds into
-LearningManager --> LearningAgent : manages
-LearningAgent --> KnowledgeBase : uses
-LearningAgent --> StrategyRefiner : uses
 
 ' State Management Relationships
 StateManager --> StateSynchronizer : manages
@@ -187,7 +127,6 @@ CollaborativeWorkflow --> StateManager : uses
 ' Workflow Relationships
 CollaborativeWorkflow --> WorkflowOrchestrator : uses
 WorkflowOrchestrator --> ResourceManager : manages
-ResourceManager --> WorkflowOptimizer : uses
 EnhancedAgent --> CollaborativeWorkflow : participates in
 AdaptiveAgent --> CollaborativeWorkflow : participates in
 
@@ -196,31 +135,20 @@ MockLLM --> TestRunner : used by
 TestRunner --> PerformanceMonitor : uses
 
 ' Notes
+note right of BaseChatAgent
+  Base agent with message
+  handling capabilities
+end note
+
 note right of EnhancedAgent
-  Base agent with enhanced
-  capabilities and state
-  management
+  Enhanced agent with
+  state management and
+  adaptation capabilities
 end note
 
 note right of BehaviorMonitor
   Monitors agent behavior
   and detects anomalies
-end note
-
-note right of HumanFeedbackAgent
-  Handles feedback collection
-  and processing
-end note
-
-note right of FeedbackProcessor
-  Processes and validates
-  feedback from multiple
-  sources
-end note
-
-note right of LearningAgent
-  Manages learning and
-  adaptation
 end note
 
 note right of StateManager

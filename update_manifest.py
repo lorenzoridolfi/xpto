@@ -73,8 +73,32 @@ from state_manager import StateManager
 # Global logger instance
 logger = logging.getLogger("update_manifest")
 
-# Load configuration
-config = load_json_file("update_manifest.json")
+def load_config():
+    """Load configuration from the new config directory structure."""
+    config = {}
+    
+    # Load shared configurations
+    shared_configs = [
+        'config/shared/global_settings.json',
+        'config/shared/base_config.json',
+        'config/shared/agent_settings.json',
+        'config/shared/logging_settings.json'
+    ]
+    
+    for config_file in shared_configs:
+        with open(config_file) as f:
+            config.update(json.load(f))
+    
+    # Load program-specific configuration
+    with open('config/update_manifest/program_config.json') as f:
+        config.update(json.load(f))
+    
+    return config
+
+def load_manifest_schema():
+    """Load manifest validation schema from the new config directory structure."""
+    with open('config/update_manifest/manifest_validation_schema.json') as f:
+        return json.load(f)
 
 # Initialize LLM cache
 llm_cache = LLMCache(
@@ -643,46 +667,55 @@ async def main():
     Main entry point for the update manifest program.
     Demonstrates the basic usage of the enhanced agent architecture.
     """
-    # Create components
-    agents = create_agents()
-    state_manager, state_synchronizer, state_validator = create_state_manager()
-    workflow = create_workflow(agents)
-    
-    # Initialize workflow
-    await workflow.initialize()
-    
-    # Define update requirements
-    update_requirements = {
-        "type": "dependency_update",
-        "target_dependencies": ["package1", "package2"],
-        "version_constraints": {
-            "package1": ">=2.0.0",
-            "package2": ">=1.5.0"
-        },
-        "compatibility_checks": True,
-        "validation_requirements": {
-            "format": "json",
-            "semver": True,
-            "dependency_tree": True
+    try:
+        # Load configuration
+        config = load_config()
+        
+        # Load manifest schema
+        manifest_schema = load_manifest_schema()
+        
+        # Create components
+        agents = create_agents()
+        state_manager, state_synchronizer, state_validator = create_state_manager()
+        workflow = create_workflow(agents)
+        
+        # Initialize workflow
+        await workflow.initialize()
+        
+        # Define update requirements
+        update_requirements = {
+            "type": "dependency_update",
+            "target_dependencies": ["package1", "package2"],
+            "version_constraints": {
+                "package1": ">=2.0.0",
+                "package2": ">=1.5.0"
+            },
+            "compatibility_checks": True,
+            "validation_requirements": {
+                "format": "json",
+                "semver": True,
+                "dependency_tree": True
+            }
         }
-    }
-    
-    # Process manifest update
-    manifest_path = "path/to/manifest.json"
-    update_result = await process_manifest_update(
-        workflow=workflow,
-        manifest_path=manifest_path,
-        update_requirements=update_requirements,
-        state_manager=state_manager
-    )
-    
-    # Generate update report
-    report = await workflow.agents[0].generate_update_report(
-        update_result=update_result,
-        include_recommendations=True
-    )
-    
-    print(f"Update Report:\n{report}")
+        
+        # Process manifest update
+        manifest_path = "path/to/manifest.json"
+        update_result = await process_manifest_update(
+            workflow=workflow,
+            manifest_path=manifest_path,
+            update_requirements=update_requirements,
+            state_manager=state_manager
+        )
+        
+        # Generate update report
+        report = await workflow.agents[0].generate_update_report(
+            update_result=update_result,
+            include_recommendations=True
+        )
+        
+        print(f"Update Report:\n{report}")
+    except Exception as e:
+        print(f"Error processing manifest update: {e}")
 
 if __name__ == "__main__":
     import asyncio
