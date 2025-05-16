@@ -43,7 +43,7 @@ import psutil
 import time
 from pathlib import Path
 
-from autogen import AssistantAgent
+from autogen import AssistantAgent, UserProxyAgent
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_agentchat.base import Response
@@ -53,7 +53,7 @@ from src.tool_analytics import ToolAnalytics, ToolUsageMetrics
 from src.analytics_assistant_agent import AnalyticsAssistantAgent
 from src.llm_cache import LLMCache
 import autogen
-from autogen import UserProxyAgent, GroupChat, GroupChatManager
+from autogen import GroupChat, GroupChatManager
 
 from src.base_agent_system import (
     setup_logging, log_event, create_base_agents, create_group_chat,
