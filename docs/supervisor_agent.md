@@ -1,181 +1,283 @@
-# Supervisor Agent
+# Supervisor Agent Documentation
 
 ## Overview
+The Supervisor Agent is a central component that orchestrates and manages the behavior of other agents in both the `update_manifest` and `toy_example` systems. It ensures consistent operation, error handling, and coordination across all agent interactions.
 
-The Supervisor Agent is a specialized agent responsible for orchestrating the workflow between different agents in the system. It ensures proper coordination, task distribution, and process management through a combination of direct supervision and group chat management.
+## Core Responsibilities
 
-## Unified Implementation
+### 1. Agent Management
+- Initializes and configures all subordinate agents
+- Maintains agent lifecycle
+- Monitors agent health and performance
+- Handles agent failures and recovery
 
-The supervisor agent is implemented as a combination of two components:
+### 2. Task Coordination
+- Distributes tasks among agents
+- Ensures proper task sequencing
+- Manages task dependencies
+- Tracks task completion status
 
-1. **Supervisor Agent** (Base Component)
+### 3. Communication Management
+- Routes messages between agents
+- Maintains conversation history
+- Ensures message delivery
+- Handles communication failures
+
+### 4. Error Handling
+- Catches and processes agent errors
+- Implements retry mechanisms
+- Provides error recovery strategies
+- Maintains system stability
+
+## Implementation Details
+
+### Base Supervisor Class
 ```python
-supervisor = AssistantAgent(
-    name=supervisor_config["name"],
-    system_message=supervisor_config["system_message"],
-    llm_config=config["llm_config"]["supervisor"]
-)
+class SupervisorAgent(LoggerMixin):
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__()
+        self.config = config
+        self.agents = {}
+        self.conversation_history = []
+        self.task_queue = asyncio.Queue()
+        self.error_count = 0
+        self.max_retries = config.get("max_retries", 3)
 ```
 
-2. **Group Chat Manager** (Coordination Component)
+### Key Methods
+
+#### 1. Agent Initialization
 ```python
-group_chat_manager = GroupChatManager(
-    groupchat=groupchat,
-    llm_config=config["llm_config"]["supervisor"]
-)
+async def initialize_agents(self):
+    """Initialize all subordinate agents with proper configuration."""
+    try:
+        # Initialize each agent with its specific config
+        for agent_name, agent_config in self.config["agents"].items():
+            agent = await self._create_agent(agent_name, agent_config)
+            self.agents[agent_name] = agent
+            self.log_info(f"Initialized {agent_name}", config=agent_config)
+    except Exception as e:
+        self.log_error("Failed to initialize agents", error=str(e))
+        raise
 ```
 
-### Key Features
+#### 2. Task Management
+```python
+async def process_task(self, task: Dict[str, Any]):
+    """Process a single task through the agent pipeline."""
+    try:
+        # Validate task
+        if not self._validate_task(task):
+            raise ValueError("Invalid task format")
+            
+        # Route task to appropriate agent
+        result = await self._route_task(task)
+        
+        # Handle result
+        await self._handle_result(result)
+        
+        return result
+    except Exception as e:
+        self.log_error("Task processing failed", error=str(e), task=task)
+        raise
+```
 
-1. **Workflow Management**
-   - Task distribution and coordination
-   - Process monitoring and control
-   - Progress tracking
-   - Error handling and recovery
+#### 3. Error Handling
+```python
+async def handle_error(self, error: Exception, context: Dict[str, Any]):
+    """Handle errors in agent operations."""
+    self.error_count += 1
+    
+    if self.error_count > self.max_retries:
+        self.log_error("Max retries exceeded", error=str(error))
+        raise error
+        
+    # Implement retry logic
+    await self._retry_operation(context)
+```
 
-2. **Agent Coordination**
-   - Inter-agent communication management
-   - Message routing and aggregation
-   - State management
-   - Conflict resolution
-
-3. **Quality Control**
-   - Process validation
-   - Output verification
-   - Performance monitoring
-   - Error detection and handling
-
-4. **System Optimization**
-   - Resource allocation
-   - Performance tracking
-   - Cache management
-   - API efficiency monitoring
+#### 4. Message Routing
+```python
+async def route_message(self, message: Dict[str, Any]):
+    """Route messages between agents."""
+    try:
+        sender = message.get("sender")
+        recipient = message.get("recipient")
+        content = message.get("content")
+        
+        if not all([sender, recipient, content]):
+            raise ValueError("Invalid message format")
+            
+        # Route message to recipient
+        await self.agents[recipient].receive_message(message)
+        
+        # Log message
+        self.log_debug("Message routed", 
+                      sender=sender,
+                      recipient=recipient,
+                      message_type=message.get("type"))
+    except Exception as e:
+        self.log_error("Message routing failed", error=str(e))
+        raise
+```
 
 ## Configuration
 
-The supervisor agent can be configured through the system's configuration file:
-
+### Supervisor Configuration
 ```json
 {
-    "agents": {
-        "supervisor": {
-            "name": "supervisor",
-            "description": "Coordinates the workflow between agents",
-            "system_message": "You are a supervisor agent responsible for coordinating the workflow between different agents. Your role includes task distribution, process monitoring, and ensuring quality control.",
-            "llm_config": {
-                "model": "gpt-4",
-                "temperature": 0.7,
-                "max_tokens": 4096
-            }
+    "supervisor": {
+        "max_retries": 3,
+        "retry_delay": 1,
+        "timeout": 30,
+        "error_threshold": 5,
+        "logging": {
+            "level": "DEBUG",
+            "format": "detailed"
         }
-    },
-    "group_chat": {
-        "max_round": 10,
-        "speaker_selection_method": "round_robin",
-        "allow_repeat_speaker": false
     }
 }
 ```
 
-## Usage Example
-
-```python
-from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
-
-def create_supervisor_system(config):
-    # Create base agents
-    creator = AssistantAgent(
-        name=config["agents"]["creator"]["name"],
-        system_message=config["agents"]["creator"]["system_message"],
-        llm_config=config["llm_config"]["creator"]
-    )
-    
-    critic = AssistantAgent(
-        name=config["agents"]["critic"]["name"],
-        system_message=config["agents"]["critic"]["system_message"],
-        llm_config=config["llm_config"]["critic"]
-    )
-    
-    # Create supervisor
-    supervisor = AssistantAgent(
-        name=config["agents"]["supervisor"]["name"],
-        system_message=config["agents"]["supervisor"]["system_message"],
-        llm_config=config["llm_config"]["supervisor"]
-    )
-    
-    # Create user proxy
-    user_proxy = UserProxyAgent(
-        name=config["system"]["user_proxy"]["name"],
-        human_input_mode=config["system"]["user_proxy"]["human_input_mode"]
-    )
-    
-    # Create group chat
-    groupchat = GroupChat(
-        agents=[user_proxy, creator, critic, supervisor],
-        messages=[],
-        max_round=config["group_chat"]["max_round"]
-    )
-    
-    # Create group chat manager
-    group_chat_manager = GroupChatManager(
-        groupchat=groupchat,
-        llm_config=config["llm_config"]["supervisor"]
-    )
-    
-    return {
-        "supervisor": supervisor,
-        "group_chat_manager": group_chat_manager,
-        "groupchat": groupchat
+### Agent Configuration
+```json
+{
+    "agents": {
+        "agent1": {
+            "type": "specialized",
+            "config": { ... }
+        },
+        "agent2": {
+            "type": "general",
+            "config": { ... }
+        }
     }
+}
 ```
+
+## Usage in Both Systems
+
+### Update Manifest System
+The supervisor in `update_manifest.py` manages:
+- FileReaderAgent
+- ManifestUpdaterAgent
+- LoggingConfigAgent
+- ValidationAgent
+
+### Toy Example System
+The supervisor in `toy_example.py` manages:
+- FileReaderAgent
+- WriterAgent
+- VerifierAgent
+- QualityAgent
+
+## Common Features
+
+### 1. Task Processing
+Both implementations:
+- Use the same task validation logic
+- Implement identical retry mechanisms
+- Follow the same error handling patterns
+- Maintain consistent logging
+
+### 2. Agent Management
+Both systems:
+- Initialize agents with proper configuration
+- Monitor agent health
+- Handle agent failures
+- Maintain agent state
+
+### 3. Communication
+Both implementations:
+- Use the same message routing system
+- Maintain conversation history
+- Handle communication failures
+- Implement retry logic
+
+### 4. Error Handling
+Both systems:
+- Use the same error recovery strategies
+- Implement identical retry mechanisms
+- Maintain error counts
+- Log errors consistently
 
 ## Best Practices
 
-1. **Workflow Design**
-   - Define clear agent roles and responsibilities
-   - Establish communication protocols
-   - Set process boundaries
-   - Implement error handling
+### 1. Agent Initialization
+- Always validate agent configuration
+- Initialize agents in the correct order
+- Handle initialization failures
+- Log initialization status
 
-2. **Performance Optimization**
-   - Monitor agent interactions
-   - Track resource usage
-   - Optimize message flow
-   - Manage cache effectively
+### 2. Task Management
+- Validate tasks before processing
+- Maintain task state
+- Handle task failures
+- Implement proper cleanup
 
-3. **Error Handling**
-   - Implement retry logic
-   - Log error events
-   - Provide recovery mechanisms
-   - Maintain system stability
+### 3. Error Handling
+- Use appropriate error types
+- Implement retry mechanisms
+- Maintain error context
+- Log errors properly
 
-4. **Monitoring**
-   - Track agent performance
-   - Monitor system metrics
-   - Log important events
-   - Generate analytics reports
+### 4. Communication
+- Validate messages
+- Handle communication failures
+- Maintain message history
+- Implement proper routing
 
-## Integration with Analytics
+## Example Usage
 
-The supervisor agent integrates with the analytics system to provide comprehensive monitoring and optimization:
-
+### Basic Usage
 ```python
-from tool_analytics import ToolAnalytics
+# Initialize supervisor
+supervisor = SupervisorAgent(config)
 
-# Initialize analytics
-analytics = ToolAnalytics()
+# Start supervisor
+await supervisor.start()
 
-# Record supervisor events
-analytics.record_usage(ToolUsage(
-    timestamp=datetime.now(),
-    tool_name="supervisor",
-    parameters={"action": "coordinate", "agents": ["creator", "critic"]},
-    duration=0.5,
-    success=True
-))
+# Process task
+result = await supervisor.process_task({
+    "type": "file_processing",
+    "content": "file_content",
+    "metadata": { ... }
+})
 
-# Get performance metrics
-metrics = analytics.get_tool_metrics("supervisor")
-print(f"Success rate: {metrics.success_rate}")
-print(f"Average duration: {metrics.avg_duration}")
-``` 
+# Handle result
+await supervisor.handle_result(result)
+```
+
+### Error Handling
+```python
+try:
+    await supervisor.process_task(task)
+except Exception as e:
+    await supervisor.handle_error(e, {
+        "task": task,
+        "context": "processing"
+    })
+```
+
+## Troubleshooting
+
+### Common Issues
+1. **Agent Initialization Failures**
+   - Check agent configuration
+   - Verify dependencies
+   - Check resource availability
+
+2. **Task Processing Errors**
+   - Validate task format
+   - Check agent availability
+   - Verify task dependencies
+
+3. **Communication Issues**
+   - Check message format
+   - Verify agent status
+   - Check network connectivity
+
+4. **Error Recovery**
+   - Check error logs
+   - Verify retry configuration
+   - Check resource limits 

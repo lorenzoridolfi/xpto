@@ -85,5 +85,41 @@
         "max_size": 1000,
         "ttl_seconds": 3600,
         "cleanup_interval_seconds": 300
+    },
+    "tracing": {
+        "enabled": true,
+        "level": "DEBUG",
+        "persist_traces": true,
+        "max_traces": 1000,
+        "trace_retention": "7d",
+        "events": {
+            "agent_creation": true,
+            "agent_interaction": true,
+            "task_processing": true,
+            "error_handling": true,
+            "decision_making": true
+        },
+        "metrics": {
+            "enabled": true,
+            "collect_interval": 60,
+            "retention_period": "30d"
+        }
+    },
+    "supervisor": {
+        "max_retries": 3,
+        "retry_delay": 1,
+        "timeout": 30,
+        "error_threshold": 5,
+        "group_chat": {
+            "max_round": 10,
+            "allow_repeat_speaker": false
+        },
+        "llm_config": {
+            "supervisor": {
+                "model": "gpt-4",
+                "temperature": 0.7,
+                "max_tokens": 2000
+            }
+        }
     }
 } 
