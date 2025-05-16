@@ -1,31 +1,86 @@
-from typing import Dict, Any, List, Optional
+"""
+Supervisor Agent Module
+
+This module implements a supervisor agent that manages and coordinates other agents
+using AutoGen's GroupChat functionality. It provides:
+- Agent lifecycle management
+- Task processing and coordination
+- Error handling and retry mechanisms
+- System metrics and monitoring
+
+The supervisor agent serves as the central coordinator for multi-agent systems,
+ensuring proper communication and task execution between agents.
+"""
+
+from typing import Dict, Any, List, Optional, Union, TypedDict, TypeVar, Generic
 import asyncio
 from datetime import datetime
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 from .logger import LoggerMixin
+from .base_supervisor import TaskDict, TaskResult, AgentStatus, SystemMetrics
+
+# Custom Exceptions
+class SupervisorAgentError(Exception):
+    """Base exception for supervisor agent-related errors."""
+    pass
+
+class ConfigurationError(SupervisorAgentError):
+    """Raised when supervisor agent configuration is invalid."""
+    pass
+
+class AgentError(SupervisorAgentError):
+    """Raised when agent operations fail."""
+    pass
+
+class TaskError(SupervisorAgentError):
+    """Raised when task processing fails."""
+    pass
+
+# Type Definitions
+class AgentConfig(TypedDict):
+    name: str
+    system_message: str
+    llm_config: Dict[str, Any]
+
+T = TypeVar('T')
 
 class SupervisorAgent(LoggerMixin):
-    """Base supervisor agent class that manages and coordinates other agents using AutoGen's GroupChat."""
+    """Base supervisor agent class that manages and coordinates other agents using AutoGen's GroupChat.
     
-    def __init__(self, config: Dict[str, Any]):
+    This class implements the core supervisor agent functionality for managing and
+    coordinating multiple agents in a group chat environment. It handles agent
+    lifecycle, task processing, error handling, and system monitoring.
+    """
+    
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the supervisor agent.
         
         Args:
             config: Configuration dictionary containing agent settings
+            
+        Raises:
+            ConfigurationError: If configuration is invalid
         """
-        super().__init__()
-        self.config = config
-        self.agents = {}
-        self.group_chat = None
-        self.group_chat_manager = None
-        self.error_count = 0
-        self.max_retries = config.get("max_retries", 3)
-        self.retry_delay = config.get("retry_delay", 1)
-        self.timeout = config.get("timeout", 30)
-        self.error_threshold = config.get("error_threshold", 5)
+        try:
+            super().__init__()
+            self.config = config
+            self.agents: Dict[str, Union[AssistantAgent, UserProxyAgent]] = {}
+            self.group_chat: Optional[GroupChat] = None
+            self.group_chat_manager: Optional[GroupChatManager] = None
+            self.error_count: int = 0
+            self.max_retries: int = config.get("max_retries", 3)
+            self.retry_delay: int = config.get("retry_delay", 1)
+            self.timeout: int = config.get("timeout", 30)
+            self.error_threshold: int = config.get("error_threshold", 5)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to initialize supervisor agent: {str(e)}")
         
     async def initialize_agents(self) -> None:
-        """Initialize all subordinate agents with proper configuration."""
+        """Initialize all subordinate agents with proper configuration.
+        
+        Raises:
+            AgentError: If agent initialization fails
+        """
         try:
             # Create base agents
             for agent_name, agent_config in self.config["agents"].items():
@@ -59,7 +114,7 @@ class SupervisorAgent(LoggerMixin):
                          
         except Exception as e:
             self.log_error("Failed to initialize agents", error=str(e))
-            raise
+            raise AgentError(f"Agent initialization failed: {str(e)}")
             
     async def _create_agent(self, name: str, config: Dict[str, Any]) -> AssistantAgent:
         """Create an agent instance based on its type and configuration.
@@ -70,14 +125,20 @@ class SupervisorAgent(LoggerMixin):
             
         Returns:
             Initialized AssistantAgent instance
-        """
-        return AssistantAgent(
-            name=name,
-            system_message=config["system_message"],
-            llm_config=self.config["llm_config"][name]
-        )
             
-    async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        Raises:
+            AgentError: If agent creation fails
+        """
+        try:
+            return AssistantAgent(
+                name=name,
+                system_message=config["system_message"],
+                llm_config=self.config["llm_config"][name]
+            )
+        except Exception as e:
+            raise AgentError(f"Failed to create agent {name}: {str(e)}")
+            
+    async def process_task(self, task: TaskDict) -> TaskResult:
         """Process a single task through the agent pipeline.
         
         Args:
@@ -87,12 +148,11 @@ class SupervisorAgent(LoggerMixin):
             Task result dictionary
             
         Raises:
-            ValueError: If task format is invalid
-            Exception: If task processing fails
+            TaskError: If task processing fails
         """
         try:
             if not self._validate_task(task):
-                raise ValueError("Invalid task format")
+                raise TaskError("Invalid task format")
                 
             # Convert task to chat message
             message = self._task_to_message(task)
@@ -107,9 +167,9 @@ class SupervisorAgent(LoggerMixin):
             return task_result
         except Exception as e:
             self.log_error("Task processing failed", error=str(e), task=task)
-            raise
+            raise TaskError(f"Task processing failed: {str(e)}")
             
-    def _validate_task(self, task: Dict[str, Any]) -> bool:
+    def _validate_task(self, task: TaskDict) -> bool:
         """Validate task format and content.
         
         Args:
@@ -121,7 +181,7 @@ class SupervisorAgent(LoggerMixin):
         required_fields = ["type", "content"]
         return all(field in task for field in required_fields)
         
-    def _task_to_message(self, task: Dict[str, Any]) -> str:
+    def _task_to_message(self, task: TaskDict) -> str:
         """Convert task dictionary to chat message.
         
         Args:
@@ -132,7 +192,7 @@ class SupervisorAgent(LoggerMixin):
         """
         return f"Task Type: {task['type']}\nContent: {task['content']}\nMetadata: {task.get('metadata', {})}"
         
-    def _message_to_task(self, message: str) -> Dict[str, Any]:
+    def _message_to_task(self, message: str) -> TaskResult:
         """Convert chat message to task result.
         
         Args:
@@ -144,20 +204,27 @@ class SupervisorAgent(LoggerMixin):
         return {
             "status": "success",
             "content": message,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "error": None
         }
         
-    async def _handle_result(self, result: Dict[str, Any]) -> None:
+    async def _handle_result(self, result: TaskResult) -> None:
         """Handle task result and update system state.
         
         Args:
             result: Task result dictionary
+            
+        Raises:
+            TaskError: If result handling fails
         """
-        if result.get("status") == "error":
-            await self.handle_error(
-                Exception(result.get("error", "Unknown error")),
-                {"result": result}
-            )
+        try:
+            if result.get("status") == "error":
+                await self.handle_error(
+                    Exception(result.get("error", "Unknown error")),
+                    {"result": result}
+                )
+        except Exception as e:
+            raise TaskError(f"Failed to handle result: {str(e)}")
             
     async def handle_error(self, error: Exception, context: Dict[str, Any]) -> None:
         """Handle errors in agent operations.
@@ -167,13 +234,13 @@ class SupervisorAgent(LoggerMixin):
             context: Additional context about the error
             
         Raises:
-            Exception: If max retries exceeded
+            AgentError: If max retries exceeded
         """
         self.error_count += 1
         
         if self.error_count > self.max_retries:
             self.log_error("Max retries exceeded", error=str(error))
-            raise error
+            raise AgentError(f"Max retries exceeded: {str(error)}")
             
         self.log_warning(
             "Operation failed, retrying",
@@ -190,21 +257,41 @@ class SupervisorAgent(LoggerMixin):
         
         Args:
             context: Context of the failed operation
+            
+        Raises:
+            TaskError: If retry operation fails
         """
-        task = context.get("task")
-        if task:
-            await self.process_task(task)
+        try:
+            task = context.get("task")
+            if task:
+                await self.process_task(task)
+        except Exception as e:
+            raise TaskError(f"Retry operation failed: {str(e)}")
             
     async def start(self) -> None:
-        """Start the supervisor agent and initialize all components."""
-        await self.initialize_agents()
-        self.log_info("Supervisor agent started")
+        """Start the supervisor agent and initialize all components.
+        
+        Raises:
+            SupervisorAgentError: If supervisor startup fails
+        """
+        try:
+            await self.initialize_agents()
+            self.log_info("Supervisor agent started")
+        except Exception as e:
+            raise SupervisorAgentError(f"Failed to start supervisor agent: {str(e)}")
         
     async def stop(self) -> None:
-        """Stop the supervisor agent and cleanup resources."""
-        self.log_info("Supervisor agent stopped")
+        """Stop the supervisor agent and cleanup resources.
         
-    def get_agent_status(self) -> Dict[str, Any]:
+        Raises:
+            SupervisorAgentError: If supervisor shutdown fails
+        """
+        try:
+            self.log_info("Supervisor agent stopped")
+        except Exception as e:
+            raise SupervisorAgentError(f"Failed to stop supervisor agent: {str(e)}")
+        
+    def get_agent_status(self) -> Dict[str, AgentStatus]:
         """Get status of all managed agents.
         
         Returns:
@@ -219,15 +306,21 @@ class SupervisorAgent(LoggerMixin):
             for name, agent in self.agents.items()
         }
         
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> SystemMetrics:
         """Get system-wide metrics.
         
         Returns:
             Dictionary containing system metrics
         """
+        active_agents = sum(1 for status in self.get_agent_status().values() 
+                          if status["status"] == "active")
+        
         return {
-            "total_agents": len(self.agents),
-            "active_agents": sum(1 for a in self.agents.values() if a),
+            "agent_count": len(self.agents),
+            "active_agents": active_agents,
             "error_count": self.error_count,
-            "conversation_history_length": len(self.group_chat.messages) if self.group_chat else 0
+            "total_tasks": 0,  # TODO: Implement task tracking
+            "successful_tasks": 0,  # TODO: Implement task tracking
+            "failed_tasks": 0,  # TODO: Implement task tracking
+            "average_processing_time": 0.0  # TODO: Implement processing time calculation
         } 

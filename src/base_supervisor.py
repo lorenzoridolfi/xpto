@@ -1,33 +1,108 @@
-from typing import Dict, Any, List, Optional
+"""
+Base Supervisor Module
+
+This module provides the core supervisor functionality for managing agent-based systems.
+It implements:
+- Agent lifecycle management
+- Task processing pipeline
+- Error handling and retry mechanisms
+- System metrics and monitoring
+- Trace-based debugging
+
+The module serves as a foundation for building robust agent-based systems with
+comprehensive error handling and monitoring capabilities.
+"""
+
+from typing import Dict, Any, List, Optional, Union, TypedDict, TypeVar, Generic
 import asyncio
 from datetime import datetime
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 from .logger import LoggerMixin
-from .supervisor_trace import SupervisorTrace
+from .supervisor_trace import SupervisorTrace, Trace, TaskDict
+
+# Custom Exceptions
+class SupervisorError(Exception):
+    """Base exception for supervisor-related errors."""
+    pass
+
+class ConfigurationError(SupervisorError):
+    """Raised when supervisor configuration is invalid."""
+    pass
+
+class AgentError(SupervisorError):
+    """Raised when agent operations fail."""
+    pass
+
+class TaskError(SupervisorError):
+    """Raised when task processing fails."""
+    pass
+
+# Type Definitions
+class AgentConfig(TypedDict):
+    name: str
+    system_message: str
+    llm_config: Dict[str, Any]
+
+class TaskResult(TypedDict):
+    status: str
+    content: str
+    timestamp: str
+    error: Optional[str]
+
+class AgentStatus(TypedDict):
+    status: str
+    error_count: int
+    last_active: Optional[str]
+
+class SystemMetrics(TypedDict):
+    agent_count: int
+    active_agents: int
+    error_count: int
+    total_tasks: int
+    successful_tasks: int
+    failed_tasks: int
+    average_processing_time: float
+
+T = TypeVar('T')
 
 class BaseSupervisor(LoggerMixin):
-    """Base supervisor class that provides common functionality for both programs."""
+    """Base supervisor class that provides common functionality for both programs.
     
-    def __init__(self, config: Dict[str, Any]):
+    This class implements the core supervisor functionality for managing agent-based
+    systems, including agent lifecycle management, task processing, error handling,
+    and system monitoring.
+    """
+    
+    def __init__(self, config: Dict[str, Any]) -> None:
         """Initialize the base supervisor.
         
         Args:
             config: Configuration dictionary containing agent settings
+            
+        Raises:
+            ConfigurationError: If configuration is invalid
         """
-        super().__init__()
-        self.config = config
-        self.agents = {}
-        self.group_chat = None
-        self.group_chat_manager = None
-        self.error_count = 0
-        self.max_retries = config.get("max_retries", 3)
-        self.retry_delay = config.get("retry_delay", 1)
-        self.timeout = config.get("timeout", 30)
-        self.error_threshold = config.get("error_threshold", 5)
-        self.trace = SupervisorTrace(config)
+        try:
+            super().__init__()
+            self.config = config
+            self.agents: Dict[str, Union[AssistantAgent, UserProxyAgent]] = {}
+            self.group_chat: Optional[GroupChat] = None
+            self.group_chat_manager: Optional[GroupChatManager] = None
+            self.error_count: int = 0
+            self.max_retries: int = config.get("max_retries", 3)
+            self.retry_delay: int = config.get("retry_delay", 1)
+            self.timeout: int = config.get("timeout", 30)
+            self.error_threshold: int = config.get("error_threshold", 5)
+            self.trace = SupervisorTrace(config)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to initialize supervisor: {str(e)}")
         
     async def initialize_agents(self) -> None:
-        """Initialize all subordinate agents with proper configuration."""
+        """Initialize all subordinate agents with proper configuration.
+        
+        Raises:
+            AgentError: If agent initialization fails
+        """
         try:
             # Create base agents
             for agent_name, agent_config in self.config["agents"].items():
@@ -63,7 +138,7 @@ class BaseSupervisor(LoggerMixin):
                          
         except Exception as e:
             self.log_error("Failed to initialize agents", error=str(e))
-            raise
+            raise AgentError(f"Agent initialization failed: {str(e)}")
             
     async def _create_agent(self, name: str, config: Dict[str, Any]) -> AssistantAgent:
         """Create an agent instance based on its type and configuration.
@@ -74,14 +149,20 @@ class BaseSupervisor(LoggerMixin):
             
         Returns:
             Initialized AssistantAgent instance
-        """
-        return AssistantAgent(
-            name=name,
-            system_message=config["system_message"],
-            llm_config=self.config["llm_config"][name]
-        )
             
-    async def process_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        Raises:
+            AgentError: If agent creation fails
+        """
+        try:
+            return AssistantAgent(
+                name=name,
+                system_message=config["system_message"],
+                llm_config=self.config["llm_config"][name]
+            )
+        except Exception as e:
+            raise AgentError(f"Failed to create agent {name}: {str(e)}")
+            
+    async def process_task(self, task: TaskDict) -> TaskResult:
         """Process a single task through the agent pipeline.
         
         Args:
@@ -91,12 +172,11 @@ class BaseSupervisor(LoggerMixin):
             Task result dictionary
             
         Raises:
-            ValueError: If task format is invalid
-            Exception: If task processing fails
+            TaskError: If task processing fails
         """
         try:
             if not self._validate_task(task):
-                raise ValueError("Invalid task format")
+                raise TaskError("Invalid task format")
                 
             # Start tracing
             self.trace.start_trace(task)
@@ -120,9 +200,9 @@ class BaseSupervisor(LoggerMixin):
         except Exception as e:
             self.log_error("Task processing failed", error=str(e), task=task)
             self.trace.trace_error(e, {"task": task})
-            raise
+            raise TaskError(f"Task processing failed: {str(e)}")
             
-    def _validate_task(self, task: Dict[str, Any]) -> bool:
+    def _validate_task(self, task: TaskDict) -> bool:
         """Validate task format and content.
         
         Args:
@@ -134,7 +214,7 @@ class BaseSupervisor(LoggerMixin):
         required_fields = ["type", "content"]
         return all(field in task for field in required_fields)
         
-    def _task_to_message(self, task: Dict[str, Any]) -> str:
+    def _task_to_message(self, task: TaskDict) -> str:
         """Convert task dictionary to chat message.
         
         Args:
@@ -145,7 +225,7 @@ class BaseSupervisor(LoggerMixin):
         """
         return f"Task Type: {task['type']}\nContent: {task['content']}\nMetadata: {task.get('metadata', {})}"
         
-    def _message_to_task(self, message: str) -> Dict[str, Any]:
+    def _message_to_task(self, message: str) -> TaskResult:
         """Convert chat message to task result.
         
         Args:
@@ -157,20 +237,27 @@ class BaseSupervisor(LoggerMixin):
         return {
             "status": "success",
             "content": message,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "error": None
         }
         
-    async def _handle_result(self, result: Dict[str, Any]) -> None:
+    async def _handle_result(self, result: TaskResult) -> None:
         """Handle task result and update system state.
         
         Args:
             result: Task result dictionary
+            
+        Raises:
+            TaskError: If result handling fails
         """
-        if result.get("status") == "error":
-            await self.handle_error(
-                Exception(result.get("error", "Unknown error")),
-                {"result": result}
-            )
+        try:
+            if result.get("status") == "error":
+                await self.handle_error(
+                    Exception(result.get("error", "Unknown error")),
+                    {"result": result}
+                )
+        except Exception as e:
+            raise TaskError(f"Failed to handle result: {str(e)}")
             
     async def handle_error(self, error: Exception, context: Dict[str, Any]) -> None:
         """Handle errors in agent operations.
@@ -180,14 +267,14 @@ class BaseSupervisor(LoggerMixin):
             context: Additional context about the error
             
         Raises:
-            Exception: If max retries exceeded
+            AgentError: If max retries exceeded
         """
         self.error_count += 1
         
         if self.error_count > self.max_retries:
             self.log_error("Max retries exceeded", error=str(error))
             self.trace.trace_decision("max_retries_exceeded", {"error": str(error)})
-            raise error
+            raise AgentError(f"Max retries exceeded: {str(error)}")
             
         self.log_warning(
             "Operation failed, retrying",
@@ -209,25 +296,45 @@ class BaseSupervisor(LoggerMixin):
         
         Args:
             context: Context of the failed operation
+            
+        Raises:
+            TaskError: If retry operation fails
         """
-        task = context.get("task")
-        if task:
-            await self.process_task(task)
+        try:
+            task = context.get("task")
+            if task:
+                await self.process_task(task)
+        except Exception as e:
+            raise TaskError(f"Retry operation failed: {str(e)}")
             
     async def start(self) -> None:
-        """Start the supervisor agent and initialize all components."""
-        await self.initialize_agents()
-        self.log_info("Supervisor agent started")
-        self.trace.trace_decision("supervisor_start", {"config": self.config})
+        """Start the supervisor agent and initialize all components.
+        
+        Raises:
+            SupervisorError: If supervisor startup fails
+        """
+        try:
+            await self.initialize_agents()
+            self.log_info("Supervisor agent started")
+            self.trace.trace_decision("supervisor_start", {"config": self.config})
+        except Exception as e:
+            raise SupervisorError(f"Failed to start supervisor: {str(e)}")
         
     async def stop(self) -> None:
-        """Stop the supervisor agent and cleanup resources."""
-        self.log_info("Supervisor agent stopped")
-        self.trace.trace_decision("supervisor_stop", {
-            "metrics": self.get_system_metrics()
-        })
+        """Stop the supervisor agent and cleanup resources.
         
-    def get_agent_status(self) -> Dict[str, Any]:
+        Raises:
+            SupervisorError: If supervisor shutdown fails
+        """
+        try:
+            self.log_info("Supervisor agent stopped")
+            self.trace.trace_decision("supervisor_stop", {
+                "metrics": self.get_system_metrics()
+            })
+        except Exception as e:
+            raise SupervisorError(f"Failed to stop supervisor: {str(e)}")
+        
+    def get_agent_status(self) -> Dict[str, AgentStatus]:
         """Get status of all managed agents.
         
         Returns:
@@ -242,17 +349,25 @@ class BaseSupervisor(LoggerMixin):
             for name, agent in self.agents.items()
         }
         
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> SystemMetrics:
         """Get system-wide metrics.
         
         Returns:
             Dictionary containing system metrics
         """
+        active_agents = sum(1 for status in self.get_agent_status().values() 
+                          if status["status"] == "active")
+        
         return {
-            "total_agents": len(self.agents),
-            "active_agents": sum(1 for a in self.agents.values() if a),
+            "agent_count": len(self.agents),
+            "active_agents": active_agents,
             "error_count": self.error_count,
-            "conversation_history_length": len(self.group_chat.messages) if self.group_chat else 0
+            "total_tasks": len(self.trace.get_all_traces()),
+            "successful_tasks": sum(1 for t in self.trace.get_all_traces() 
+                                  if t.get("status") == "success"),
+            "failed_tasks": sum(1 for t in self.trace.get_all_traces() 
+                              if t.get("status") == "error"),
+            "average_processing_time": 0.0  # TODO: Implement processing time calculation
         }
         
     def get_trace_metrics(self) -> Dict[str, Any]:
@@ -263,7 +378,7 @@ class BaseSupervisor(LoggerMixin):
         """
         return self.trace.get_trace_metrics()
         
-    def get_trace(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_trace(self, task_id: str) -> Optional[Trace]:
         """Get trace for a specific task.
         
         Args:
@@ -274,7 +389,7 @@ class BaseSupervisor(LoggerMixin):
         """
         return self.trace.get_trace(task_id)
         
-    def get_all_traces(self) -> List[Dict[str, Any]]:
+    def get_all_traces(self) -> List[Trace]:
         """Get all traces.
         
         Returns:

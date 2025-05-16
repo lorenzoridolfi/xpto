@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: General coding best practices for all projects and languages (global rule)
+alwaysApply: false
+---
+- Use consistent code formatting across all languages. Prefer spaces over tabs for indentation (e.g. 4 spaces per level in Python) and avoid overly long lines (around 80-100 characters for readability). Ensure each file ends with a newline and contain no trailing whitespace on any line.
+- Name variables, functions, classes, and files clearly and consistently. Follow language-specific naming conventions (for example, snake_case for Python functions/variables, PascalCase for class names, and kebab-case for file names where applicable). Avoid single-letter names except for simple loop indices or throwaway variables.
+- Always provide explicit type annotations for all function parameters, return types, and class attributes. Utilize Python’s built-in typing module (`typing`) to specify types clearly. This includes using `Union`, `Optional`, `Literal`, and other specialized types where appropriate. Type annotations improve readabil
+- Write self-documenting and maintainable code. Clear and simple logic should be favored. Use comments to explain non-obvious implementation details or complex algorithms, but avoid redundant comments that restate the code. Aim for code that is easy for others to read and understand.
+- Always handle errors and edge cases gracefully. Validate inputs and use appropriate error-handling mechanisms (such as try/except in Python or null checks in other languages) to make the code robust against unexpected conditions. Provide informative error messages or exceptions to aid in debugging.
+- Adhere to the DRY (Don't Repeat Yourself) principle and single-responsibility principle. Refactor duplicate logic into shared functions or modules, and design each function or class to have a clear, focused purpose. This ensures better maintainability and reduces bugs.
+- Whenever feasible, write tests or include verification steps for new code to ensure it behaves as expected. The AI assistant should favor solutions that are testable and reliable. New code suggestions should not break existing functionality and should integrate with any existing test suites.
+- **AI Suggestion Guidelines:** Ensure any AI-generated code or refactoring follows all the above practices. The assistant’s suggestions should match the project’s style and conventions. It should avoid introducing insecure content (e.g. hard-coded credentials or secrets) or any anti-patterns, and provide explanations or rationale for significant changes when appropriate.
