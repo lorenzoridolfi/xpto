@@ -50,6 +50,50 @@ pytest tests/test_mock_llm_edge_cases.py::TestConcurrentOperations -v
 - Verify history tracking
 - Check resource management
 
+### Step 6: Autogen Agent Integration Tests
+1. Run agent integration tests:
+```bash
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentIntegration -v
+```
+- Verify agent initialization
+- Test agent communication
+- Check task handling
+- Test concurrent operations
+
+2. Run agent error handling tests:
+```bash
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentErrorHandling -v
+```
+- Test timeout handling
+- Verify invalid input handling
+- Check permission errors
+
+3. Run agent dynamic response tests:
+```bash
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentDynamicResponses -v
+```
+- Test dynamic counting
+- Verify timing responses
+- Check task completion tracking
+
+4. Run agent collaboration tests:
+```bash
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentCollaboration -v
+```
+- Test complete agent workflows
+- Verify consensus building
+- Check agent coordination
+- Test specialized agent roles
+
+5. Run agent state persistence tests:
+```bash
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentStatePersistence -v
+```
+- Test state save/load operations
+- Verify state updates
+- Check state clearing
+- Test state maintenance
+
 ## Phase 2: Update Manifest Application Test
 
 ### Step 1: Setup
@@ -107,6 +151,25 @@ python update_manifest.py nonexistent.json test_update.json
 - Handles errors gracefully
 - Maintains JSON format
 - Preserves existing data
+
+### Autogen Agent Integration
+- Agents initialize correctly with mock LLM
+- Agent communication works as expected
+- Error handling functions properly
+- Dynamic responses are generated correctly
+- Concurrent operations work reliably
+
+### Agent Collaboration
+- Agents work together in workflows
+- Consensus building functions properly
+- Coordination between agents works
+- Specialized roles perform as expected
+
+### Agent State Management
+- State save/load operations work
+- State updates are maintained
+- State clearing functions properly
+- State persists between operations
 
 ## Troubleshooting
 
