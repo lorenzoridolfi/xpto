@@ -1,0 +1,167 @@
+@startuml Update Manifest Class Diagram
+
+' Style
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+}
+
+' Base Classes
+abstract class BaseChatAgent {
+    + name: String
+    + description: String
+    + {abstract} on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+    + {abstract} on_messages_stream(messages: List[BaseChatMessage], cancellation_token): Response
+}
+
+class AssistantAgent {
+    + name: String
+    + llm_config: Dict
+    + system_message: String
+}
+
+class UserProxyAgent {
+    + name: String
+    + human_input_mode: String
+    + system_message: String
+}
+
+' Agent Classes
+class FileReaderAgent {
+    + manifest: Set[String]
+    + files_read: List[String]
+    + file_log: List[String]
+    + on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+    + run(task: String): String
+}
+
+class ManifestUpdaterAgent {
+    + name: String
+    + description: String
+    + llm_config: Dict
+    + update_manifest(content: String): Dict
+    + on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+}
+
+class LoggingConfigAgent {
+    + name: String
+    + description: String
+    + llm_config: Dict
+    + configure_logging(content: String): Dict
+    + on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+}
+
+class ValidationAgent {
+    + name: String
+    + description: String
+    + llm_config: Dict
+    + validate_configuration(content: String): Dict
+    + on_messages(messages: List[BaseChatMessage], cancellation_token): Response
+}
+
+class AdaptiveAgent {
+    + base_agent: BaseAgent
+    + role: String
+    + capabilities: List[String]
+    + analyze_manifest(manifest_path: String, validation_rules: Dict): Dict
+    + generate_recommendations(manifest_state: Dict, requirements: Dict): Dict
+    + coordinate_update(recommendations: Dict, context: Dict): Dict
+    + generate_update_report(update_result: Dict, include_recommendations: Boolean): String
+}
+
+' State Management Classes
+class StateManager {
+    + storage_backend: String
+    + cache_size: Integer
+    + validation_rules: Dict
+    + save_state(entity_id: String, state: Dict): void
+    + load_state(entity_id: String): Dict
+    + validate_state(state: Dict): Boolean
+}
+
+class StateSynchronizer {
+    + synchronize_states(states: List[Dict]): Dict
+    + resolve_conflicts(conflicts: List[Dict]): Dict
+}
+
+class StateValidator {
+    + validation_rules: Dict
+    + validate_manifest(manifest: Dict): Boolean
+    + validate_dependencies(dependencies: Dict): Boolean
+}
+
+' Workflow Classes
+class CollaborativeWorkflow {
+    + agents: List[AdaptiveAgent]
+    + sequential: Boolean
+    + consensus_required: Boolean
+    + consensus_threshold: Float
+    + timeout: Integer
+    + description: String
+    + initialize(): void
+    + execute_task(task: Dict): Dict
+}
+
+' Message Classes
+class BaseChatMessage {
+    + source: String
+    + content: String
+}
+
+class TextMessage {
+    + source: String
+    + content: String
+}
+
+class Response {
+    + chat_message: BaseChatMessage
+}
+
+' Relationships
+BaseChatAgent <|-- FileReaderAgent
+BaseChatAgent <|-- ManifestUpdaterAgent
+BaseChatAgent <|-- LoggingConfigAgent
+BaseChatAgent <|-- ValidationAgent
+AssistantAgent <|-- AdaptiveAgent
+UserProxyAgent <|-- AdaptiveAgent
+StateManager o-- StateSynchronizer
+StateManager o-- StateValidator
+CollaborativeWorkflow o-- AdaptiveAgent
+BaseChatMessage <|-- TextMessage
+Response o-- BaseChatMessage
+
+' Notes
+note right of AdaptiveAgent
+  Handles manifest analysis
+  and update coordination
+end note
+
+note right of StateManager
+  Manages state persistence
+  and validation
+end note
+
+note right of CollaborativeWorkflow
+  Orchestrates the update
+  process and agent
+  coordination
+end note
+
+note right of FileReaderAgent
+  Reads and processes
+  manifest files
+end note
+
+note right of ManifestUpdaterAgent
+  Updates manifest content
+  based on analysis
+end note
+
+note right of ValidationAgent
+  Validates manifest and
+  configuration
+end note
+
+@enduml 
