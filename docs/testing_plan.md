@@ -3,96 +3,182 @@
 ## Overview
 This plan outlines a systematic approach to testing the framework, starting with unit tests and then moving to testing the `update_manifest` application as an integration test.
 
-## Phase 1: Unit Tests
+## MockLLM Test Structure
 
-### Step 1: Basic Response Tests
-1. Run basic response tests:
-```bash
-pytest tests/test_mock_llm_responses.py::TestBasicResponses -v
-```
-- Verify simple text responses work
-- Check default behavior
-- Test file operation responses
+### MockLLM Test Components
+1. **Response Patterns** (defined in `conftest.py`):
+   - `BASIC_RESPONSES`: Simple text responses
+   - `TEMPLATE_RESPONSES`: Dynamic response templates
+   - `ERROR_RESPONSES`: Error handling patterns
+   - `COMPLEX_RESPONSES`: Multi-step and conditional responses
 
-### Step 2: Template Response Tests
-1. Run template response tests:
-```bash
-pytest tests/test_mock_llm_responses.py::TestTemplateResponses -v
-```
-- Verify dynamic responses
-- Check count-based responses
-- Test time-based responses
+2. **Test Fixtures**:
+   - `basic_response_map`: Basic response patterns
+   - `template_response_map`: Template response patterns
+   - `error_response_map`: Error response patterns
+   - `complex_response_map`: Complex response patterns
+   - `mock_llm`: Basic MockLLM instance
+   - `dynamic_mock_llm`: DynamicMockLLM instance
+   - `error_mock_llm`: Error-focused MockLLM
+   - `complex_mock_llm`: Complex response MockLLM
+   - `mock_llm_with_history`: MockLLM with pre-populated history
+   - `dynamic_mock_llm_with_counts`: DynamicMockLLM with counts
 
-### Step 3: Error Response Tests
-1. Run error handling tests:
-```bash
-pytest tests/test_mock_llm_responses.py::TestErrorResponses -v
-```
-- Verify timeout handling
-- Check validation errors
-- Test permission errors
+## Test Order and Dependencies
 
-### Step 4: Edge Case Tests
-1. Run edge case tests:
-```bash
-pytest tests/test_mock_llm_edge_cases.py::TestEdgeCases -v
-```
-- Test empty prompts
-- Verify long prompt handling
-- Check special character handling
+### Level 1: Basic Tests (No Dependencies)
+1. Basic Response Tests (`TestBasicResponses`)
+   - Simple text responses
+   - File operations
+   - Default behavior
+   - Uses: `basic_response_map`, `mock_llm` fixtures
 
-### Step 5: Concurrent Operation Tests
-1. Run concurrent operation tests:
-```bash
-pytest tests/test_mock_llm_edge_cases.py::TestConcurrentOperations -v
-```
-- Test parallel requests
-- Verify history tracking
-- Check resource management
+2. Template Response Tests (`TestTemplateResponses`)
+   - Count-based responses
+   - Time-based responses
+   - Length-based responses
+   - Uses: `template_response_map`, `dynamic_mock_llm` fixtures
 
-### Step 6: Autogen Agent Integration Tests
-1. Run agent integration tests:
-```bash
-pytest tests/test_mock_llm_autogen_integration.py::TestAgentIntegration -v
-```
-- Verify agent initialization
-- Test agent communication
-- Check task handling
-- Test concurrent operations
+3. Error Response Tests (`TestErrorResponses`)
+   - Timeout handling
+   - Validation errors
+   - Permission errors
+   - Uses: `error_response_map`, `error_mock_llm` fixtures
 
-2. Run agent error handling tests:
-```bash
-pytest tests/test_mock_llm_autogen_integration.py::TestAgentErrorHandling -v
-```
-- Test timeout handling
-- Verify invalid input handling
-- Check permission errors
+4. Edge Case Tests (`TestEdgeCases`)
+   - Empty prompts
+   - Long prompts
+   - Special characters
+   - Unicode characters
+   - Uses: `mock_llm` fixture
 
-3. Run agent dynamic response tests:
-```bash
-pytest tests/test_mock_llm_autogen_integration.py::TestAgentDynamicResponses -v
-```
-- Test dynamic counting
-- Verify timing responses
-- Check task completion tracking
+5. Concurrent Operation Tests (`TestConcurrentOperations`)
+   - Parallel requests
+   - History tracking
+   - Uses: `mock_llm_with_history` fixture
 
-4. Run agent collaboration tests:
-```bash
-pytest tests/test_mock_llm_autogen_integration.py::TestAgentCollaboration -v
-```
-- Test complete agent workflows
-- Verify consensus building
-- Check agent coordination
-- Test specialized agent roles
+### Level 2: Agent Integration Tests (Depends on Basic Tests)
+6. Agent Integration Tests (`TestAgentIntegration`)
+   - Agent initialization
+   - Agent communication
+   - Task handling
+   - Concurrent operations
+   - Uses: `mock_llm`, `complex_mock_llm` fixtures
 
-5. Run agent state persistence tests:
+7. Agent Error Handling Tests (`TestAgentErrorHandling`)
+   - Timeout handling
+   - Invalid input handling
+   - Uses: `error_mock_llm` fixture
+
+8. Agent Dynamic Response Tests (`TestAgentDynamicResponses`)
+   - Dynamic counting
+   - Timing responses
+   - Uses: `dynamic_mock_llm_with_counts` fixture
+
+### Level 3: Advanced Tests (Depends on Agent Integration)
+9. Agent Collaboration Tests (`TestAgentCollaboration`)
+   - Complete workflows
+   - Consensus building
+   - Agent coordination
+   - Uses: `complex_mock_llm` fixture
+
+10. Agent State Persistence Tests (`TestAgentStatePersistence`)
+    - State save/load
+    - State updates
+    - State clearing
+    - Uses: `mock_llm_with_history` fixture
+
+## Running Tests
+
+### Option 1: Run All Tests in Order
 ```bash
-pytest tests/test_mock_llm_autogen_integration.py::TestAgentStatePersistence -v
+pytest tests/ -v
 ```
-- Test state save/load operations
-- Verify state updates
-- Check state clearing
-- Test state maintenance
+This will run all tests in the correct order, respecting dependencies.
+
+### Option 2: Run Specific Test Levels
+```bash
+# Run Level 1 tests (Basic MockLLM tests)
+pytest tests/test_mock_llm_responses.py::TestBasicResponses tests/test_mock_llm_responses.py::TestTemplateResponses tests/test_mock_llm_responses.py::TestErrorResponses tests/test_mock_llm_edge_cases.py::TestEdgeCases tests/test_mock_llm_edge_cases.py::TestConcurrentOperations -v
+
+# Run Level 2 tests (Agent Integration with MockLLM)
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentIntegration tests/test_mock_llm_autogen_integration.py::TestAgentErrorHandling tests/test_mock_llm_autogen_integration.py::TestAgentDynamicResponses -v
+
+# Run Level 3 tests (Advanced MockLLM scenarios)
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentCollaboration tests/test_mock_llm_autogen_integration.py::TestAgentStatePersistence -v
+```
+
+### Option 3: Run with Dependencies
+```bash
+# Run a specific test and its dependencies
+pytest tests/test_mock_llm_autogen_integration.py::TestAgentCollaboration -v --deps
+```
+
+## Success Criteria
+
+### Level 1 Tests (MockLLM Basic)
+- All basic response tests pass
+- Template responses work correctly
+- Error handling functions properly
+- Edge cases are handled correctly
+- Concurrent operations work reliably
+- Response patterns match expected formats
+- History tracking works correctly
+
+### Level 2 Tests (MockLLM with Agents)
+- Agent initialization works with MockLLM
+- Agent communication functions with MockLLM
+- Error handling works in agent context
+- Dynamic responses work with agents
+- Response patterns are correctly applied
+- Agent state is maintained
+
+### Level 3 Tests (MockLLM Advanced)
+- Agent collaboration works with MockLLM
+- State persistence functions correctly
+- Complex workflows execute properly
+- Response patterns are correctly sequenced
+- Agent interactions are properly tracked
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Test Dependencies**
+   - Check if required tests have passed
+   - Verify test order is correct
+   - Check for circular dependencies
+   - Verify fixture availability
+
+2. **Test Failures**
+   - Review test output for specific failures
+   - Check if dependencies are satisfied
+   - Verify test data is correct
+   - Check response pattern matches
+
+3. **MockLLM Specific Issues**
+   - Verify response patterns are defined
+   - Check fixture initialization
+   - Verify history tracking
+   - Check concurrent operation handling
+
+### Getting Help
+- Review test output
+- Check error messages
+- Consult testing guide
+- Review test dependencies
+- Check MockLLM documentation
+
+## Next Steps
+
+After completing this testing plan:
+
+1. Review test coverage report
+2. Document any issues found
+3. Create additional tests if needed
+4. Plan integration tests for other applications
+5. Consider adding performance benchmarks
+6. Review and update response patterns
 
 ## Phase 2: Update Manifest Application Test
 
