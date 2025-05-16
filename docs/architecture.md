@@ -28,33 +28,834 @@ The framework is built around a robust agent system that emphasizes human feedba
    - Testing infrastructure
    - Performance monitoring
 
-## Framework Migration
+## Core Classes and Components
 
-The architecture is designed with framework independence in mind, making it straightforward to migrate to different agent frameworks. This is achieved through:
+### 1. EnhancedAgent
+The `EnhancedAgent` class is the foundation of the agent system, providing enhanced capabilities over basic agents. This class implements a sophisticated agent architecture that combines the power of language models with advanced features for state management, feedback collection, and behavior adaptation.
 
-1. **Modular Design**
-   - Core systems are framework-agnostic
-   - Clear separation of concerns
-   - Standardized interfaces
-   - Adapter-based integration
+Key Features:
+- **State Persistence**: Maintains agent state across sessions, enabling continuity and learning
+- **Feedback Integration**: Collects and processes both explicit and implicit feedback
+- **Behavior Adaptation**: Dynamically adjusts behavior based on context and feedback
+- **Task Execution**: Validates and executes tasks based on agent capabilities
+- **History Tracking**: Maintains comprehensive history of interactions and decisions
 
-2. **Preserved Functionality**
-   - Human feedback systems remain intact
-   - Learning mechanisms are preserved
-   - State management is maintained
-   - Behavior adaptation continues
+The agent is designed to be highly configurable, allowing developers to:
+- Define specific roles and capabilities
+- Customize state persistence behavior
+- Implement custom feedback collection methods
+- Define behavior adaptation strategies
+- Extend task execution capabilities
 
-3. **Migration Support**
-   - Framework evaluation tools
-   - Compatibility checking
-   - State migration utilities
-   - Behavior mapping tools
+#### Relationship with Autogen Agents
 
-This design allows for seamless transitions between different agent frameworks while maintaining the core value of human feedback and continuous improvement.
+The `EnhancedAgent` class is designed to work alongside Autogen's specialized agent classes, not replace them. Here's how it relates to Autogen's core agent types:
+
+1. **AssistantAgent**
+   - `EnhancedAgent` can wrap an `AssistantAgent` to add:
+     - State persistence
+     - Feedback collection
+     - Behavior adaptation
+     - History tracking
+   - The original `AssistantAgent` capabilities remain intact
+
+2. **UserProxyAgent**
+   - `EnhancedAgent` can enhance a `UserProxyAgent` with:
+     - Automated feedback processing
+     - State management
+     - Learning capabilities
+     - Behavior tracking
+   - Maintains the user proxy functionality
+
+3. **GroupChatManager**
+   - `EnhancedAgent` can work with `GroupChatManager` to provide:
+     - Enhanced state management for group interactions
+     - Feedback collection from group members
+     - Learning from group dynamics
+     - History tracking for group sessions
+
+4. **RetrieveUserProxyAgent**
+   - `EnhancedAgent` can extend `RetrieveUserProxyAgent` with:
+     - Enhanced state persistence for retrieved information
+     - Feedback processing for retrieval quality
+     - Learning from retrieval patterns
+     - History tracking for retrievals
+
+Example Integration:
+```python
+from autogen import AssistantAgent, UserProxyAgent
+from enhanced_agent import EnhancedAgent
+
+# Create base Autogen agents
+assistant = AssistantAgent(
+    name="assistant",
+    llm_config={"config_list": [{"model": "gpt-4"}]}
+)
+
+user_proxy = UserProxyAgent(
+    name="user_proxy",
+    human_input_mode="TERMINATE"
+)
+
+# Enhance them with additional capabilities
+enhanced_assistant = EnhancedAgent(
+    base_agent=assistant,
+    role="assistant",
+    state_persistence=True,
+    capabilities=["code_generation", "explanation"]
+)
+
+enhanced_user_proxy = EnhancedAgent(
+    base_agent=user_proxy,
+    role="user_proxy",
+    state_persistence=True,
+    capabilities=["feedback_collection", "interaction_tracking"]
+)
+
+# Use enhanced agents in collaboration
+workflow = CollaborativeWorkflow(
+    agents=[enhanced_assistant, enhanced_user_proxy],
+    consensus_required=True
+)
+```
+
+This design allows developers to:
+- Keep using Autogen's specialized agents
+- Add enhanced capabilities when needed
+- Maintain compatibility with existing Autogen workflows
+- Gradually adopt enhanced features
+
+The `EnhancedAgent` class acts as a wrapper that adds capabilities while preserving the original agent's functionality, making it a complementary addition to Autogen's agent system rather than a replacement.
+
+#### Text Variables and Message Handling
+
+The `EnhancedAgent` class extends Autogen's text variable handling while maintaining compatibility with Autogen's message system. Here's how it works:
+
+1. **Message Structure**
+```python
+class EnhancedAgent:
+    def __init__(self, base_agent, role, state_persistence=True, capabilities=None):
+        self.base_agent = base_agent
+        self.role = role
+        self.state_persistence = state_persistence
+        self.capabilities = capabilities or []
+        self.message_history = []
+        self.text_variables = {}
+    
+    def register_text_variable(self, name, value, description=None):
+        """
+        Register a text variable that can be used in messages.
+        
+        Args:
+            name (str): Variable name
+            value (str): Variable value
+            description (str, optional): Variable description
+        """
+        self.text_variables[name] = {
+            'value': value,
+            'description': description,
+            'last_updated': datetime.now()
+        }
+    
+    def get_text_variable(self, name):
+        """
+        Get the current value of a text variable.
+        
+        Args:
+            name (str): Variable name
+            
+        Returns:
+            str: Variable value
+        """
+        return self.text_variables.get(name, {}).get('value')
+    
+    def update_text_variable(self, name, value):
+        """
+        Update a text variable's value.
+        
+        Args:
+            name (str): Variable name
+            value (str): New value
+        """
+        if name in self.text_variables:
+            self.text_variables[name]['value'] = value
+            self.text_variables[name]['last_updated'] = datetime.now()
+    
+    def process_message(self, message):
+        """
+        Process a message, handling text variables and maintaining history.
+        
+        Args:
+            message (str): Message to process
+            
+        Returns:
+            str: Processed message
+        """
+        # Replace variables in message
+        processed_message = self._replace_variables(message)
+        
+        # Store in history
+        self.message_history.append({
+            'original': message,
+            'processed': processed_message,
+            'timestamp': datetime.now()
+        })
+        
+        return processed_message
+    
+    def _replace_variables(self, message):
+        """
+        Replace variables in a message with their values.
+        
+        Args:
+            message (str): Message containing variables
+            
+        Returns:
+            str: Message with variables replaced
+        """
+        for name, var_info in self.text_variables.items():
+            placeholder = f"{{{name}}}"
+            if placeholder in message:
+                message = message.replace(placeholder, var_info['value'])
+        return message
+```
+
+2. **Usage Example**
+```python
+# Create an enhanced agent
+agent = EnhancedAgent(
+    base_agent=assistant,
+    role="assistant",
+    state_persistence=True
+)
+
+# Register text variables
+agent.register_text_variable(
+    "user_name",
+    "John",
+    "Name of the current user"
+)
+agent.register_text_variable(
+    "project_name",
+    "AI Assistant",
+    "Current project name"
+)
+
+# Use variables in messages
+message = "Hello {user_name}, welcome to the {project_name} project!"
+processed_message = agent.process_message(message)
+# Result: "Hello John, welcome to the AI Assistant project!"
+
+# Update variables
+agent.update_text_variable("user_name", "Jane")
+processed_message = agent.process_message(message)
+# Result: "Hello Jane, welcome to the AI Assistant project!"
+```
+
+3. **Integration with Autogen's Message System**
+```python
+class EnhancedAgent:
+    def chat(self, message, **kwargs):
+        """
+        Enhanced chat method that handles text variables.
+        
+        Args:
+            message (str): Message to send
+            **kwargs: Additional arguments for the base agent
+            
+        Returns:
+            str: Response from the base agent
+        """
+        # Process message with variables
+        processed_message = self.process_message(message)
+        
+        # Get response from base agent
+        response = self.base_agent.chat(processed_message, **kwargs)
+        
+        # Process response if needed
+        processed_response = self._process_response(response)
+        
+        return processed_response
+    
+    def _process_response(self, response):
+        """
+        Process the response from the base agent.
+        
+        Args:
+            response (str): Response from base agent
+            
+        Returns:
+            str: Processed response
+        """
+        # Add any additional processing here
+        return response
+```
+
+4. **Variable Persistence**
+```python
+class EnhancedAgent:
+    def save_state(self, checkpoint_name):
+        """
+        Save agent state including text variables.
+        
+        Args:
+            checkpoint_name (str): Name of the checkpoint
+        """
+        state = {
+            'text_variables': self.text_variables,
+            'message_history': self.message_history,
+            # ... other state data ...
+        }
+        self._persist_state(checkpoint_name, state)
+    
+    def load_state(self, checkpoint_name):
+        """
+        Load agent state including text variables.
+        
+        Args:
+            checkpoint_name (str): Name of the checkpoint
+        """
+        state = self._load_persisted_state(checkpoint_name)
+        self.text_variables = state.get('text_variables', {})
+        self.message_history = state.get('message_history', [])
+        # ... load other state data ...
+```
+
+This implementation:
+- Maintains compatibility with Autogen's message system
+- Adds persistent text variables
+- Tracks variable history and updates
+- Supports variable replacement in messages
+- Preserves message history
+- Enables state persistence for variables
+
+The text variable system allows for:
+- Dynamic message content
+- Variable tracking and updates
+- State persistence
+- Message history
+- Seamless integration with Autogen
+
+#### Testing Agent Encapsulation
+
+The `EnhancedAgent` class is thoroughly tested to ensure it properly encapsulates all types of Autogen agents. Here's how we verify the encapsulation:
+
+1. **Basic Agent Tests**
+```python
+import pytest
+from autogen import AssistantAgent, UserProxyAgent, GroupChatManager, RetrieveUserProxyAgent
+from enhanced_agent import EnhancedAgent
+
+def test_assistant_agent_encapsulation(assistant_agent):
+    """Test EnhancedAgent properly encapsulates AssistantAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    # Test basic functionality
+    assert enhanced_agent.base_agent == assistant_agent
+    assert enhanced_agent.role == "assistant"
+    
+    # Test message handling
+    response = enhanced_agent.chat("Hello!")
+    assert response is not None
+    
+    # Test state persistence
+    enhanced_agent.save_state("test_checkpoint")
+    enhanced_agent.load_state("test_checkpoint")
+    
+    # Test variable handling
+    enhanced_agent.register_text_variable("test_var", "test_value")
+    assert enhanced_agent.get_text_variable("test_var") == "test_value"
+
+def test_user_proxy_agent_encapsulation(user_proxy_agent):
+    """Test EnhancedAgent properly encapsulates UserProxyAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test human input handling
+    assert enhanced_agent.base_agent.human_input_mode == "TERMINATE"
+    
+    # Test message processing
+    message = "Hello {user_name}!"
+    enhanced_agent.register_text_variable("user_name", "Test User")
+    processed_message = enhanced_agent.process_message(message)
+    assert "Test User" in processed_message
+
+def test_group_chat_manager_encapsulation(group_chat_manager):
+    """Test EnhancedAgent properly encapsulates GroupChatManager."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=group_chat_manager,
+        role="group_manager",
+        state_persistence=True
+    )
+    
+    # Test group chat functionality
+    assert enhanced_agent.base_agent.name == "group_chat"
+    
+    # Test message broadcasting
+    message = "Hello group!"
+    enhanced_agent.register_text_variable("group_name", "Test Group")
+    processed_message = enhanced_agent.process_message(message)
+    assert processed_message is not None
+
+def test_retrieve_user_proxy_agent_encapsulation(retrieve_user_proxy_agent):
+    """Test EnhancedAgent properly encapsulates RetrieveUserProxyAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=retrieve_user_proxy_agent,
+        role="retrieve_proxy",
+        state_persistence=True
+    )
+    
+    # Test retrieval functionality
+    assert enhanced_agent.base_agent.name == "retrieve_proxy"
+    
+    # Test variable persistence with retrieval
+    enhanced_agent.register_text_variable("search_query", "test query")
+    enhanced_agent.save_state("retrieve_checkpoint")
+    enhanced_agent.load_state("retrieve_checkpoint")
+    assert enhanced_agent.get_text_variable("search_query") == "test query"
+```
+
+2. **Integration Tests**
+```python
+def test_agent_collaboration(assistant_agent, user_proxy_agent):
+    """Test collaboration between enhanced agents."""
+    enhanced_assistant = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    enhanced_user = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test message exchange
+    message = "Hello {assistant_name}!"
+    enhanced_user.register_text_variable("assistant_name", "Test Assistant")
+    processed_message = enhanced_user.process_message(message)
+    
+    response = enhanced_assistant.chat(processed_message)
+    assert response is not None
+
+def test_state_synchronization(assistant_agent, user_proxy_agent):
+    """Test state synchronization between enhanced agents."""
+    enhanced_assistant = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    enhanced_user = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test shared variables
+    shared_var = "shared_value"
+    enhanced_assistant.register_text_variable("shared", shared_var)
+    enhanced_user.register_text_variable("shared", shared_var)
+    
+    # Verify synchronization
+    assert enhanced_assistant.get_text_variable("shared") == enhanced_user.get_text_variable("shared")
+```
+
+3. **Error Handling Tests**
+```python
+def test_invalid_agent_encapsulation():
+    """Test handling of invalid agent types."""
+    with pytest.raises(ValueError):
+        EnhancedAgent(
+            base_agent="invalid_agent",
+            role="test",
+            state_persistence=True
+        )
+
+def test_variable_conflict_handling(assistant_agent):
+    """Test handling of variable conflicts."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    # Test variable overwrite
+    enhanced_agent.register_text_variable("test_var", "initial_value")
+    enhanced_agent.update_text_variable("test_var", "new_value")
+    assert enhanced_agent.get_text_variable("test_var") == "new_value"
+    
+    # Test invalid variable access
+    assert enhanced_agent.get_text_variable("nonexistent_var") is None
+```
+
+These tests ensure that:
+- All Autogen agent types are properly encapsulated
+- Message handling works correctly
+- State persistence functions as expected
+- Variable management is reliable
+- Agent collaboration is seamless
+- Error handling is robust
+
+The test suite verifies that EnhancedAgent:
+- Maintains compatibility with Autogen's core functionality
+- Adds enhanced features without breaking existing behavior
+- Handles all agent types consistently
+- Manages state and variables reliably
+
+```python
+class EnhancedAgent:
+    // ... existing code ...
+```
+
+### 2. CollaborativeWorkflow
+The `CollaborativeWorkflow` class orchestrates complex multi-agent interactions, enabling sophisticated collaboration patterns and task distribution. This class is essential for scenarios requiring multiple agents to work together, either sequentially or in parallel, with optional consensus requirements.
+
+Key Features:
+- **Flexible Execution Modes**: Supports both sequential and parallel task execution
+- **Consensus Management**: Optional consensus requirements for critical decisions
+- **Timeout Handling**: Configurable timeouts for task execution
+- **Dynamic Agent Management**: Add or remove agents during workflow execution
+- **State Tracking**: Maintains workflow state and message queue
+
+The workflow system enables:
+- Complex task distribution across multiple agents
+- Coordinated decision-making processes
+- Parallel processing of independent tasks
+- Graceful handling of agent failures
+- Dynamic workflow adaptation
+
+```python
+class CollaborativeWorkflow:
+    def __init__(self, agents, consensus_required=False, sequential=False, timeout=None):
+        self.agents = agents
+        self.consensus_required = consensus_required
+        self.sequential = sequential
+        self.timeout = timeout
+        self.workflow_state = {}
+        self.message_queue = []
+    
+    def execute(self, task, **kwargs):
+        """
+        Execute a task across multiple agents.
+        
+        Args:
+            task (str): The task to execute
+            **kwargs: Additional task parameters
+            
+        Returns:
+            dict: Workflow execution results
+        """
+        if self.sequential:
+            return self._execute_sequential(task, **kwargs)
+        else:
+            return self._execute_parallel(task, **kwargs)
+    
+    def _execute_sequential(self, task, **kwargs):
+        """
+        Execute task sequentially across agents.
+        """
+        results = []
+        for agent in self.agents:
+            result = agent.execute_task(task, **kwargs)
+            results.append(result)
+            
+            if self.consensus_required:
+                if not self._check_consensus(results):
+                    raise ConsensusError("No consensus reached")
+        
+        return self._combine_results(results)
+    
+    def _execute_parallel(self, task, **kwargs):
+        """
+        Execute task in parallel across agents.
+        """
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(agent.execute_task, task, **kwargs)
+                for agent in self.agents
+            ]
+            
+            results = [f.result(timeout=self.timeout) for f in futures]
+            
+            if self.consensus_required:
+                if not self._check_consensus(results):
+                    raise ConsensusError("No consensus reached")
+            
+            return self._combine_results(results)
+    
+    def add_agent(self, agent):
+        """
+        Add an agent to the workflow.
+        
+        Args:
+            agent (EnhancedAgent): The agent to add
+        """
+        self.agents.append(agent)
+    
+    def remove_agent(self, agent):
+        """
+        Remove an agent from the workflow.
+        
+        Args:
+            agent (EnhancedAgent): The agent to remove
+        """
+        self.agents.remove(agent)
+    
+    def get_workflow_state(self):
+        """
+        Get current workflow state.
+        
+        Returns:
+            dict: Current workflow state
+        """
+        return self.workflow_state
+```
+
+### 3. FeedbackProcessor
+The `FeedbackProcessor` class is a sophisticated component that handles the analysis and processing of feedback from various sources. It employs a strategy-based approach to analyze feedback, extract key insights, and generate actionable suggestions for improvement.
+
+Key Features:
+- **Strategy-Based Analysis**: Configurable analysis strategies for different feedback types
+- **Sentiment Analysis**: Evaluates feedback sentiment and emotional content
+- **Key Point Extraction**: Identifies and extracts important feedback points
+- **Suggestion Generation**: Creates actionable improvement suggestions
+- **History Tracking**: Maintains comprehensive feedback processing history
+
+The processor enables:
+- Customizable feedback analysis pipelines
+- Extensible analysis strategies
+- Comprehensive feedback tracking
+- Actionable improvement suggestions
+- Historical feedback analysis
+
+```python
+class FeedbackProcessor:
+    def __init__(self, analysis_strategies=None):
+        self.analysis_strategies = analysis_strategies or {}
+        self.feedback_history = []
+    
+    def process_feedback(self, feedback):
+        """
+        Process feedback using configured strategies.
+        
+        Args:
+            feedback (dict): Feedback to process
+            
+        Returns:
+            dict: Processed feedback results
+        """
+        # Analyze sentiment
+        sentiment = self._analyze_sentiment(feedback)
+        
+        # Extract key points
+        key_points = self._extract_key_points(feedback)
+        
+        # Generate suggestions
+        suggestions = self._generate_suggestions(key_points)
+        
+        result = {
+            'sentiment': sentiment,
+            'key_points': key_points,
+            'suggestions': suggestions
+        }
+        
+        self.feedback_history.append(result)
+        return result
+    
+    def add_analysis_strategy(self, name, strategy):
+        """
+        Add a new analysis strategy.
+        
+        Args:
+            name (str): Strategy name
+            strategy (callable): Strategy function
+        """
+        self.analysis_strategies[name] = strategy
+    
+    def get_feedback_history(self):
+        """
+        Get feedback processing history.
+        
+        Returns:
+            list: Feedback processing history
+        """
+        return self.feedback_history
+```
+
+### 4. StateManager
+The `StateManager` class provides robust state persistence and management capabilities, ensuring reliable state storage, retrieval, and maintenance across the system. This class is crucial for maintaining system consistency and enabling state recovery.
+
+Key Features:
+- **Flexible Storage Backend**: Configurable storage backend for state persistence
+- **Caching System**: Efficient state caching for improved performance
+- **State Validation**: Ensures state integrity and consistency
+- **Checkpoint Management**: Supports named checkpoints for state recovery
+- **Entity-Based Organization**: Organizes states by entity for better management
+
+The manager enables:
+- Reliable state persistence
+- Efficient state retrieval
+- State validation and integrity checks
+- Flexible storage options
+- State recovery capabilities
+
+```python
+class StateManager:
+    def __init__(self, storage_backend=None):
+        self.storage_backend = storage_backend or FileStorage()
+        self.state_cache = {}
+    
+    def save_state(self, entity_id, state, checkpoint_name):
+        """
+        Save state for an entity.
+        
+        Args:
+            entity_id (str): Entity identifier
+            state (dict): State to save
+            checkpoint_name (str): Checkpoint name
+        """
+        # Validate state
+        self._validate_state(state)
+        
+        # Save state
+        self.storage_backend.save(
+            f"{entity_id}_{checkpoint_name}",
+            state
+        )
+        
+        # Update cache
+        self.state_cache[f"{entity_id}_{checkpoint_name}"] = state
+    
+    def load_state(self, entity_id, checkpoint_name):
+        """
+        Load state for an entity.
+        
+        Args:
+            entity_id (str): Entity identifier
+            checkpoint_name (str): Checkpoint name
+            
+        Returns:
+            dict: Loaded state
+        """
+        # Check cache
+        cache_key = f"{entity_id}_{checkpoint_name}"
+        if cache_key in self.state_cache:
+            return self.state_cache[cache_key]
+        
+        # Load state
+        state = self.storage_backend.load(cache_key)
+        
+        # Update cache
+        self.state_cache[cache_key] = state
+        
+        return state
+    
+    def clear_state(self, entity_id, checkpoint_name):
+        """
+        Clear state for an entity.
+        
+        Args:
+            entity_id (str): Entity identifier
+            checkpoint_name (str): Checkpoint name
+        """
+        cache_key = f"{entity_id}_{checkpoint_name}"
+        
+        # Clear from storage
+        self.storage_backend.delete(cache_key)
+        
+        # Clear from cache
+        if cache_key in self.state_cache:
+            del self.state_cache[cache_key]
+```
+
+### 5. LearningManager
+The `LearningManager` class orchestrates the learning and adaptation processes of the agent system. It manages learning strategies, maintains a knowledge base, and coordinates the refinement of agent behaviors based on interactions and feedback.
+
+Key Features:
+- **Strategy Management**: Configurable learning strategies for different scenarios
+- **Knowledge Base**: Centralized storage for learned information
+- **Pattern Recognition**: Identifies and extracts patterns from interactions
+- **Strategy Refinement**: Continuously improves learning strategies
+- **History Tracking**: Maintains comprehensive learning history
+
+The manager enables:
+- Customizable learning processes
+- Knowledge accumulation and refinement
+- Pattern-based learning
+- Strategy optimization
+- Learning history analysis
+
+```python
+class LearningManager:
+    def __init__(self, learning_strategies=None):
+        self.learning_strategies = learning_strategies or {}
+        self.knowledge_base = {}
+        self.learning_history = []
+    
+    def learn_from_interaction(self, interaction):
+        """
+        Learn from an interaction.
+        
+        Args:
+            interaction (Interaction): The interaction to learn from
+            
+        Returns:
+            dict: Learning results
+        """
+        # Extract patterns
+        patterns = self._extract_patterns(interaction)
+        
+        # Update knowledge
+        self._update_knowledge(patterns)
+        
+        # Refine strategies
+        self._refine_strategies(patterns)
+        
+        result = {
+            'patterns': patterns,
+            'knowledge_update': self.knowledge_base,
+            'strategy_updates': self.learning_strategies
+        }
+        
+        self.learning_history.append(result)
+        return result
+    
+    def add_learning_strategy(self, name, strategy):
+        """
+        Add a new learning strategy.
+        
+        Args:
+            name (str): Strategy name
+            strategy (callable): Strategy function
+        """
+        self.learning_strategies[name] = strategy
+    
+    def get_learning_history(self):
+        """
+        Get learning history.
+        
+        Returns:
+            list: Learning history
+        """
+        return self.learning_history
+```
+
+These core classes form the foundation of the enhanced agent system, providing a robust and flexible architecture for building sophisticated agent-based applications. Each class is designed to be extensible and configurable, allowing developers to customize behavior while maintaining the core functionality. The system's modular design enables easy integration with different frameworks and adaptation to various use cases.
 
 ## Core Features
 
 ### 1. Human-Centric Design
+
+The human-centric design focuses on collecting and processing feedback effectively. The system uses the Observer pattern to handle feedback events and the Command pattern to process them.
 
 #### Feedback Collection
 ```python
@@ -68,21 +869,13 @@ class HumanFeedbackAgent(EnhancedAgent):
         
         # Combine feedback types
         return self.combine_feedback(explicit_feedback, implicit_feedback)
-    
-    def get_explicit_feedback(self, interaction):
-        return {
-            'rating': interaction.rating,
-            'comments': interaction.comments,
-            'suggestions': interaction.suggestions
-        }
-    
-    def analyze_implicit_feedback(self, interaction):
-        return {
-            'completion_time': interaction.duration,
-            'retry_count': interaction.retries,
-            'user_engagement': interaction.engagement_metrics
-        }
 ```
+
+This implementation:
+- Uses the Observer pattern for event handling
+- Implements the Command pattern for feedback processing
+- Provides flexible feedback collection
+- Enables real-time feedback analysis
 
 #### Feedback Processing
 ```python
@@ -102,16 +895,17 @@ class FeedbackProcessor:
             'key_points': key_points,
             'suggestions': suggestions
         }
-    
-    def analyze_sentiment(self, feedback):
-        return {
-            'positive': feedback.positive_aspects,
-            'negative': feedback.negative_aspects,
-            'neutral': feedback.neutral_aspects
-        }
 ```
 
+This implementation:
+- Uses the Strategy pattern for sentiment analysis
+- Implements the Command pattern for processing
+- Provides flexible feedback handling
+- Enables extensible processing
+
 ### 2. Continuous Learning
+
+The continuous learning system uses the Strategy pattern for learning algorithms and the State pattern for knowledge management.
 
 #### Pattern Recognition
 ```python
@@ -125,24 +919,13 @@ class LearningAgent(EnhancedAgent):
         
         # Refine strategies
         self.refine_strategies(patterns)
-    
-    def extract_patterns(self, interaction):
-        return {
-            'success_patterns': self.identify_success_patterns(interaction),
-            'failure_patterns': self.identify_failure_patterns(interaction),
-            'improvement_areas': self.identify_improvement_areas(interaction)
-        }
-    
-    def update_knowledge(self, patterns):
-        # Update success patterns
-        self.knowledge_base.add_success_patterns(patterns['success_patterns'])
-        
-        # Update failure patterns
-        self.knowledge_base.add_failure_patterns(patterns['failure_patterns'])
-        
-        # Update improvement strategies
-        self.knowledge_base.update_strategies(patterns['improvement_areas'])
 ```
+
+This implementation:
+- Uses the Strategy pattern for pattern recognition
+- Implements the State pattern for knowledge management
+- Provides flexible learning mechanisms
+- Enables continuous improvement
 
 #### Strategy Refinement
 ```python
@@ -163,7 +946,15 @@ class StrategyRefiner:
         return validated_strategies
 ```
 
+This implementation:
+- Uses the Strategy pattern for strategy selection
+- Implements the Command pattern for refinement
+- Provides flexible strategy management
+- Enables continuous optimization
+
 ### 3. Adaptive Behavior
+
+The adaptive behavior system uses the State pattern for behavior management and the Observer pattern for monitoring.
 
 #### Context Analysis
 ```python
@@ -178,21 +969,13 @@ class AdaptiveAgent(EnhancedAgent):
         # Apply and monitor
         result = self.apply_behavior(behavior)
         self.monitor_effectiveness(result)
-    
-    def analyze_context(self, context):
-        return {
-            'user_context': self.analyze_user_context(context),
-            'environment_context': self.analyze_environment_context(context),
-            'historical_context': self.analyze_historical_context(context)
-        }
-    
-    def select_behavior(self, context_analysis):
-        # Match context to behavior patterns
-        matched_patterns = self.match_context_patterns(context_analysis)
-        
-        # Select best behavior
-        return self.select_best_behavior(matched_patterns)
 ```
+
+This implementation:
+- Uses the State pattern for behavior management
+- Implements the Observer pattern for monitoring
+- Provides flexible behavior adaptation
+- Enables real-time monitoring
 
 #### Behavior Monitoring
 ```python
@@ -214,80 +997,11 @@ class BehaviorMonitor:
         }
 ```
 
-## Feedback Analysis and Processing
-
-### 1. Feedback Types
-
-#### Explicit Feedback
-```python
-class ExplicitFeedback:
-    def __init__(self):
-        self.rating = None
-        self.comments = []
-        self.suggestions = []
-        self.preferences = {}
-    
-    def add_rating(self, rating):
-        self.rating = rating
-    
-    def add_comment(self, comment):
-        self.comments.append(comment)
-    
-    def add_suggestion(self, suggestion):
-        self.suggestions.append(suggestion)
-```
-
-#### Implicit Feedback
-```python
-class ImplicitFeedback:
-    def __init__(self):
-        self.interaction_time = None
-        self.retry_count = 0
-        self.engagement_metrics = {}
-        self.completion_rate = None
-    
-    def track_interaction(self, interaction):
-        self.interaction_time = interaction.duration
-        self.retry_count = interaction.retries
-        self.engagement_metrics = interaction.metrics
-        self.completion_rate = interaction.completion_rate
-```
-
-### 2. Feedback Analysis
-
-#### Sentiment Analysis
-```python
-class SentimentAnalyzer:
-    def analyze_sentiment(self, feedback):
-        # Analyze text sentiment
-        text_sentiment = self.analyze_text_sentiment(feedback.text)
-        
-        # Analyze interaction sentiment
-        interaction_sentiment = self.analyze_interaction_sentiment(feedback.interaction)
-        
-        # Combine sentiments
-        return self.combine_sentiments(text_sentiment, interaction_sentiment)
-```
-
-#### Pattern Analysis
-```python
-class PatternAnalyzer:
-    def analyze_patterns(self, feedback_history):
-        # Identify common patterns
-        common_patterns = self.identify_common_patterns(feedback_history)
-        
-        # Analyze pattern effectiveness
-        pattern_effectiveness = self.analyze_pattern_effectiveness(common_patterns)
-        
-        # Generate pattern recommendations
-        recommendations = self.generate_pattern_recommendations(pattern_effectiveness)
-        
-        return {
-            'patterns': common_patterns,
-            'effectiveness': pattern_effectiveness,
-            'recommendations': recommendations
-        }
-```
+This implementation:
+- Uses the Observer pattern for monitoring
+- Implements the Command pattern for analysis
+- Provides flexible monitoring
+- Enables continuous improvement
 
 ## Development Tools
 
@@ -297,6 +1011,8 @@ The MockLLM system provides a robust testing and development environment, but it
 - Simulating human feedback
 - Validating improvements
 - Development and debugging
+
+The system uses the Factory pattern for response generation and the Strategy pattern for response selection.
 
 ## Core Components
 
@@ -892,6 +1608,7 @@ pytest tests/
 # Run specific test levels
 pytest tests/test_mock_llm_responses.py  # Level 1
 pytest tests/test_mock_llm_autogen_integration.py  # Level 2
+pytest tests/test_enhanced_agent_encapsulation.py  # Level 3
 ```
 
 ### 4. Common Use Cases
@@ -965,6 +1682,35 @@ def test_agent():
 def test_agent_task_execution(test_agent):
     result = test_agent.execute_task("test_task")
     assert result.status == "success"
+
+# Test agent encapsulation
+def test_agent_encapsulation():
+    # Test AssistantAgent encapsulation
+    assistant = AssistantAgent(name="assistant")
+    enhanced_assistant = EnhancedAgent(
+        base_agent=assistant,
+        role="assistant",
+        state_persistence=True
+    )
+    assert enhanced_assistant.base_agent == assistant
+    
+    # Test UserProxyAgent encapsulation
+    user_proxy = UserProxyAgent(name="user_proxy")
+    enhanced_user = EnhancedAgent(
+        base_agent=user_proxy,
+        role="user_proxy",
+        state_persistence=True
+    )
+    assert enhanced_user.base_agent == user_proxy
+    
+    # Test GroupChatManager encapsulation
+    group_chat = GroupChatManager(name="group_chat")
+    enhanced_group = EnhancedAgent(
+        base_agent=group_chat,
+        role="group_manager",
+        state_persistence=True
+    )
+    assert enhanced_group.base_agent == group_chat
 ```
 
 ### 6. Troubleshooting
@@ -1035,4 +1781,352 @@ def test_agent_task_execution(test_agent):
 - Maintain collaboration patterns
 
 ## Conclusion
-This enhanced architecture provides a robust foundation for building and testing LLM-based applications, with significant improvements over the base Autogen implementation in terms of testing, state management, error handling, and collaboration capabilities. 
+This enhanced architecture provides a robust foundation for building and testing LLM-based applications, with significant improvements over the base Autogen implementation in terms of testing, state management, error handling, and collaboration capabilities.
+
+## Design Patterns
+
+The architecture employs several key design patterns to ensure maintainability, flexibility, and scalability:
+
+### 1. Observer Pattern
+The Observer pattern is used for feedback collection and event handling. This allows components to subscribe to events and react to changes without tight coupling.
+
+```python
+class HumanFeedbackAgent(EnhancedAgent):
+    def collect_feedback(self, interaction):
+        # Collect explicit feedback
+        explicit_feedback = self.get_explicit_feedback(interaction)
+        
+        # Collect implicit feedback
+        implicit_feedback = self.analyze_implicit_feedback(interaction)
+        
+        # Combine feedback types
+        return self.combine_feedback(explicit_feedback, implicit_feedback)
+```
+
+This pattern enables:
+- Decoupled feedback collection
+- Real-time event processing
+- Flexible subscription mechanisms
+- Easy addition of new feedback types
+
+### 2. Strategy Pattern
+The Strategy pattern is used for behavior adaptation and learning mechanisms. It allows different algorithms to be selected at runtime.
+
+```python
+class LearningAgent(EnhancedAgent):
+    def learn_from_interaction(self, interaction):
+        # Extract interaction patterns
+        patterns = self.extract_patterns(interaction)
+        
+        # Update knowledge base
+        self.update_knowledge(patterns)
+        
+        # Refine strategies
+        self.refine_strategies(patterns)
+```
+
+This pattern provides:
+- Flexible behavior selection
+- Runtime strategy switching
+- Easy addition of new strategies
+- Clean separation of concerns
+
+### 3. State Pattern
+The State pattern manages agent behavior based on internal state. This allows for clean state transitions and behavior changes.
+
+```python
+class AdaptiveAgent(EnhancedAgent):
+    def adapt_behavior(self, context):
+        # Analyze context
+        context_analysis = self.analyze_context(context)
+        
+        # Select appropriate behavior
+        behavior = self.select_behavior(context_analysis)
+        
+        # Apply and monitor
+        result = self.apply_behavior(behavior)
+        self.monitor_effectiveness(result)
+```
+
+This pattern enables:
+- Clear state transitions
+- State-specific behavior
+- Easy state management
+- Predictable behavior changes
+
+### 4. Command Pattern
+The Command pattern is used for task execution and feedback processing. It encapsulates requests as objects.
+
+```python
+class FeedbackProcessor:
+    def process_feedback(self, feedback):
+        # Analyze feedback sentiment
+        sentiment = self.analyze_sentiment(feedback)
+        
+        # Extract key points
+        key_points = self.extract_key_points(feedback)
+        
+        # Generate improvement suggestions
+        suggestions = self.generate_suggestions(key_points)
+        
+        return {
+            'sentiment': sentiment,
+            'key_points': key_points,
+            'suggestions': suggestions
+        }
+```
+
+This pattern provides:
+- Encapsulated operations
+- Queued command execution
+- Undo/redo capabilities
+- Command logging
+
+### 5. Factory Pattern
+The Factory pattern is used for agent creation and component instantiation. It provides a flexible way to create objects.
+
+```python
+class AgentFactory:
+    def create_agent(self, agent_type, configuration):
+        if agent_type == "feedback":
+            return HumanFeedbackAgent(configuration)
+        elif agent_type == "learning":
+            return LearningAgent(configuration)
+        elif agent_type == "adaptive":
+            return AdaptiveAgent(configuration)
+```
+
+This pattern enables:
+- Centralized object creation
+- Configuration-based instantiation
+- Easy addition of new types
+- Consistent initialization
+
+### 6. Adapter Pattern
+The Adapter pattern is used for framework integration and interface compatibility. It allows different interfaces to work together.
+
+```python
+class FrameworkAdapter:
+    def adapt_interface(self, source_interface, target_framework):
+        return {
+            'agent_interface': self.map_agent_interface(source_interface),
+            'state_interface': self.map_state_interface(source_interface),
+            'communication_interface': self.map_communication_interface(source_interface)
+        }
+```
+
+This pattern provides:
+- Interface compatibility
+- Framework independence
+- Clean integration
+- Reusable adapters
+
+## Framework Migration
+
+The architecture's modular design enables straightforward migration to other agent frameworks. Core systems are framework-agnostic, preserving essential functionality like human feedback, learning mechanisms, and state management. The migration process is supported by evaluation tools, compatibility checks, and state migration utilities, ensuring a smooth transition while maintaining the system's core value of human feedback and continuous improvement. 
+
+### 2. Test Execution Order
+
+```python
+# Level 1: Basic Tests
+def test_mock_llm_responses():
+    # Test basic response patterns
+    pass
+
+def test_basic_agent_operations():
+    # Test basic agent functionality
+    pass
+
+# Level 2: Integration Tests
+def test_autogen_integration():
+    # Test Autogen compatibility
+    pass
+
+def test_agent_collaboration():
+    # Test agent interaction
+    pass
+
+# Level 3: Enhanced Feature Tests
+def test_assistant_agent_encapsulation(assistant_agent):
+    """Test EnhancedAgent properly encapsulates AssistantAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    # Test basic functionality
+    assert enhanced_agent.base_agent == assistant_agent
+    assert enhanced_agent.role == "assistant"
+    
+    # Test message handling
+    response = enhanced_agent.chat("Hello!")
+    assert response is not None
+    
+    # Test state persistence
+    enhanced_agent.save_state("test_checkpoint")
+    enhanced_agent.load_state("test_checkpoint")
+    
+    # Test variable handling
+    enhanced_agent.register_text_variable("test_var", "test_value")
+    assert enhanced_agent.get_text_variable("test_var") == "test_value"
+
+def test_user_proxy_agent_encapsulation(user_proxy_agent):
+    """Test EnhancedAgent properly encapsulates UserProxyAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test human input handling
+    assert enhanced_agent.base_agent.human_input_mode == "TERMINATE"
+    
+    # Test message processing
+    message = "Hello {user_name}!"
+    enhanced_agent.register_text_variable("user_name", "Test User")
+    processed_message = enhanced_agent.process_message(message)
+    assert "Test User" in processed_message
+
+def test_group_chat_manager_encapsulation(group_chat_manager):
+    """Test EnhancedAgent properly encapsulates GroupChatManager."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=group_chat_manager,
+        role="group_manager",
+        state_persistence=True
+    )
+    
+    # Test group chat functionality
+    assert enhanced_agent.base_agent.name == "group_chat"
+    
+    # Test message broadcasting
+    message = "Hello group!"
+    enhanced_agent.register_text_variable("group_name", "Test Group")
+    processed_message = enhanced_agent.process_message(message)
+    assert processed_message is not None
+
+def test_retrieve_user_proxy_agent_encapsulation(retrieve_user_proxy_agent):
+    """Test EnhancedAgent properly encapsulates RetrieveUserProxyAgent."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=retrieve_user_proxy_agent,
+        role="retrieve_proxy",
+        state_persistence=True
+    )
+    
+    # Test retrieval functionality
+    assert enhanced_agent.base_agent.name == "retrieve_proxy"
+    
+    # Test variable persistence with retrieval
+    enhanced_agent.register_text_variable("search_query", "test query")
+    enhanced_agent.save_state("retrieve_checkpoint")
+    enhanced_agent.load_state("retrieve_checkpoint")
+    assert enhanced_agent.get_text_variable("search_query") == "test query"
+
+def test_agent_collaboration(assistant_agent, user_proxy_agent):
+    """Test collaboration between enhanced agents."""
+    enhanced_assistant = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    enhanced_user = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test message exchange
+    message = "Hello {assistant_name}!"
+    enhanced_user.register_text_variable("assistant_name", "Test Assistant")
+    processed_message = enhanced_user.process_message(message)
+    
+    response = enhanced_assistant.chat(processed_message)
+    assert response is not None
+
+def test_state_synchronization(assistant_agent, user_proxy_agent):
+    """Test state synchronization between enhanced agents."""
+    enhanced_assistant = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    enhanced_user = EnhancedAgent(
+        base_agent=user_proxy_agent,
+        role="user_proxy",
+        state_persistence=True
+    )
+    
+    # Test shared variables
+    shared_var = "shared_value"
+    enhanced_assistant.register_text_variable("shared", shared_var)
+    enhanced_user.register_text_variable("shared", shared_var)
+    
+    # Verify synchronization
+    assert enhanced_assistant.get_text_variable("shared") == enhanced_user.get_text_variable("shared")
+
+def test_invalid_agent_encapsulation():
+    """Test handling of invalid agent types."""
+    with pytest.raises(ValueError):
+        EnhancedAgent(
+            base_agent="invalid_agent",
+            role="test",
+            state_persistence=True
+        )
+
+def test_variable_conflict_handling(assistant_agent):
+    """Test handling of variable conflicts."""
+    enhanced_agent = EnhancedAgent(
+        base_agent=assistant_agent,
+        role="assistant",
+        state_persistence=True
+    )
+    
+    # Test variable overwrite
+    enhanced_agent.register_text_variable("test_var", "initial_value")
+    enhanced_agent.update_text_variable("test_var", "new_value")
+    assert enhanced_agent.get_text_variable("test_var") == "new_value"
+    
+    # Test invalid variable access
+    assert enhanced_agent.get_text_variable("nonexistent_var") is None
+```
+
+### 3. Test Documentation
+
+#### Basic Tests (Level 1)
+- Verify Mock LLM response patterns
+- Test basic agent operations
+- Validate simple state management
+- Check basic variable handling
+
+#### Integration Tests (Level 2)
+- Verify Autogen compatibility
+- Test agent collaboration
+- Validate state synchronization
+- Check message exchange
+
+#### Enhanced Feature Tests (Level 3)
+- Verify agent encapsulation
+  - Test AssistantAgent wrapping
+  - Test UserProxyAgent wrapping
+  - Test GroupChatManager wrapping
+  - Test RetrieveUserProxyAgent wrapping
+- Validate advanced state management
+  - Test state persistence
+  - Test state synchronization
+  - Test state recovery
+- Check variable persistence
+  - Test variable registration
+  - Test variable updates
+  - Test variable sharing
+- Verify error handling
+  - Test invalid agent types
+  - Test variable conflicts
+  - Test invalid variable access
+- Validate performance
+  - Test message processing speed
+  - Test state management efficiency
+  - Test variable handling performance
+
+// ... rest of existing code ... 
