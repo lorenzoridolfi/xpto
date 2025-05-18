@@ -367,7 +367,7 @@ class FileReaderAgent(BaseChatAgent):
             combined = []
             for fname in valid:
                 try:
-                    text = open(fname, encoding="utf-8").read()
+                    text = open(os.path.join(self.config["input_text_folder"], fname), encoding="utf-8").read()
                 except Exception as e:
                     raise FileOperationError(f"Error reading {fname}: {str(e)}")
                 self.files_read.append(fname)

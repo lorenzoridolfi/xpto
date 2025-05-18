@@ -55,6 +55,7 @@ from typing import Dict, List, Any, Optional, Set, Union, TypedDict
 from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
+import os
 
 from autogen import AssistantAgent, UserProxyAgent
 from autogen_agentchat.agents import BaseChatAgent
@@ -244,7 +245,7 @@ class FileReaderAgent(BaseChatAgent):
             combined = []
             for fname in valid:
                 try:
-                    text = open(fname, encoding="utf-8").read()
+                    text = open(os.path.join(self.config["input_text_folder"], fname), encoding="utf-8").read()
                 except Exception as e:
                     raise FileOperationError(f"Error reading {fname}: {str(e)}")
                 self.files_read.append(fname)
@@ -647,7 +648,7 @@ async def main() -> None:
         
         result = await process_manifest_update(
             workflow=workflow,
-            manifest_path="path/to/manifest.json",
+            manifest_path=config["shared_manifest_file"],
             update_requirements=update_requirements,
             state_manager=state_manager
         )

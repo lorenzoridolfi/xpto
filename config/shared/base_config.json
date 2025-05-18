@@ -61,5 +61,7 @@
         }
       ]
     }
-  }
+  },
+  "input_text_folder": "text/",
+  "shared_manifest_file": "update_manifest.json"
 } 
