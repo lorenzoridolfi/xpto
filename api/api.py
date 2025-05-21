@@ -2,10 +2,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from uuid import UUID
-from datetime import datetime
 
 from .feedback_protocols import QueryHandler, FeedbackHandler
-from .feedback_storage import FeedbackStorage, InMemoryFeedbackStorage
+from .feedback_storage import InMemoryFeedbackStorage
 from .feedback_manager import QueryFeedbackManager
 
 app = FastAPI(title="Query Feedback API")

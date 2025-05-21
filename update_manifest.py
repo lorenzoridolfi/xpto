@@ -56,6 +56,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 import os
+import asyncio
 
 from autogen import AssistantAgent, UserProxyAgent
 from autogen_agentchat.agents import BaseChatAgent
@@ -159,7 +160,6 @@ def load_manifest_schema() -> Dict[str, Any]:
 config = load_config()
 llm_cache = LLMCache(
     max_size=config["cache_config"]["max_size"],
-    similarity_threshold=config["cache_config"]["similarity_threshold"],
     expiration_hours=config["cache_config"]["expiration_hours"]
 )
 
@@ -511,39 +511,42 @@ class ValidationAgent(AnalyticsAssistantAgent):
             logger.error(f"Unexpected error: {str(e)}")
             return Response(chat_message=TextMessage(content=f"Unexpected error: {str(e)}", source=self.name))
 
+def load_agents_config(path="config/update_manifest/agents.json") -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)["agents"]
+
 def create_agents() -> Dict[str, Any]:
     """
-    Create and initialize all required agents.
-    
+    Create and initialize all required agents from config/update_manifest/agents.json.
     Returns:
         Dict[str, Any]: Dictionary containing initialized agents
-        
     Raises:
         ConfigError: If agent creation fails
     """
     try:
         config = load_config()
+        agents_config = load_agents_config()
         agents = {
             "file_reader": FileReaderAgent(
-                name="FileReader",
-                description="Reads and processes manifest files",
+                name=agents_config["file_reader"]["name"],
+                description=agents_config["file_reader"]["description"],
                 manifest=config.get("manifest_files", []),
                 file_log=FILE_LOG
             ),
             "manifest_updater": ManifestUpdaterAgent(
-                name="ManifestUpdater",
-                description="Updates manifest files",
-                llm_config=config.get("llm_config", {})
+                name=agents_config["manifest_updater"]["name"],
+                description=agents_config["manifest_updater"]["description"],
+                llm_config=agents_config["manifest_updater"]["llm_config"]
             ),
             "logging_config": LoggingConfigAgent(
-                name="LoggingConfig",
-                description="Configures logging settings",
-                llm_config=config.get("llm_config", {})
+                name=agents_config["logging_config"]["name"],
+                description=agents_config["logging_config"]["description"],
+                llm_config=agents_config["logging_config"]["llm_config"]
             ),
             "validator": ValidationAgent(
-                name="Validator",
-                description="Validates configurations and manifests",
-                llm_config=config.get("llm_config", {})
+                name=agents_config["validator"]["name"],
+                description=agents_config["validator"]["description"],
+                llm_config=agents_config["validator"]["llm_config"]
             )
         }
         return agents

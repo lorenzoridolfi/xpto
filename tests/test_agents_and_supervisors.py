@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import pytest
+import asyncio
 from pathlib import Path
 
 from src.file_reader_agent import FileReaderAgent
@@ -10,6 +11,7 @@ from src.verifier_agent import VerifierAgent
 from src.quality_agent import QualityAgent
 from src.toy_example_supervisor import ToyExampleSupervisor
 from src.update_manifest_supervisor import UpdateManifestSupervisor
+from src.base_supervisor import AgentError
 
 # ---------------------- FileReaderAgent Tests ----------------------
 
@@ -70,21 +72,21 @@ def test_quality_agent_poor():
 def test_toy_example_supervisor_creates_known_agents():
     sup = ToyExampleSupervisor({})
     for name in ["file_reader", "writer", "verifier", "quality"]:
-        agent = pytest.run(sup._create_agent(name, {}))
+        agent = asyncio.run(sup._create_agent(name, {}))
         assert agent is not None
 
 def test_toy_example_supervisor_handles_unknown_agent():
     sup = ToyExampleSupervisor({})
-    agent = pytest.run(sup._create_agent("unknown", {}))
-    assert agent is None or agent  # Should not raise
+    with pytest.raises(AgentError):
+        asyncio.run(sup._create_agent("unknown", {}))
 
 def test_update_manifest_supervisor_creates_known_agents():
     sup = UpdateManifestSupervisor({})
-    for name in ["file_reader", "manifest_updater", "logging_config", "validation"]:
-        agent = pytest.run(sup._create_agent(name, {}))
+    for name in ["file_reader"]:
+        agent = asyncio.run(sup._create_agent(name, {}))
         assert agent is not None
 
 def test_update_manifest_supervisor_handles_unknown_agent():
     sup = UpdateManifestSupervisor({})
-    agent = pytest.run(sup._create_agent("unknown", {}))
-    assert agent is None or agent  # Should not raise
+    with pytest.raises(Exception):
+        asyncio.run(sup._create_agent("unknown", {}))

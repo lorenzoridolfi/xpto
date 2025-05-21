@@ -9,6 +9,13 @@ import json
 from typing import Dict, Any, Tuple
 from jsonschema import validate, ValidationError
 
+def validate_json(data: dict, schema: dict) -> bool:
+    """
+    Validate a dictionary against a JSON schema. Returns True if valid, raises Exception if not.
+    """
+    validate(instance=data, schema=schema)
+    return True
+
 def validate_json_output(output: str) -> Tuple[bool, str]:
     """
     Validates JSON output against the agent's schema.

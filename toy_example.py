@@ -31,35 +31,22 @@ import os
 import json
 import logging
 import asyncio
-import datetime
-from typing import List, Dict, Any, Optional, Set, Union, TypedDict, Tuple
+from typing import List, Dict, Any, TypedDict, Set, Tuple
 import jsonschema
 from jsonschema import validate, ValidationError
-import sys
 from prompt_toolkit import prompt
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
-import psutil
-import time
-from pathlib import Path
-from dataclasses import dataclass
-from enum import Enum
 
-from autogen import AssistantAgent, UserProxyAgent
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.messages import TextMessage, BaseChatMessage
 from autogen_agentchat.base import Response
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-from src.json_validator_tool import get_tool_for_agent
-from src.tool_analytics import ToolAnalytics, ToolUsageMetrics
 from src.analytics_assistant_agent import AnalyticsAssistantAgent
 from src.llm_cache import LLMCache
-import autogen
-from autogen import GroupChat, GroupChatManager
+from src.tool_analytics import ToolAnalytics
 
 from src.base_agent_system import (
-    setup_logging, log_event, create_base_agents, create_group_chat,
-    load_json_file, save_json_file, FILE_LOG, ROOT_CAUSE_DATA
+    setup_logging, log_event, FILE_LOG
 )
 
 # Custom Exceptions
@@ -69,10 +56,6 @@ class SystemError(Exception):
 
 class ConfigError(SystemError):
     """Raised when configuration operations fail."""
-    pass
-
-class ValidationError(SystemError):
-    """Raised when validation operations fail."""
     pass
 
 class FileOperationError(SystemError):
@@ -85,7 +68,7 @@ class AgentError(SystemError):
 
 # Type Definitions
 class ConfigDict(TypedDict):
-    cache_config: Dict[str, Union[int, float]]
+    cache_config: Dict[str, Any]
     logging: Dict[str, Any]
     agent_settings: Dict[str, Any]
 
@@ -141,7 +124,6 @@ logger = logging.getLogger("toy_example")
 config = load_config()
 llm_cache = LLMCache(
     max_size=config["cache_config"]["max_size"],
-    similarity_threshold=config["cache_config"]["similarity_threshold"],
     expiration_hours=config["cache_config"]["expiration_hours"]
 )
 
@@ -192,98 +174,7 @@ def validate_agent_output(agent_name: str, output: Dict[str, Any]) -> bool:
         raise ValidationError(f"Schema validation failed for {agent_name}: {str(e)}")
 
 # -----------------------------------------------------------------------------
-# Logging setup
-# -----------------------------------------------------------------------------
-def setup_logging(config: ConfigDict) -> None:
-    """
-    Configure logging based on configuration settings.
-
-    Args:
-        config (ConfigDict): Configuration dictionary containing logging settings
-        
-    Raises:
-        ConfigError: If logging configuration fails
-    """
-    try:
-        log_config = config["logging"]
-        
-        # Set up logger
-        logger.setLevel(getattr(logging, log_config["level"]))
-        
-        # Create formatter
-        formatter = logging.Formatter(log_config["format"])
-        
-        # Console handler
-        if log_config.get("console", True):
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
-        
-        # File handler
-        file_handler = logging.FileHandler(log_config["file"])
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        
-        # Don't propagate to root logger to avoid duplicate logs
-        logger.propagate = False
-    except Exception as e:
-        raise ConfigError(f"Failed to configure logging: {str(e)}")
-
-# -----------------------------------------------------------------------------
-# Event logger
-# -----------------------------------------------------------------------------
-def log_event(agent_name: str, event_type: str, inputs: List[BaseChatMessage], outputs: Any) -> None:
-    """
-    Log an event in the system with detailed information about inputs and outputs.
-
-    Args:
-        agent_name (str): Name of the agent generating the event
-        event_type (str): Type of event (e.g., 'on_messages_invoke', 'on_messages_complete')
-        inputs (List[BaseChatMessage]): Input messages to the agent
-        outputs: Output from the agent (can be Response, list of Responses, or other types)
-        
-    Raises:
-        SystemError: If logging fails
-    """
-    try:
-        entry = {
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-            "agent": agent_name,
-            "event": event_type,
-            "inputs": [{"source": m.source, "content": m.content} for m in inputs],
-        }
-        
-        if isinstance(outputs, Response):
-            cm = outputs.chat_message
-            try:
-                # Try to parse JSON content
-                content = json.loads(cm.content)
-                # Validate against schema
-                if not validate_agent_output(agent_name, content):
-                    logger.warning(f"Invalid output format from {agent_name}")
-                entry["outputs"] = [{"source": cm.source, "content": content}]
-            except json.JSONDecodeError:
-                # If not JSON, store as is
-                entry["outputs"] = [{"source": cm.source, "content": cm.content}]
-        elif isinstance(outputs, list) and all(isinstance(o, Response) for o in outputs):
-            entry["outputs"] = []
-            for o in outputs:
-                try:
-                    content = json.loads(o.chat_message.content)
-                    if not validate_agent_output(agent_name, content):
-                        logger.warning(f"Invalid output format from {agent_name}")
-                    entry["outputs"].append({"source": o.chat_message.source, "content": content})
-                except json.JSONDecodeError:
-                    entry["outputs"].append({"source": o.chat_message.source, "content": o.chat_message.content})
-        else:
-            entry["outputs"] = outputs
-            
-        logger.info(json.dumps(entry))
-    except Exception as e:
-        raise SystemError(f"Failed to log event: {str(e)}")
-
-# -----------------------------------------------------------------------------
-# Agent Classes
+# FileReaderAgent
 # -----------------------------------------------------------------------------
 class FileReaderAgent(BaseChatAgent):
     """

@@ -343,7 +343,7 @@ class RootCauseAnalyzer:
                 severity = issue["severity"]
                 severity_counts[severity] = severity_counts.get(severity, 0) + 1
             
-            summary = f"Analysis Summary:\n"
+            summary = "Analysis Summary:\n"
             summary += f"- Total Issues: {total_issues}\n"
             summary += f"- Issue Types: {', '.join(issue_types)}\n"
             summary += f"- Severity Breakdown: {', '.join(f'{k}: {v}' for k, v in severity_counts.items())}\n"

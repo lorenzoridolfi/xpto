@@ -18,21 +18,20 @@ import json
 import logging
 import asyncio
 import datetime
-from typing import List, Dict, Optional, Union, Any
+from typing import List, Dict, Union, Any
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 import shutil
 import aiofiles
 
-from autogen_agentchat.agents import BaseChatAgent, AssistantAgent
 from autogen_agentchat.base import Response
-from autogen_agentchat.messages import TextMessage, BaseChatMessage
+from autogen_agentchat.messages import BaseChatMessage
+from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from .analytics_assistant_agent import AnalyticsAssistantAgent
-from .tool_analytics import ToolAnalytics, ToolUsageMetrics
+from .tool_analytics import ToolAnalytics
 from .llm_cache import LLMCache
-from .config import DEFAULT_CONFIG, load_config, save_config
+from .config import DEFAULT_CONFIG
 
 # -----------------------------------------------------------------------------
 # Configuration Management
@@ -505,9 +504,12 @@ ACTION_LOG: List[str] = []        # Records agent actions
 logger = logging.getLogger("MultiAgentSystem")
 logger.setLevel(logging.INFO)
 fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-ch = logging.StreamHandler(); ch.setFormatter(fmt)
-fh = logging.FileHandler("agent_system.log", mode="w"); fh.setFormatter(fmt)
-logger.addHandler(ch); logger.addHandler(fh)
+ch = logging.StreamHandler()
+ch.setFormatter(fmt)
+fh = logging.FileHandler("agent_system.log", mode="w")
+fh.setFormatter(fmt)
+logger.addHandler(ch)
+logger.addHandler(fh)
 
 # -----------------------------------------------------------------------------
 # Event Logging

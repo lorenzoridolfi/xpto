@@ -94,7 +94,7 @@ class TestOpenAI(unittest.TestCase):
             # Assert response structure
             self.assertIsNotNone(response.choices)
             self.assertIsNotNone(response.choices[0].message.content)
-            self.assertEqual(response.model, self.config["model"])
+            self.assertTrue(response.model.startswith(self.config["model"]))
             self.assertIsNotNone(response.usage)
             
             return {

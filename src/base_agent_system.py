@@ -68,7 +68,6 @@ ACTION_LOG: List[str] = []       # Records agent actions and decisions
 # Initialize LLM cache
 llm_cache = LLMCache(
     max_size=1000,
-    similarity_threshold=0.85,
     expiration_hours=24
 )
 

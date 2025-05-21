@@ -91,6 +91,11 @@ def load_config(config_path: str = "agent_config.json") -> Dict[str, Any]:
     Raises:
         ConfigLoadError: If configuration file exists but cannot be loaded
     """
+    # Try to find config in config/shared directory first
+    shared_config_path = os.path.join("config", "shared", config_path)
+    if os.path.exists(shared_config_path):
+        config_path = shared_config_path
+        
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r') as f:
@@ -150,6 +155,11 @@ class Config:
         Raises:
             ConfigLoadError: If configuration cannot be loaded
         """
+        # Try to find config in config/shared directory first
+        shared_config_path = os.path.join("config", "shared", config_path)
+        if os.path.exists(shared_config_path):
+            config_path = shared_config_path
+            
         try:
             with open(config_path, "rt") as f:
                 self._config = json.load(f)
