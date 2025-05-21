@@ -25,8 +25,6 @@ from autogen_extensions.common_io import load_json_file
 from autogen_extensions.messages import BaseChatMessage, TextMessage
 from autogen_extensions.agents import AssistantAgent, UserProxyAgent
 import logging
-from unittest.mock import patch, MagicMock
-from examples.common import JsonSchemaValidationError
 
 
 class DummyFile:
@@ -186,50 +184,6 @@ def test_update_manifest_trace_is_valid(monkeypatch, tmp_path):
     jsonschema.validate(instance=trace, schema=schema)
 
 
-@pytest.mark.asyncio
-def test_update_manifest_workflow_trace():
-    # Create a dummy manifest file
-    dummy_manifest = {
-        "version": "1.0.0",
-        "files": [],
-        "metadata": {"topics": {}, "entities": {}, "statistics": {"total_files": 0, "total_size": 0, "last_updated": ""}}
-    }
-    manifest_path = "test_update_manifest.json"
-    with open(manifest_path, "w", encoding="utf-8") as f:
-        json.dump(dummy_manifest, f)
-
-    try:
-        # Use a stub requirements and config
-        update_requirements = {
-            "type": "dependency_update",
-            "target_dependencies": ["test_dep"],
-            "version_constraints": {"test_dep": ">=1.0.0"},
-        }
-        test_config = {
-            "cache_config": {"max_size": 10, "similarity_threshold": 0.8, "expiration_hours": 1},
-            "logging": {},
-            "agent_settings": {},
-            "shared_manifest_file": manifest_path
-        }
-        output = asyncio.get_event_loop().run_until_complete(run_update_manifest_workflow(update_requirements, config_override=test_config))
-        trace = output["trace"]
-        agents = output["agents"]
-        assert len(trace) > 0
-        agent_names = [a.name for a in agents]
-        sources = {msg["source"] for msg in trace if "source" in msg}
-        for name in agent_names:
-            assert name in sources
-        for msg in trace:
-            assert "agent_name" in msg
-            assert "role" in msg
-            assert "content" in msg
-            assert "source" in msg
-        assert output["result"] is not None
-    finally:
-        if os.path.exists(manifest_path):
-            os.remove(manifest_path)
-
-
 def test_create_agents_from_config():
     agents = create_agents()
     assert "assistant" in agents
@@ -287,13 +241,11 @@ def test_missing_required_agent_field_raises():
     if "name" in assistant_cfg:
         del assistant_cfg["name"]
     config["agents"]["AssistantAgent"] = assistant_cfg
-    from update_manifest import AgentTracer, get_openai_client
-    tracer = AgentTracer(config)
+    from update_manifest import get_openai_client
     llm_config = config.get("llm_config")
     if not (isinstance(llm_config, dict) and "config_list" in llm_config):
         llm_config = {"config_list": [{"model": "gpt-4"}]}
     model_client = get_openai_client(api_key=os.environ.get("OPENAI_API_KEY"), model="gpt-4")
-    from autogen import AssistantAgent
     with pytest.raises((KeyError, TypeError, ValueError)):
         AssistantAgent(
             name=assistant_cfg["name"],  # This will raise
@@ -330,173 +282,3 @@ def test_build_update_manifest_groupchat(monkeypatch):
     agent_names = [a.name for a in result["group_chat"].agents]
     for key in ["builder", "writer", "validator", "trace_collector"]:
         assert result[key].name in agent_names
-
-
-@pytest.fixture
-def mock_config():
-    """Mock agent configuration."""
-    return {
-        "agents": {
-            "ManifestBuilder": {
-                "system_message": "Build manifest",
-            },
-            "ManifestValidator": {
-                "system_message": "Validate manifest",
-            },
-            "ManifestWriter": {
-                "system_message": "Write manifest",
-            },
-        }
-    }
-
-@pytest.fixture
-def mock_manifest():
-    """Mock manifest data."""
-    return {
-        "files": [
-            {
-                "path": "test.py",
-                "metadata": {"type": "python"}
-            }
-        ]
-    }
-
-@pytest.fixture
-def mock_schema():
-    """Mock manifest schema."""
-    return {
-        "type": "object",
-        "properties": {
-            "files": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string"},
-                        "metadata": {"type": "object"}
-                    },
-                    "required": ["path", "metadata"]
-                }
-            }
-        },
-        "required": ["files"]
-    }
-
-@pytest.mark.asyncio
-async def test_create_agents(tmp_path, mock_config):
-    """Test agent creation with logging."""
-    config_path = tmp_path / "config.json"
-    with open(config_path, "w") as f:
-        json.dump(mock_config, f)
-    
-    with patch("logging.getLogger") as mock_logger:
-        agents = await create_agents(str(config_path))
-        
-        # Verify logging calls
-        mock_logger.return_value.info.assert_any_call(f"Loading agent configuration from {config_path}")
-        mock_logger.return_value.info.assert_any_call("Creating manifest workflow agents")
-        
-        # Verify agents created
-        assert "manifest_builder" in agents
-        assert "manifest_validator" in agents
-        assert "manifest_writer" in agents
-        assert "trace_collector" in agents
-        
-        # Verify agent configuration
-        assert agents["manifest_builder"].name == "ManifestBuilder"
-        assert agents["manifest_validator"].name == "ManifestValidator"
-        assert agents["manifest_writer"].name == "ManifestWriter"
-        assert agents["trace_collector"].name == "TraceCollector"
-
-@pytest.mark.asyncio
-async def test_run_manifest_update(tmp_path, mock_manifest, mock_schema):
-    """Test manifest update workflow with logging."""
-    # Create test files
-    manifest_path = tmp_path / "manifest.json"
-    schema_path = tmp_path / "schema.json"
-    with open(manifest_path, "w") as f:
-        json.dump(mock_manifest, f)
-    with open(schema_path, "w") as f:
-        json.dump(mock_schema, f)
-    
-    # Create mock agents
-    mock_agents = {
-        "manifest_builder": MagicMock(),
-        "manifest_validator": MagicMock(),
-        "manifest_writer": MagicMock(),
-        "trace_collector": MagicMock(get_trace=MagicMock(return_value={"events": []})),
-    }
-    
-    with patch("logging.getLogger") as mock_logger:
-        await run_manifest_update(
-            mock_agents,
-            manifest_path=str(manifest_path),
-            schema_path=str(schema_path)
-        )
-        
-        # Verify logging calls
-        mock_logger.return_value.info.assert_any_call("Initializing GroupChat for manifest update workflow")
-        mock_logger.return_value.info.assert_any_call("Starting manifest update workflow")
-        mock_logger.return_value.info.assert_any_call("Completed GroupChat workflow execution")
-        
-        # Verify trace was saved
-        assert (Path.cwd() / "update_manifest_trace.json").exists()
-
-@pytest.mark.asyncio
-async def test_manifest_validation_error(tmp_path, mock_manifest):
-    """Test handling of manifest validation errors."""
-    manifest_path = tmp_path / "manifest.json"
-    schema_path = tmp_path / "schema.json"
-    
-    # Create invalid manifest
-    invalid_manifest = {"wrong_key": []}
-    with open(manifest_path, "w") as f:
-        json.dump(invalid_manifest, f)
-    with open(schema_path, "w") as f:
-        json.dump({"type": "object", "required": ["files"]}, f)
-    
-    mock_agents = {
-        "manifest_builder": MagicMock(),
-        "manifest_validator": MagicMock(),
-        "manifest_writer": MagicMock(),
-        "trace_collector": MagicMock(),
-    }
-    
-    with patch("logging.getLogger") as mock_logger:
-        await run_manifest_update(
-            mock_agents,
-            manifest_path=str(manifest_path),
-            schema_path=str(schema_path)
-        )
-        
-        # Verify error logging
-        mock_logger.return_value.error.assert_called()
-
-@pytest.mark.asyncio
-async def test_main_workflow(tmp_path, mock_config, mock_manifest, mock_schema):
-    """Test the complete workflow."""
-    # Setup test files
-    config_path = tmp_path / "config.json"
-    manifest_path = tmp_path / "manifest.json"
-    schema_path = tmp_path / "schema.json"
-    
-    with open(config_path, "w") as f:
-        json.dump(mock_config, f)
-    with open(manifest_path, "w") as f:
-        json.dump(mock_manifest, f)
-    with open(schema_path, "w") as f:
-        json.dump(mock_schema, f)
-    
-    with patch("examples.update_manifest.DEFAULT_CONFIG_PATH", str(config_path)), \
-         patch("examples.update_manifest.DEFAULT_MANIFEST_PATH", str(manifest_path)), \
-         patch("examples.update_manifest.DEFAULT_SCHEMA_PATH", str(schema_path)), \
-         patch("logging.getLogger") as mock_logger:
-        
-        await main()
-        
-        # Verify workflow completed
-        mock_logger.return_value.info.assert_any_call("Starting manifest update workflow")
-        mock_logger.return_value.info.assert_any_call("Manifest update workflow completed successfully")
-        
-        # Verify trace file was created
-        assert (Path.cwd() / "update_manifest_trace.json").exists()

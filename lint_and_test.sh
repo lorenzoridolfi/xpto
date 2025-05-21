@@ -37,4 +37,4 @@ pylint --ignore=.venv . -E --disable=all --enable=undefined-variable
 ruff check .
 
 # 10. Run pytest on tests
-pytest ./tests --maxfail=3 --disable-warnings -q
+pytest -vvv ./tests --maxfail=3 --disable-warnings -q

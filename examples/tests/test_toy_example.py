@@ -23,29 +23,26 @@ LLM_CONFIG = {
     ]
 }
 
-def create_agents(config: dict, manifest_data: dict, tracer=None, model_client=None):
+def create_agents(config: dict, manifest_data: dict, model_client=None):
     agents_config = config.get("agents", {})
     assistant_cfg = agents_config.get("WriterAgent", {})
     user_cfg = agents_config.get("SupervisorAgent", agents_config.get("User", {}))
     # Use dummy tracer and model_client for tests if not provided
-    test_tracer = tracer or AgentTracer(config)
-    test_model_client = model_client or object()
+    test_tracer = AgentTracer(config)
     agents = {
         "assistant": AssistantAgent(
             name=assistant_cfg.get("name", "assistant"),
             system_message=assistant_cfg.get("system_message", "You are an assistant."),
             llm_config=config.get("llm_config", LLM_CONFIG),
             description=assistant_cfg.get("description", "Assistant agent"),
-            tracer=test_tracer,
-            model_client=test_model_client
+            tracer=test_tracer
         ),
         "user": UserProxyAgent(
             name=user_cfg.get("name", "user"),
             system_message=user_cfg.get("system_message", "You are a user."),
             llm_config=config.get("llm_config", LLM_CONFIG),
             description=user_cfg.get("description", "User agent"),
-            tracer=test_tracer,
-            model_client=test_model_client
+            tracer=test_tracer
         ),
     }
     return agents
@@ -61,7 +58,6 @@ async def test_toy_example_group_chat_trace():
         "agent_settings": {}
     }, manifest_data=dummy_manifest())
     test_tracer = AgentTracer({})
-    test_model_client = object()
     trace_collector = toy_example.TraceCollectorAgent(name="trace_collector", system_message="Trace collector agent", llm_config=LLM_CONFIG, description="Collects all messages", tracer=test_tracer)
     agents = list(agents_dict.values()) + [trace_collector]
     document_path = "test_document.txt"

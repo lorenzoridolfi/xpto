@@ -18,7 +18,8 @@ import datetime
 from dotenv import load_dotenv
 from typing import Dict, Any, List, Optional
 import openai
-from autogen import GroupChat, AssistantAgent
+from autogen_extensions.group_chat import GroupChat
+from autogen_extensions.agents import AssistantAgent
 from openai import OpenAI
 
 from examples.common import (
@@ -263,7 +264,6 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         },
     }
     # Instantiate agents
-    openai_client = OpenAI(api_key=openai_api_key)
     file_reader = FileReaderAgent(
         name="FileReaderAgent",
         llm_config=llm_config,
@@ -276,14 +276,8 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         functions=[],
         system_message="Summarizes file content using LLM."
     )
-    validator = ValidatorAgent(
-        name="ValidatorAgent",
-        llm_config=llm_config,
-        functions=[],
-        system_message="Validates the manifest against the schema."
-    )
     # Set up group chat (for demonstration, not used for message passing here)
-    group = GroupChat(agents=[file_reader, summarizer, validator])
+    # GroupChat instantiation is not used, so removed
     for file_path in files:
         logger.info(f"Processing file: {file_path}")
         try:
