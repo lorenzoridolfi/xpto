@@ -5,6 +5,7 @@ include:
   - "*.json"
   - "*.sh"
   - "*.toml"
+  - "*.txt"
 exclude:
   - ".*"
 ignore_dotfolders: true

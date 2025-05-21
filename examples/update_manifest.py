@@ -169,6 +169,18 @@ class SummarizerAgent(AssistantAgent):
         """
         Summarize the content of a file using OpenAI's API and log the action.
         """
+        logger.debug(f"SummarizerAgent: Preparing to summarize file: {file_path}")
+        # Estimate token count (1 token ≈ 4 chars for rough estimate)
+        max_tokens = 8192 - 1000  # leave room for completion
+        def num_tokens(text: str) -> int:
+            return len(text) // 4
+        if num_tokens(content) > max_tokens:
+            logger.warning(f"File {file_path} is too large for LLM context window, skipping.")
+            log_action("file_skipped_too_large", {"file": file_path}, self.name)
+            return {
+                "description": f"Arquivo de texto: {os.path.basename(file_path)} (excedeu limite de contexto LLM)",
+                "summary": "Arquivo muito grande para resumir automaticamente."
+            }
         prompt = (
             f"Por favor, analise este arquivo de texto e forneça:\n"
             f"1. Uma breve descrição do que este arquivo contém\n"
@@ -178,12 +190,14 @@ class SummarizerAgent(AssistantAgent):
             f"DESCRIÇÃO: (descrição em uma linha)\n"
             f"RESUMO: (resumo detalhado)"
         )
+        logger.debug(f"SummarizerAgent: Starting OpenAI API call for file: {file_path}")
         response = openai.chat.completions.create(
             model=llm_config["model"],
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000,
             temperature=0.3,
         )
+        logger.debug(f"SummarizerAgent: Finished OpenAI API call for file: {file_path}")
         response_text = response.choices[0].message.content.strip()
         description = ""
         summary = ""
@@ -196,6 +210,7 @@ class SummarizerAgent(AssistantAgent):
             description = f"Arquivo de texto: {os.path.basename(file_path)}"
             summary = "Falha ao gerar resumo. Conteúdo original preservado."
         log_action("file_summarized", {"file": file_path, "summary": summary}, self.name)
+        logger.debug(f"SummarizerAgent: Completed summarization for file: {file_path}")
         return {"description": description, "summary": summary}
 
 class ValidatorAgent(AssistantAgent):

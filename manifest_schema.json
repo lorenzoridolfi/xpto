@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "version",
+    "files",
+    "metadata"
+  ],
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "filename",
+          "path",
+          "description",
+          "status",
+          "metadata",
+          "sha256",
+          "modified_date",
+          "file_type",
+          "encoding",
+          "size",
+          "dependencies",
+          "category",
+          "read_order"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "required": [
+              "summary",
+              "keywords",
+              "topics",
+              "entities"
+            ],
+            "properties": {
+              "summary": {
+                "type": "string"
+              },
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "entities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "modified_date": {
+            "type": "string"
+          },
+          "file_type": {
+            "type": "string"
+          },
+          "encoding": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "category": {
+            "type": "string"
+          },
+          "read_order": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "statistics": {
+          "type": "object"
+        },
+        "topics": {
+          "type": "object"
+        },
+        "entities": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}
