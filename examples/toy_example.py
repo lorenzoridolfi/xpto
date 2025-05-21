@@ -50,7 +50,6 @@ from dotenv import load_dotenv
 from openai.types.chat import ChatCompletion
 from openai import OpenAI
 
-from autogen_extensions.agents import AssistantAgent, UserProxyAgent
 from autogen_extensions.messages import TextMessage, BaseChatMessage
 from autogen_extensions.response import Response
 from autogen_extensions.llm_cache import LLMCache
@@ -390,3 +389,17 @@ if __name__ == "__main__":
         traceback.print_exc()
         import sys
         sys.exit(1)
+
+# Ensure these are module-level variables for import
+llm_config = llm_config
+llm_cache = llm_cache
+tool_analytics = tool_analytics
+run_toy_example_workflow = run_toy_example_workflow
+
+__all__ = [
+    "create_agents",
+    "llm_config",
+    "tool_analytics",
+    "llm_cache",
+    "run_toy_example_workflow"
+]

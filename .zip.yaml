@@ -1,0 +1,11 @@
+destination: /Users/lorenzo/Sync/Source/AI/autogen_backup
+include:
+  - "*.py"
+  - "*.yaml"
+  - "*.json"
+  - "*.sh"
+  - "*.toml"
+exclude:
+  - ".*"
+ignore_dotfolders: true
+

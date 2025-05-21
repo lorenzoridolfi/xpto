@@ -74,5 +74,21 @@
             "speaker_selection_method": "round_robin",
             "allow_repeat_speaker": false
         }
+    },
+    "cache_config": {
+        "use_gpu": false,
+        "gpu_memory_fraction": 0.0,
+        "batch_size": 1,
+        "similarity_threshold": 0.85,
+        "max_size": 100,
+        "expiration_hours": 24,
+        "language": "en",
+        "cleaning": {
+            "mode": "expired",
+            "min_similarity": 0.99,
+            "max_age_hours": 48,
+            "min_hits": 1,
+            "max_size": 50
+        }
     }
 } 
