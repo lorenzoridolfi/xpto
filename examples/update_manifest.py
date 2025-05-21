@@ -1,8 +1,8 @@
 """
-Update Manifest Example
+Update Manifest Example (Multi-Agent Version)
 
 This example demonstrates a multi-agent system that:
-1. Generates a manifest for project files
+1. Generates a manifest for project files using agent classes
 2. Validates the manifest against a schema
 3. Saves the validated manifest
 4. Collects a trace of all agent interactions
@@ -18,7 +18,8 @@ import datetime
 from dotenv import load_dotenv
 from typing import Dict, Any, List, Optional
 import openai
-from autogen import GroupChat
+from autogen import GroupChat, AssistantAgent
+from openai import OpenAI
 
 from examples.common import (
     load_json_file,
@@ -112,11 +113,15 @@ MINIMAL_MANIFEST_SCHEMA = {
     }
 }
 
-# Action trace for logging all operations
 action_trace: list = []
 
-def log_action(action_type: str, details: dict, agent_name: str = "DirectLLM") -> None:
-    """Log an action to the trace with timestamp and agent information."""
+def log_action(action_type: str, details: dict, agent_name: str) -> None:
+    """
+    Log an action performed by an agent, including timestamp and details.
+    The agent_name argument must always be provided and non-null.
+    """
+    if not agent_name:
+        raise ValueError("agent_name must be provided for all actions!")
     action_trace.append({
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "action_type": action_type,
@@ -124,173 +129,126 @@ def log_action(action_type: str, details: dict, agent_name: str = "DirectLLM") -
         **details
     })
 
-class TracedGroupChat(GroupChat):
-    """A GroupChat that automatically traces all interactions."""
-    
-    def __init__(self, *args, trace_path: str, **kwargs):
-        """Initialize the traced group chat.
-        
-        Args:
-            trace_path: Path where to save the trace file
-            *args: Arguments to pass to GroupChat
-            **kwargs: Keyword arguments to pass to GroupChat
+# --- Agent Classes ---
+llm_config = {
+    "api_key": openai_api_key,
+    "model": "gpt-4",
+}
+
+class FileReaderAgent(AssistantAgent):
+    """
+    Agent responsible for reading file content.
+    """
+    def __init__(self, name: str, llm_config, functions, system_message: str):
+        super().__init__(
+            name=name,
+            llm_config=llm_config,
+            functions=functions,
+            system_message=system_message
+        )
+    def read(self, file_path: str) -> str:
         """
-        super().__init__(*args, **kwargs)
-        self.trace_path = trace_path
-        self.action_trace: List[Dict[str, Any]] = []
-        
-    def _log_action(self, action_type: str, details: Dict[str, Any], agent_name: str) -> None:
-        """Log an action to the trace with timestamp and agent information."""
-        self.action_trace.append({
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "action_type": action_type,
-            "agent": agent_name,
-            **details
-        })
-        
-    def _save_trace(self) -> None:
-        """Save the current trace to the trace file."""
-        trace = {
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "stats": {
-                "total_actions": len(self.action_trace),
-                "agents": list(set(action["agent"] for action in self.action_trace))
-            },
-            "actions": self.action_trace
-        }
-        with open(self.trace_path, "w", encoding="utf-8") as f:
-            json.dump(trace, f, indent=2, ensure_ascii=False)
-            
-    def reset(self) -> None:
-        """Reset the group chat and save the current trace."""
-        self._save_trace()
-        super().reset()
-        
-    def select_speaker(self, *args, **kwargs):
-        """Override select_speaker to trace speaker selection."""
-        speaker = super().select_speaker(*args, **kwargs)
-        if speaker:
-            self._log_action(
-                "speaker_selected",
-                {"selected_speaker": speaker.name},
-                "GroupChat"
-            )
-        return speaker
-        
-    def send(self, message: str, sender: Optional[str] = None, **kwargs):
-        """Override send to trace message sending."""
-        self._log_action(
-            "message_sent",
-            {
-                "sender": sender,
-                "message_length": len(message),
-                **kwargs
-            },
-            sender or "Unknown"
-        )
-        return super().send(message, sender, **kwargs)
-        
-    def receive(self, message: str, sender: Optional[str] = None, **kwargs):
-        """Override receive to trace message receiving."""
-        self._log_action(
-            "message_received",
-            {
-                "sender": sender,
-                "message_length": len(message),
-                **kwargs
-            },
-            self.name
-        )
-        return super().receive(message, sender, **kwargs)
-
-def compute_sha256(file_path: str, agent_name: str = "FileProcessor") -> str:
-    """Compute SHA256 hash of a file."""
-    logger.info(f"Computing SHA256 for file: {file_path}")
-    sha256_hash = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        # Read the file in chunks to handle large files efficiently
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
-
-def llm_generate_file_summary(file_path: str, agent_name: str = "SummaryGenerator") -> Dict[str, Any]:
-    logger.info(f"Generating summary for file: {file_path}")
-    try:
+        Read the content of a file and log the action.
+        """
         content = read_file_content(file_path)
-        logger.info(f"Successfully read content from {file_path}")
-    except Exception as e:
-        logger.error(f"Error reading file {file_path}: {e}")
-        raise
+        log_action("file_read", {"file": file_path}, self.name)
+        return content
 
-    # PROMPT EM PORTUGUÊS
-    prompt = (
-        f"Por favor, analise este arquivo de texto e forneça:\n"
-        f"1. Uma breve descrição do que este arquivo contém\n"
-        f"2. Um resumo detalhado de seu conteúdo\n"
-        f"\nConteúdo do arquivo:\n{content}\n\n"
-        f"Formate sua resposta assim:\n"
-        f"DESCRIÇÃO: (descrição em uma linha)\n"
-        f"RESUMO: (resumo detalhado)"
-    )
-    
-    logger.info("Making OpenAI API call for file summary")
-    try:
-        logger.info(f"Making OpenAI API call for file summary with model: {agent_name}")
+class SummarizerAgent(AssistantAgent):
+    """
+    Agent responsible for summarizing file content using an LLM.
+    """
+    def __init__(self, name: str, llm_config, functions, system_message: str):
+        super().__init__(
+            name=name,
+            llm_config=llm_config,
+            functions=functions,
+            system_message=system_message
+        )
+    def summarize(self, file_path: str, content: str) -> Dict[str, Any]:
+        """
+        Summarize the content of a file using OpenAI's API and log the action.
+        """
+        prompt = (
+            f"Por favor, analise este arquivo de texto e forneça:\n"
+            f"1. Uma breve descrição do que este arquivo contém\n"
+            f"2. Um resumo detalhado de seu conteúdo\n"
+            f"\nConteúdo do arquivo:\n{content}\n\n"
+            f"Formate sua resposta assim:\n"
+            f"DESCRIÇÃO: (descrição em uma linha)\n"
+            f"RESUMO: (resumo detalhado)"
+        )
         response = openai.chat.completions.create(
-            model=agent_name,
+            model=llm_config["model"],
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000,  # Increased for better summaries
+            max_tokens=1000,
             temperature=0.3,
         )
-        
-        logger.info("Successfully received OpenAI API response")
-    except Exception as e:
-        logger.error(f"OpenAI API call failed: {e}")
-        raise
-
-    # Parse the response in a simple format (Portuguese markers)
-    response_text = response.choices[0].message.content.strip()
-    try:
-        # Simple parsing based on DESCRIÇÃO: and RESUMO: markers
+        response_text = response.choices[0].message.content.strip()
         description = ""
         summary = ""
-        
         for line in response_text.split('\n'):
             if line.startswith('DESCRIÇÃO:'):
                 description = line.replace('DESCRIÇÃO:', '').strip()
             elif line.startswith('RESUMO:'):
                 summary = line.replace('RESUMO:', '').strip()
-        
         if not description or not summary:
-            raise ValueError("Falha ao extrair descrição ou resumo da resposta")
-            
-        logger.info(f"Successfully parsed summary for {file_path}")
-        
-    except Exception as e:
-        logger.error(f"Error parsing summary for {file_path}: {e}")
-        # Provide a basic fallback
-        description = f"Arquivo de texto: {os.path.basename(file_path)}"
-        summary = "Falha ao gerar resumo. Conteúdo original preservado."
+            description = f"Arquivo de texto: {os.path.basename(file_path)}"
+            summary = "Falha ao gerar resumo. Conteúdo original preservado."
+        log_action("file_summarized", {"file": file_path, "summary": summary}, self.name)
+        return {"description": description, "summary": summary}
 
-    return {
-        "description": description,
-        "metadata": {"summary": summary}
-    }
+class ValidatorAgent(AssistantAgent):
+    """
+    Agent responsible for validating the manifest against a schema.
+    """
+    def __init__(self, name: str, llm_config, functions, system_message: str):
+        super().__init__(
+            name=name,
+            llm_config=llm_config,
+            functions=functions,
+            system_message=system_message
+        )
+    def validate(self, manifest: Dict[str, Any], schema: Dict[str, Any]) -> bool:
+        """
+        Validate the manifest using the provided schema and log the result.
+        """
+        print(f"[DEBUG] ValidatorAgent self.name: {self.name}")  # Debug print
+        try:
+            validate_manifest(manifest, schema)
+            log_action("manifest_validated", {"result": "success"}, self.name)
+            return True
+        except JsonSchemaValidationError as e:
+            log_action("manifest_validation_failed", {"error": str(e)}, self.name)
+            return False
+        except Exception as e:
+            log_action("manifest_validation_failed", {"error": str(e)}, self.name)
+            raise
 
-def build_manifest_with_llm(text_dir: str, agent_name: str = "ManifestBuilder") -> Dict[str, Any]:
+# --- Main Workflow ---
+def compute_sha256(file_path: str) -> str:
+    """
+    Compute the SHA256 hash of a file.
+    """
+    logger.info(f"Computing SHA256 for file: {file_path}")
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str, Any]:
+    """
+    Build a manifest for all files in a directory using a multi-agent workflow.
+    Each file is read and summarized by agents, and the manifest is assembled.
+    """
     logger.info(f"Starting manifest build for directory: {text_dir}")
-    logger.info(f"Using agent: {agent_name}")
-    
     if not os.path.exists(text_dir):
         logger.error(f"Directory does not exist: {text_dir}")
         raise FileNotFoundError(f"Directory not found: {text_dir}")
-        
     files = [os.path.join(text_dir, f) for f in os.listdir(text_dir) if os.path.isfile(os.path.join(text_dir, f))]
-    # Filter out .DS_Store and other hidden files
     files = [f for f in files if not os.path.basename(f).startswith('.')]
-    
     logger.info(f"Found {len(files)} files to process")
-    
     manifest = {
         "version": "1.0.0",
         "files": [],
@@ -304,25 +262,48 @@ def build_manifest_with_llm(text_dir: str, agent_name: str = "ManifestBuilder") 
             "entities": {},
         },
     }
-    
+    # Instantiate agents
+    openai_client = OpenAI(api_key=openai_api_key)
+    file_reader = FileReaderAgent(
+        name="FileReaderAgent",
+        llm_config=llm_config,
+        functions=[],
+        system_message="Reads file content for manifest generation."
+    )
+    summarizer = SummarizerAgent(
+        name="SummarizerAgent",
+        llm_config=llm_config,
+        functions=[],
+        system_message="Summarizes file content using LLM."
+    )
+    validator = ValidatorAgent(
+        name="ValidatorAgent",
+        llm_config=llm_config,
+        functions=[],
+        system_message="Validates the manifest against the schema."
+    )
+    # Set up group chat (for demonstration, not used for message passing here)
+    group = GroupChat(agents=[file_reader, summarizer, validator])
     for file_path in files:
         logger.info(f"Processing file: {file_path}")
         try:
-            summary_data = llm_generate_file_summary(file_path, agent_name)
-            logger.info(f"Successfully generated summary for {file_path}")
-            
+            # Agent reads the file
+            content = file_reader.read(file_path)
+            # Agent summarizes the file
+            summary_data = summarizer.summarize(file_path, content)
+            # Assemble file entry for manifest
             file_entry = {
                 "filename": os.path.basename(file_path),
                 "path": file_path,
                 "description": summary_data["description"],
                 "status": "okay",
                 "metadata": {
-                    "summary": summary_data["metadata"]["summary"],
+                    "summary": summary_data["summary"],
                     "keywords": ["ai", "text", "analysis"],
                     "topics": ["artificial intelligence"],
                     "entities": ["llm", "agent"]
                 },
-                "sha256": compute_sha256(file_path, agent_name),
+                "sha256": compute_sha256(file_path),
                 "modified_date": datetime.datetime.fromtimestamp(
                     os.path.getmtime(file_path), 
                     tz=datetime.timezone.utc
@@ -335,41 +316,41 @@ def build_manifest_with_llm(text_dir: str, agent_name: str = "ManifestBuilder") 
                 "read_order": 0,
             }
             manifest["files"].append(file_entry)
-            
+            log_action("file_added_to_manifest", {"file": file_path}, "System")
             logger.info(f"Added {file_path} to manifest")
         except Exception as e:
             logger.error(f"Failed to process {file_path}: {e}")
+            log_action("file_processing_failed", {"file": file_path, "error": str(e)}, "System")
             continue
-    
     logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
-    
     return manifest
 
 async def main(max_round: int = 10) -> None:
-    logger.info("Starting manifest update workflow (direct LLM per-file summary mode)")
+    """
+    Main entry point for the manifest update workflow.
+    Orchestrates the multi-agent process: build, save, and validate the manifest.
+    """
+    logger.info("Starting manifest update workflow (multi-agent mode)")
     text_dir = os.path.join(PROJECT_ROOT, "text")
     logger.info(f"Text directory: {text_dir}")
-    
     if not os.path.exists(text_dir):
         logger.error(f"Text directory does not exist: {text_dir}")
         os.makedirs(text_dir, exist_ok=True)
         logger.info(f"Created text directory: {text_dir}")
-    
-    logger.info("Building manifest")
+    logger.info("Building manifest with agents")
     try:
-        manifest = build_manifest_with_llm(text_dir)
+        manifest = build_manifest_with_agents(text_dir)
         logger.info("Successfully built manifest")
         logger.info(f"Manifest contains {len(manifest['files'])} files")
     except Exception as e:
         logger.error(f"Failed to build manifest: {e}")
         raise
-        
     logger.info(f"Saving manifest to {DEFAULT_MANIFEST_PATH}")
     try:
         save_json_file(manifest, DEFAULT_MANIFEST_PATH)
+        log_action("manifest_saved", {"manifest_path": DEFAULT_MANIFEST_PATH, "file_count": len(manifest["files"])}, "System")
         logger.info(f"Successfully saved manifest to {DEFAULT_MANIFEST_PATH}")
-        
-        # Save trace with all actions and statistics
+        # Save the trace of all agent actions
         trace = {
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "stats": {
@@ -385,16 +366,14 @@ async def main(max_round: int = 10) -> None:
                     for entry in manifest["files"]
                 ]
             },
-            "actions": action_trace  # Include all logged actions
+            "actions": action_trace
         }
         save_json_file(trace, TRACE_PATH)
         logger.info(f"Saved trace to {TRACE_PATH}")
-        
     except Exception as e:
         logger.error(f"Failed to save manifest: {e}")
+        log_action("manifest_save_failed", {"error": str(e)}, "System")
         raise
-        
-    # Validate the updated manifest
     logger.info("Starting manifest validation")
     try:
         logger.info(f"Loading schema from {DEFAULT_SCHEMA_PATH}")
@@ -404,16 +383,16 @@ async def main(max_round: int = 10) -> None:
             logger.info(f"Created minimal schema at {DEFAULT_SCHEMA_PATH}")
         schema = load_json_file(DEFAULT_SCHEMA_PATH)
         logger.info("Successfully loaded schema")
-        
         logger.info("Validating manifest against schema")
-        validate_manifest(manifest, schema)
-        logger.info(f"Manifest validation successful: {DEFAULT_MANIFEST_PATH}")
-    except JsonSchemaValidationError as e:
-        logger.error(f"Manifest validation failed: {e}")
-    except FileNotFoundError as e:
-        logger.error(f"File not found during validation: {e}")
+        validator = ValidatorAgent("ValidatorAgent", llm_config, [], "Validates the manifest against the schema.")
+        valid = validator.validate(manifest, schema)
+        if valid:
+            logger.info(f"Manifest validation successful: {DEFAULT_MANIFEST_PATH}")
+        else:
+            logger.error(f"Manifest validation failed: {DEFAULT_MANIFEST_PATH}")
     except Exception as e:
         logger.error(f"Unexpected error during validation: {e}")
+        log_action("manifest_validation_failed", {"error": str(e)}, "System")
 
 if __name__ == "__main__":
     import asyncio
