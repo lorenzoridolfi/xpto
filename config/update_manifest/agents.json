@@ -1,0 +1,44 @@
+{
+  "agents": {
+    "file_reader": {
+      "name": "FileReader",
+      "description": "Lê e processa arquivos de manifesto",
+      "system_message": "Você é um agente responsável por ler arquivos de manifesto.",
+      "llm_config": {
+        "model": "gpt-4",
+        "temperature": 0.3,
+        "max_tokens": 1024
+      }
+    },
+    "manifest_updater": {
+      "name": "ManifestUpdater",
+      "description": "Atualiza arquivos de manifesto",
+      "system_message": "Você é um agente responsável por atualizar arquivos de manifesto.",
+      "llm_config": {
+        "model": "gpt-4",
+        "temperature": 0.3,
+        "max_tokens": 1024
+      }
+    },
+    "logging_config": {
+      "name": "LoggingConfig",
+      "description": "Configura o sistema de logging",
+      "system_message": "Você é um agente responsável por configurar o sistema de logging.",
+      "llm_config": {
+        "model": "gpt-4",
+        "temperature": 0.3,
+        "max_tokens": 1024
+      }
+    },
+    "validator": {
+      "name": "Validator",
+      "description": "Valida configurações e manifestos",
+      "system_message": "Você é um agente responsável por validar configurações e manifestos.",
+      "llm_config": {
+        "model": "gpt-4",
+        "temperature": 0.3,
+        "max_tokens": 1024
+      }
+    }
+  }
+} 
