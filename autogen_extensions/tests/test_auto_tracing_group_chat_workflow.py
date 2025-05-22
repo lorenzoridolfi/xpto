@@ -21,14 +21,14 @@ class DummyAgent:
     def validate(self, manifest, schema):
         return True
 
-def build_simple_manifest_with_tracing(text_dir, trace_path):
+def build_simple_manifest_with_tracing(text_dir, trace_file):
     file_reader = DummyAgent("FileReaderAgent", "Reads file content.", "Reads file content.")
     summarizer = DummyAgent("SummarizerAgent", "Summarizes file content.", "Summarizes file content.")
     validator = DummyAgent("ValidatorAgent", "Validates manifest.", "Validates manifest.")
     agents = [file_reader, summarizer, validator]
     group_description = "Test group for manifest workflow."
     manifest = {"version": "1.0.0", "files": [], "metadata": {"statistics": {}}}
-    with AutoTracingGroupChat(agents=agents, trace_path=trace_path, description=group_description) as group:
+    with AutoTracingGroupChat(agents=agents, trace_file=trace_file, description=group_description) as group:
         for file_path in Path(text_dir).iterdir():
             if file_path.name.startswith('.') or not file_path.is_file():
                 continue
@@ -62,14 +62,14 @@ async def test_auto_tracing_group_chat_workflow(tmp_path):
     # Setup: create a sample file
     sample_file = tmp_path / "sample.txt"
     sample_file.write_text("hello world", encoding="utf-8")
-    trace_path = tmp_path / "trace.json"
+    trace_file = tmp_path / "trace.json"
     # Run the workflow
-    manifest = build_simple_manifest_with_tracing(tmp_path, trace_path)
+    manifest = build_simple_manifest_with_tracing(tmp_path, trace_file)
     # Validate manifest
     assert len(manifest["files"]) == 1
     assert manifest["files"][0]["filename"] == "sample.txt"
     # Validate trace file
-    with open(trace_path, "r", encoding="utf-8") as f:
+    with open(trace_file, "r", encoding="utf-8") as f:
         trace = json.load(f)
     assert trace["group_description"] == "Test group for manifest workflow."
     assert "FileReaderAgent" in trace["agents"]
@@ -82,4 +82,4 @@ async def test_auto_tracing_group_chat_workflow(tmp_path):
     assert "manifest_validated" in action_types
     # Clean up
     sample_file.unlink()
-    trace_path.unlink() 
+    trace_file.unlink() 

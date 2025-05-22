@@ -277,7 +277,7 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         "This group coordinates FileReaderAgent, SummarizerAgent, and ValidatorAgent "
         "to build, summarize, and validate a manifest for project files."
     )
-    with AutoTracingGroupChat(agents=agents, trace_path=TRACE_PATH, description=group_description) as group:
+    with AutoTracingGroupChat(agents=agents, trace_file=TRACE_PATH, description=group_description) as group:
         for file_path in files:
             logger.info(f"Processing file: {file_path}")
             # FileReaderAgent reads the file

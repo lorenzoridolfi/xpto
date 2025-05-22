@@ -25,10 +25,10 @@ class AutoTracingGroupChat(GroupChat):
     GroupChat that automatically traces all agent actions and messages using a TraceCollectorAgent.
     No manual logging or user intervention required.
     """
-    def __init__(self, agents, trace_path: str, description: str = "", *args, **kwargs):
+    def __init__(self, agents, trace_file: str, description: str = "", *args, **kwargs):
         self.trace_collector = TraceCollectorAgent()
         super().__init__(agents=agents, *args, **kwargs)
-        self.trace_path = trace_path
+        self.trace_file = trace_file
         self.description = description
         self._agents_metadata = self._collect_agents_metadata(agents)
 
@@ -77,7 +77,7 @@ class AutoTracingGroupChat(GroupChat):
             },
             "actions": self.trace_collector.collected_actions
         }
-        with open(self.trace_path, "w", encoding="utf-8") as f:
+        with open(self.trace_file, "w", encoding="utf-8") as f:
             json.dump(trace, f, indent=2, ensure_ascii=False)
 
     def get_trace(self):

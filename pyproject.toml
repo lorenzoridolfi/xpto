@@ -24,4 +24,5 @@ dependencies = [
 
 [tool.ruff]
 [tool.ruff.lint]
-ignore = ["F401", "F841"]
+select = ["E", "F"]  # Enables Error and Pyflakes rules
+# ignore = ["F401", "F841"]

@@ -4,9 +4,11 @@ from typing import Dict, Any, Optional
 class WorkflowCriticAgent:
     """
     Analyzes a workflow trace and human feedback to generate a critique and action plan for improvement.
+    Optionally writes the output to a file if output_file is provided.
     """
-    def __init__(self, trace_path: str):
+    def __init__(self, trace_path: str, output_file: Optional[str] = None):
         self.trace_path = trace_path
+        self.output_file = output_file
         self.trace = self._load_trace()
         self.agent_metadata = self.trace.get("agents", {})
         self.actions = self.trace.get("actions", [])
@@ -39,7 +41,11 @@ class WorkflowCriticAgent:
                 action_plan.append(f"Add or clarify system_message for agent '{agent}'.")
         # Example: generic improvement step
         action_plan.append("Consider using an LLM for deeper workflow analysis.")
-        return {
+        result = {
             "critique": "\n".join(critique_lines),
             "action_plan": action_plan
-        } 
+        }
+        if self.output_file:
+            with open(self.output_file, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+        return result 
