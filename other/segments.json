@@ -1,0 +1,322 @@
+{
+  "segmentos": [
+    {
+      "nome": "Planejadores",
+      "descricao": "O segmento Planejadores, representando 6,1% da população brasileira (aproximadamente 9,5 milhões de indivíduos), incorpora uma relação proativa e sofisticada com o dinheiro. Para eles, o propósito primário do dinheiro é multiplicar: veem o dinheiro investido como uma ferramenta que trabalha ativamente para gerar mais riqueza. São caracterizados por um forte hábito de poupança mensal e clara preferência por manter seus fundos investidos. Demonstra-se elevado letramento financeiro (98% interessados em educação financeira), alta confiança na gestão própria das finanças e entusiasmo em acompanhar investimentos. Demograficamente, têm maior renda média (R$10.101/mês), altos níveis de escolaridade (61% com ensino superior completo) e concentram-se nas regiões Sul e Sudeste, com idade média de 34,9 anos. Em termos de produtos, 100% investem, 98% utilizam bancos tradicionais, 95% bancos digitais e 52% corretoras. Metas incluem viagens, compra de veículos e aquisição de imóvel.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "6,1%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "9,5M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Multiplicar",
+          "valor": "Multiplicar",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Renda Média",
+          "valor": "Média R$10.101/mês (17% >R$5,1k)",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Idade Média",
+          "valor": "34,9 anos",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Estado Civil",
+          "valor": "+ Casados",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Escolaridade",
+          "valor": "61% Superior Completo",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Concentração Geográfica",
+          "valor": "+ Sul, + Sudeste",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Poupança",
+          "valor": "Hábito de poupar mensalmente, muito importante",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Gastos",
+          "valor": "Só gastar o que se tem (86% concordam)",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Investimentos",
+          "valor": "Dinheiro trabalhando para gerar mais dinheiro; empolgante",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "98%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "95%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de corretoras",
+          "valor": "52%",
+          "fonte": "1"
+        }
+      ]
+    },
+    {
+      "nome": "Poupadores",
+      "descricao": "O segmento Poupadores compreende 5,1% da população brasileira (aproximadamente 8 milhões de pessoas), com relação ao dinheiro centrada em guardar. Semelhantes aos Planejadores em hábitos de poupança e busca por conhecimento financeiro, apresentam apetite ao risco menor e foco em contas de poupança tradicionais. Demograficamente, são mais jovens (média de 35,5 anos), solteiros e possuem renda média. Demonstram alta atividade digital para transações e comparação de preços, mas preferem bancos tradicionais para gestão de economias. Metas incluem compra de veículo e imóvel.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "5,1%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "8M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Guardar",
+          "valor": "Guardar",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Renda Média",
+          "valor": "Média",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Idade Média",
+          "valor": "35,5 anos",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Estado Civil",
+          "valor": "+ Solteiros",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Demografia",
+          "atributo": "Escolaridade",
+          "valor": "35% Superior Completo",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Poupança",
+          "valor": "Muito importante, sempre guardar parte dos ganhos",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Gastos",
+          "valor": "Cauteloso; caçador de descontos",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "86%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "68%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de corretoras",
+          "valor": "18%",
+          "fonte": "1"
+        }
+      ]
+    },
+    {
+      "nome": "Materialistas",
+      "descricao": "O segmento Materialistas, correspondendo a 15,2% da população (aproximadamente 24 milhões), vê o dinheiro principalmente como meio para gastar, valorizando gratificação imediata e status. Tendem a priorizar desejos presentes, acreditando que produtos caros correspondem a maior qualidade. Demonstram desconfiança elevada em relação a bancos e menor interesse em educação financeira (49%). Demograficamente, são jovens (média de 31,5 anos), solteiros e de renda média. Metas financeiras incluem pagar dívidas, renda excedente e conquista de imóvel.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "15,2%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "24M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Gastar",
+          "valor": "Gastar",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Atitudes & Comportamentos Financeiros",
+          "atributo": "Gastos",
+          "valor": "Imediata; traz felicidade, status",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "89%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "69%",
+          "fonte": "1"
+        }
+      ]
+    },
+    {
+      "nome": "Batalhadores",
+      "descricao": "Os Batalhadores são 26,3% da população (cerca de 41 milhões), com relação ao dinheiro baseada na sobrevivência e trabalho árduo. Encaram o dinheiro como meio de pagar contas, veem investimento como não viável e preferem empreender para melhorar a renda. Menor bancarização e resistência ao online caracterizam seu perfil. Demograficamente, renda média-baixa, idade média de 36,2 anos e alta proporção de empregos informais. Metas incluem pagamento de dívidas e renda excedente.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "26,3%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "41M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Ganhar",
+          "valor": "Ganhar para sobrevivência",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "92%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "11%",
+          "fonte": "1"
+        }
+      ]
+    },
+    {
+      "nome": "Céticos",
+      "descricao": "O segmento Céticos representa 21,2% da população (cerca de 33 milhões), marcado por profunda desconfiança nas instituições financeiras. Encaram o dinheiro como fonte de problemas, evitam discussão sobre finanças e desconsideram investimentos. Baixo engajamento em produtos, com exceções em financiamentos e títulos de capitalização. Demograficamente, renda média, idade média de 36 anos e escolaridade menor. Necessitam de abordagens transparentes para reconstruir confiança.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "21,2%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "33M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Evitar",
+          "valor": "Evitar",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "88%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "65%",
+          "fonte": "1"
+        }
+      ]
+    },
+    {
+      "nome": "Endividados",
+      "descricao": "O segmento Endividados corresponder a 26,3% da população (aproximadamente 41 milhões), com foco em pagar contas e dívidas. Demonstram confusão financeira e uso extensivo de crédito para esticar orçamento. Grande reconhecimento da necessidade de ajuda (69%) e desejo de melhorar habilidades básicas de poupança. Demograficamente, renda baixa, idade média de 36 anos, alta proporcionalidade de desempregados. Metas incluem quitar dívidas e formar reservas básicas.",
+      "atributos": [
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "% da População",
+          "valor": "26,3%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Identidade do Segmento",
+          "atributo": "Milhões Estimados",
+          "valor": "41M",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Filosofia Central sobre Dinheiro",
+          "atributo": "Pagar",
+          "valor": "Pagar dívidas e contas",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos tradicionais",
+          "valor": "92%",
+          "fonte": "1"
+        },
+        {
+          "categoria": "Bancos & Produtos Financeiros",
+          "atributo": "Uso de bancos digitais",
+          "valor": "64%",
+          "fonte": "1"
+        }
+      ]
+    }
+  ]
+}

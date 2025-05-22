@@ -1,0 +1,141 @@
+{
+  "metadata": {
+    "generated_at": "2025-05-22T16:34:16.181182",
+    "important_note": "autogen_core.models contains model families and interfaces, NOT actual model implementations",
+    "actual_models_location": "Model implementations with capabilities are in autogen_ext.models.* packages"
+  },
+  "model_families": {
+    "description": "Model family constants defined in autogen_core",
+    "note": "These are just string constants for categorization, not actual model implementations",
+    "families": {
+      "CLAUDE_3_5_HAIKU": "claude-3-5-haiku",
+      "CLAUDE_3_5_SONNET": "claude-3-5-sonnet",
+      "CLAUDE_3_7_SONNET": "claude-3-7-sonnet",
+      "CLAUDE_3_HAIKU": "claude-3-haiku",
+      "CLAUDE_3_OPUS": "claude-3-opus",
+      "CLAUDE_3_SONNET": "claude-3-sonnet",
+      "CODESRAL": "codestral",
+      "GEMINI_1_5_FLASH": "gemini-1.5-flash",
+      "GEMINI_1_5_PRO": "gemini-1.5-pro",
+      "GEMINI_2_0_FLASH": "gemini-2.0-flash",
+      "GEMINI_2_5_PRO": "gemini-2.5-pro",
+      "GPT_35": "gpt-35",
+      "GPT_4": "gpt-4",
+      "GPT_41": "gpt-41",
+      "GPT_45": "gpt-45",
+      "GPT_4O": "gpt-4o",
+      "MINISTRAL": "ministral",
+      "MISTRAL": "mistral",
+      "O1": "o1",
+      "O3": "o3",
+      "O4": "o4",
+      "OPEN_CODESRAL_MAMBA": "open-codestral-mamba",
+      "PIXTRAL": "pixtral",
+      "R1": "r1",
+      "UNKNOWN": "unknown"
+    }
+  },
+  "capability_structure": {
+    "description": "Structure for defining model capabilities",
+    "usage": "Model clients use this to define their capabilities",
+    "fields": {
+      "vision": {
+        "type": "ForwardRef('Required[bool]', module='autogen_core.models._model_client')",
+        "description": "Model capability: vision"
+      },
+      "function_calling": {
+        "type": "ForwardRef('Required[bool]', module='autogen_core.models._model_client')",
+        "description": "Model capability: function_calling"
+      },
+      "json_output": {
+        "type": "ForwardRef('Required[bool]', module='autogen_core.models._model_client')",
+        "description": "Model capability: json_output"
+      },
+      "family": {
+        "type": "ForwardRef('Required[ModelFamily.ANY | str]', module='autogen_core.models._model_client')",
+        "description": "Model capability: family"
+      },
+      "structured_output": {
+        "type": "ForwardRef('Required[bool]', module='autogen_core.models._model_client')",
+        "description": "Model capability: structured_output"
+      },
+      "multiple_system_messages": {
+        "type": "ForwardRef('Optional[bool]', module='autogen_core.models._model_client')",
+        "description": "Model capability: multiple_system_messages"
+      }
+    }
+  },
+  "message_types": [
+    {
+      "name": "AssistantMessage",
+      "docstring": "Assistant message are sampled from the language model."
+    },
+    {
+      "name": "FunctionExecutionResultMessage",
+      "docstring": "Function execution result message contains the output of multiple function calls."
+    },
+    {
+      "name": "SystemMessage",
+      "docstring": "System message contains instructions for the model coming from the developer.\n\n.. note::\n\n    Open AI is moving away from using 'system' role in favor of 'developer' role.\n    See `Model Spec <https://cdn.openai.com/spec/model-spec-2024-05-08.html#definitions>`_ for more details.\n    However, the 'system' role is still allowed in their API and will be automatically converted to 'developer' role\n    on the server side.\n    So, you can use `SystemMessage` for developer messages."
+    },
+    {
+      "name": "UserMessage",
+      "docstring": "User message contains input from end users, or a catch-all for data provided to the model."
+    }
+  ],
+  "available_in_core": {
+    "classes": [
+      "AssistantMessage",
+      "ChatCompletionClient",
+      "ChatCompletionTokenLogprob",
+      "CreateResult",
+      "FunctionExecutionResult",
+      "FunctionExecutionResultMessage",
+      "ModelCapabilities",
+      "ModelFamily",
+      "ModelInfo",
+      "RequestUsage",
+      "SystemMessage",
+      "TopLogprob",
+      "UserMessage"
+    ],
+    "functions": [
+      "validate_model_info"
+    ],
+    "constants": []
+  },
+  "clarification": {
+    "what_this_module_contains": [
+      "Model family constants (e.g., 'gpt-4o', 'claude-3-opus')",
+      "Base classes and interfaces (ChatCompletionClient)",
+      "Message type definitions (UserMessage, SystemMessage, etc.)",
+      "Capability structure definitions (ModelInfo, ModelCapabilities)"
+    ],
+    "what_this_module_does_not_contain": [
+      "Actual list of supported models",
+      "Specific model capabilities (e.g., 'gpt-4o supports vision')",
+      "Model client implementations",
+      "Model-specific configuration"
+    ],
+    "where_to_find_actual_models": {
+      "OpenAI models": "autogen_ext.models.openai",
+      "Anthropic models": "autogen_ext.models.anthropic",
+      "Azure models": "autogen_ext.models.azure",
+      "Ollama models": "autogen_ext.models.ollama",
+      "Note": "These packages contain the actual model implementations with capabilities"
+    }
+  },
+  "capability_example": {
+    "description": "Example of how model capabilities are defined in actual implementations",
+    "example": {
+      "model": "gpt-4o (this would be in autogen_ext.models.openai)",
+      "model_info": {
+        "vision": true,
+        "function_calling": true,
+        "json_output": true,
+        "family": "gpt-4o",
+        "structured_output": true
+      }
+    }
+  }
+}

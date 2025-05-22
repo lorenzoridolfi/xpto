@@ -1,0 +1,251 @@
+{
+    "segmentos": [
+    {
+    "nome": "Planejadores",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Multiplicar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Poupança",
+    "Investimentos"
+    ]
+    }
+    ]
+    },
+    {
+    "nome": "Poupadores",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Guardar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Poupança",
+    "Gastos"
+    ]
+    }
+    ]
+    },
+    {
+    "nome": "Materialistas",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Gastar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Gastos",
+    "Investimentos"
+    ]
+    }
+    ]
+    },
+    {
+    "nome": "Batalhadores",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Ganhar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Poupança",
+    "Gastos"
+    ]
+    }
+    ]
+    },
+    {
+    "nome": "Céticos",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Evitar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Gastos",
+    "Investimentos"
+    ]
+    }
+    ]
+    },
+    {
+    "nome": "Endividados",
+    "categorias": [
+    {
+    "categoria": "Identidade do Segmento",
+    "atributos": [
+    "% da População",
+    "Milhões Estimados"
+    ]
+    },
+    {
+    "categoria": "Filosofia Central sobre Dinheiro",
+    "atributos": [
+    "Pagar"
+    ]
+    },
+    {
+    "categoria": "Demografia",
+    "atributos": [
+    "Renda Média",
+    "Escolaridade",
+    "Ocupação Predominante"
+    ]
+    },
+    {
+    "categoria": "Bancos & Produtos Financeiros",
+    "atributos": [
+    "Uso de bancos tradicionais",
+    "Uso de bancos digitais",
+    "Uso de corretoras"
+    ]
+    },
+    {
+    "categoria": "Atitudes & Comportamentos Financeiros",
+    "atributos": [
+    "Gastos",
+    "Investimentos"
+    ]
+    }
+    ]
+    }
+    ]
+    }
+    

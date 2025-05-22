@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "synthetic_user_schema",
+  "title": "Synthetic User Schema",
+  "type": "object",
+  "properties": {
+    "segmentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": { "type": "string" },
+          "descricao": { "type": "string" },
+          "atributos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoria": { "type": "string" },
+                "atributo": { "type": "string" },
+                "valor": { "type": "string" },
+                "fonte": { "type": "string" }
+              },
+              "required": ["categoria", "atributo", "valor", "fonte"]
+            }
+          }
+        },
+        "required": ["nome", "descricao", "atributos"]
+      }
+    }
+  },
+  "required": ["segmentos"]
+} 

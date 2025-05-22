@@ -1,0 +1,106 @@
+{
+"segmentos": [
+{
+"nome": "Planejadores",
+"descricao": "O segmento Planejadores, representando 5,0% da população brasileira (aproximadamente 8,4 milhões de indivíduos), incorpora uma relação proativa e sofisticada com o dinheiro. Para eles, o propósito primário do dinheiro é multiplicar: veem o dinheiro investido como uma ferramenta que trabalha ativamente para gerar mais riqueza. São caracterizados por um forte hábito de poupança mensal e clara preferência por manter seus fundos investidos. Demonstra-se elevado letramento financeiro (98% interessados em educação financeira), alta confiança na gestão própria das finanças e entusiasmo em acompanhar investimentos. Demograficamente, têm maior renda média, alta escolaridade e ocupações formais de alta qualificação.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "5,0%", "fonte": "IBGE/2023"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "8,4M", "fonte": "IBGE/2023"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Multiplicar", "valor": "Multiplicar", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "Acima da média nacional (média geral R$2.846)", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "61% Superior Completo", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Empregos formais de alta qualificação", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "98%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "86%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "52%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Poupança", "valor": "Poupam mensalmente", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Investimentos", "valor": "Portfólio diversificado e periódicos", "fonte": "ANBIMA/2024"}
+]
+},
+{
+"nome": "Poupadores",
+"descricao": "O segmento Poupadores compreende 5,5% da população brasileira (aproximadamente 10 milhões de pessoas), com relação ao dinheiro centrada em guardar. Semelhantes aos Planejadores em hábitos de poupança e busca por conhecimento financeiro, apresentam apetite ao risco menor e foco em contas de poupança tradicionais. Demograficamente, são mais jovens (média de 35,5 anos), solteiros e possuem renda média. Demonstram alta atividade digital para transações e comparação de preços, mas preferem bancos tradicionais para gestão de economias. Metas incluem compra de veículo e imóvel.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "5,5%", "fonte": "IBGE/2023"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "10M", "fonte": "IBGE/2023"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Guardar", "valor": "Guardar", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "72% até R$2.100; 3% acima de R$5.000", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "35% Superior Completo; maioria Ensino Médio", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Donas de casa (12%) e jovens em início de carreira", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "89%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "87%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "15%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Poupança", "valor": "Alta frequência; guardam parte dos ganhos", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Gastos", "valor": "Cautelosos; preferem descontos", "fonte": "Serasa/2024"}
+]
+},
+{
+"nome": "Materialistas",
+"descricao": "O segmento Materialistas, correspondendo a 12,0% da população (aproximadamente 20 milhões), vê o dinheiro principalmente como meio para gastar, valorizando gratificação imediata e status. Tendem a priorizar desejos presentes, acreditando que produtos caros correspondem a maior qualidade. Demonstram desconfiança elevada em relação a bancos e menor interesse em educação financeira. Demograficamente, são jovens, solteiros e de renda média. Metas financeiras incluem pagar dívidas, renda excedente e aquisição de bens.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "12,0%", "fonte": "IBGE/2023"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "20M", "fonte": "IBGE/2023"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Gastar", "valor": "Gastar", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "73% até R$2.100; 5% acima de R$5.000", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "23% Superior Completo; maioria até Médio", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Adultos jovens, formais e informais", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "95%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "68%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "18%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Gastos", "valor": "Focam em consumo imediato", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Investimentos", "valor": "Experimentam aplicações básicas", "fonte": "ANBIMA/2024"}
+]
+},
+{
+"nome": "Batalhadores",
+"descricao": "Os Batalhadores são 17,0% da população (cerca de 28 milhões), com relação ao dinheiro baseada na sobrevivência e trabalho árduo. Encaram o dinheiro como meio de pagar contas, veem investimento como não viável e preferem empreender para melhorar a renda. Menor bancarização e resistência ao online caracterizam seu perfil. Demograficamente, renda média-baixa, idade média de 36,2 anos e alta proporção de empregos informais. Metas incluem pagamento de dívidas e geração de renda excedente.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "17,0%", "fonte": "IBGE/2023"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "28M", "fonte": "IBGE/2023"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Ganhar", "valor": "Ganhar para sobrevivência", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "78% até R$2.100; 5% acima de R$5.000", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "19% Superior Completo; maioria até Médio", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Autônomos e informais", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "92%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "65%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "7%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Poupança", "valor": "Pouco poupadores; sentem empoderamento ao conseguir poupar", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Gastos", "valor": "Vistos como necessidade", "fonte": "Serasa/2024"}
+]
+},
+{
+"nome": "Céticos",
+"descricao": "O segmento Céticos representa 18,0% da população (cerca de 30 milhões), marcado por profunda desconfiança nas instituições financeiras. Encaram o dinheiro como fonte de problemas, evitam discussão sobre finanças e desconsideram investimentos. Baixo engajamento em produtos, com exceções em financiamentos e títulos de capitalização. Demograficamente, renda baixa, idade média de 36 anos e escolaridade menor. Precisam de abordagens transparentes para reconstruir confiança.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "18,0%", "fonte": "IBGE/2023"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "30M", "fonte": "IBGE/2023"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Evitar", "valor": "Evitar", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "80% até R$2.100; 3% acima de R$5.000", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "Baixa; maioria até Médio", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Emprego formal sem perspectiva de melhora", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "88%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "64%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "11%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Gastos", "valor": "Cautela excessiva; evitam riscos", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Investimentos", "valor": "Quase nenhum", "fonte": "ANBIMA/2024"}
+]
+},
+{
+"nome": "Endividados",
+"descricao": "O segmento Endividados corresponde a 42,0% da população (aproximadamente 70 milhões), com foco em pagar contas e dívidas. Demonstram confusão financeira e uso extensivo de crédito para esticar orçamento. Grande reconhecimento da necessidade de ajuda e desejo de melhorar habilidades básicas de poupança. Demograficamente, renda baixa, idade média de 36 anos e alta proporção de desempregados. Metas incluem quitar dívidas e formar reservas básicas.",
+"atributos": [
+{"categoria": "Identidade do Segmento", "atributo": "% da População", "valor": "42,0%", "fonte": "Serasa/2024"},
+{"categoria": "Identidade do Segmento", "atributo": "Milhões Estimados", "valor": "70M", "fonte": "Serasa/2024"},
+{"categoria": "Filosofia Central sobre Dinheiro", "atributo": "Pagar", "valor": "Pagar dívidas e contas", "fonte": "Serasa/2024"},
+{"categoria": "Demografia", "atributo": "Renda Média", "valor": "77% até R$2.100; quase nenhum acima de R$5.000", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Escolaridade", "valor": "19% Superior Completo; maioria até Médio", "fonte": "IBGE/2023"},
+{"categoria": "Demografia", "atributo": "Ocupação Predominante", "valor": "Formais de baixa renda e desempregados", "fonte": "IBGE/2023"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos tradicionais", "valor": "93%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de bancos digitais", "valor": "69%", "fonte": "FEBRABAN/2024"},
+{"categoria": "Bancos & Produtos Financeiros", "atributo": "Uso de corretoras", "valor": "9%", "fonte": "ANBIMA/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Gastos", "valor": "Todo ganho consumido em despesas básicas", "fonte": "Serasa/2024"},
+{"categoria": "Atitudes & Comportamentos Financeiros", "atributo": "Investimentos", "valor": "Quase nenhum", "fonte": "ANBIMA/2024"}
+]
+}
+]
+}
