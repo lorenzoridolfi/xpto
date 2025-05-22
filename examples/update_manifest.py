@@ -20,6 +20,7 @@ from typing import Dict, Any, List, Optional
 import openai
 from autogen import GroupChat, AssistantAgent
 from openai import OpenAI
+from autogen_extensions.traced_group_chat import TracedGroupChat
 
 from examples.common import (
     load_json_file,
@@ -113,22 +114,6 @@ MINIMAL_MANIFEST_SCHEMA = {
     }
 }
 
-action_trace: list = []
-
-def log_action(action_type: str, details: dict, agent_name: str) -> None:
-    """
-    Log an action performed by an agent, including timestamp and details.
-    The agent_name argument must always be provided and non-null.
-    """
-    if not agent_name:
-        raise ValueError("agent_name must be provided for all actions!")
-    action_trace.append({
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "action_type": action_type,
-        "agent": agent_name,
-        **details
-    })
-
 # --- Agent Classes ---
 llm_config = {
     "api_key": openai_api_key,
@@ -151,7 +136,6 @@ class FileReaderAgent(AssistantAgent):
         Read the content of a file and log the action.
         """
         content = read_file_content(file_path)
-        log_action("file_read", {"file": file_path}, self.name)
         return content
 
 class SummarizerAgent(AssistantAgent):
@@ -176,7 +160,6 @@ class SummarizerAgent(AssistantAgent):
             return len(text) // 4
         if num_tokens(content) > max_tokens:
             logger.warning(f"File {file_path} is too large for LLM context window, skipping.")
-            log_action("file_skipped_too_large", {"file": file_path}, self.name)
             return {
                 "description": f"Arquivo de texto: {os.path.basename(file_path)} (excedeu limite de contexto LLM)",
                 "summary": "Arquivo muito grande para resumir automaticamente."
@@ -209,7 +192,6 @@ class SummarizerAgent(AssistantAgent):
         if not description or not summary:
             description = f"Arquivo de texto: {os.path.basename(file_path)}"
             summary = "Falha ao gerar resumo. Conteúdo original preservado."
-        log_action("file_summarized", {"file": file_path, "summary": summary}, self.name)
         logger.debug(f"SummarizerAgent: Completed summarization for file: {file_path}")
         return {"description": description, "summary": summary}
 
@@ -231,13 +213,10 @@ class ValidatorAgent(AssistantAgent):
         print(f"[DEBUG] ValidatorAgent self.name: {self.name}")  # Debug print
         try:
             validate_manifest(manifest, schema)
-            log_action("manifest_validated", {"result": "success"}, self.name)
             return True
         except JsonSchemaValidationError as e:
-            log_action("manifest_validation_failed", {"error": str(e)}, self.name)
             return False
         except Exception as e:
-            log_action("manifest_validation_failed", {"error": str(e)}, self.name)
             raise
 
 # --- Main Workflow ---
@@ -298,7 +277,7 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         system_message="Validates the manifest against the schema."
     )
     # Set up group chat (for demonstration, not used for message passing here)
-    group = GroupChat(agents=[file_reader, summarizer, validator])
+    group = TracedGroupChat(agents=[file_reader, summarizer, validator], trace_path=TRACE_PATH)
     for file_path in files:
         logger.info(f"Processing file: {file_path}")
         try:
@@ -331,11 +310,9 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
                 "read_order": 0,
             }
             manifest["files"].append(file_entry)
-            log_action("file_added_to_manifest", {"file": file_path}, "System")
             logger.info(f"Added {file_path} to manifest")
         except Exception as e:
             logger.error(f"Failed to process {file_path}: {e}")
-            log_action("file_processing_failed", {"file": file_path, "error": str(e)}, "System")
             continue
     logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
     return manifest
@@ -363,31 +340,9 @@ async def main(max_round: int = 10) -> None:
     logger.info(f"Saving manifest to {DEFAULT_MANIFEST_PATH}")
     try:
         save_json_file(manifest, DEFAULT_MANIFEST_PATH)
-        log_action("manifest_saved", {"manifest_path": DEFAULT_MANIFEST_PATH, "file_count": len(manifest["files"])}, "System")
         logger.info(f"Successfully saved manifest to {DEFAULT_MANIFEST_PATH}")
-        # Save the trace of all agent actions
-        trace = {
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "stats": {
-                "total_files": len(manifest["files"]),
-                "total_size": manifest["metadata"]["statistics"]["total_size"],
-                "success_rate": f"{len(manifest['files'])}/{len([f for f in os.listdir(text_dir) if os.path.isfile(os.path.join(text_dir, f)) and not f.startswith('.')])}",
-                "processed_files": [
-                    {
-                        "filename": entry["filename"],
-                        "size": entry["size"],
-                        "sha256": entry["sha256"]
-                    }
-                    for entry in manifest["files"]
-                ]
-            },
-            "actions": action_trace
-        }
-        save_json_file(trace, TRACE_PATH)
-        logger.info(f"Saved trace to {TRACE_PATH}")
     except Exception as e:
         logger.error(f"Failed to save manifest: {e}")
-        log_action("manifest_save_failed", {"error": str(e)}, "System")
         raise
     logger.info("Starting manifest validation")
     try:
@@ -407,7 +362,7 @@ async def main(max_round: int = 10) -> None:
             logger.error(f"Manifest validation failed: {DEFAULT_MANIFEST_PATH}")
     except Exception as e:
         logger.error(f"Unexpected error during validation: {e}")
-        log_action("manifest_validation_failed", {"error": str(e)}, "System")
+        raise
 
 if __name__ == "__main__":
     import asyncio

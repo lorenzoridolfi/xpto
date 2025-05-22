@@ -3,6 +3,7 @@ import asyncio
 import os
 import json
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 from examples.update_manifest import main as update_manifest_main
 
@@ -23,8 +24,17 @@ async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
     if trace_path.exists():
         trace_path.unlink()
 
-    # Run the workflow with reduced rounds
-    await update_manifest_main(max_round=1)
+    # Patch OpenAI LLM call to return a dummy summary instantly
+    with patch("openai.chat.completions.create") as mock_create:
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = (
+            "DESCRIÇÃO: Arquivo de teste\nRESUMO: Resumo de teste"
+        )
+        mock_create.return_value = mock_response
+
+        # Run the workflow with reduced rounds
+        await update_manifest_main(max_round=1)
 
     # Check manifest file
     assert manifest_path.exists(), "Manifest file was not created."
@@ -39,7 +49,8 @@ async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
     with open(trace_path, "r", encoding="utf-8") as f:
         trace = json.load(f)
     assert "actions" in trace
-    assert any(a["action_type"] == "file_read" for a in trace["actions"])
+    # Check for at least one group chat action
+    assert any(a["action_type"] in ("message_sent", "message_received") for a in trace["actions"])
 
     # Cleanup
     sample_file.unlink()
