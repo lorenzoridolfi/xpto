@@ -64,6 +64,7 @@ from autogen_extensions.errors import ConfigError
 # from autogen_extensions.file_reader_agent import FileReaderAgent
 from autogen_extensions.group_chat import GroupChat
 from examples.common import load_manifest_data, validate_manifest_for_toy_example
+from autogen import AssistantAgent, UserProxyAgent
 
 # Use a single logger instance
 logger = logging.getLogger("toy_example")

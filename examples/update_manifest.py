@@ -20,7 +20,7 @@ from typing import Dict, Any, List, Optional
 import openai
 from autogen import GroupChat, AssistantAgent
 from openai import OpenAI
-from autogen_extensions.traced_group_chat import TracedGroupChat
+from autogen_extensions.auto_tracing_group_chat import AutoTracingGroupChat
 
 from examples.common import (
     load_json_file,
@@ -232,10 +232,6 @@ def compute_sha256(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str, Any]:
-    """
-    Build a manifest for all files in a directory using a multi-agent workflow.
-    Each file is read and summarized by agents, and the manifest is assembled.
-    """
     logger.info(f"Starting manifest build for directory: {text_dir}")
     if not os.path.exists(text_dir):
         logger.error(f"Directory does not exist: {text_dir}")
@@ -256,7 +252,6 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
             "entities": {},
         },
     }
-    # Instantiate agents
     openai_client = OpenAI(api_key=openai_api_key)
     file_reader = FileReaderAgent(
         name="FileReaderAgent",
@@ -276,15 +271,16 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         functions=[],
         system_message="Validates the manifest against the schema."
     )
-    # Set up group chat (for demonstration, not used for message passing here)
-    group = TracedGroupChat(agents=[file_reader, summarizer, validator], trace_path=TRACE_PATH)
-    for file_path in files:
-        logger.info(f"Processing file: {file_path}")
-        try:
-            # Agent reads the file
+    agents = [file_reader, summarizer, validator]
+    with AutoTracingGroupChat(agents=agents, trace_path=TRACE_PATH) as group:
+        for file_path in files:
+            logger.info(f"Processing file: {file_path}")
+            # FileReaderAgent reads the file
             content = file_reader.read(file_path)
-            # Agent summarizes the file
+            group.agent_action("file_read", {"file": file_path}, file_reader.name)
+            # SummarizerAgent summarizes the file
             summary_data = summarizer.summarize(file_path, content)
+            group.agent_action("file_summarized", {"file": file_path, "summary": summary_data["summary"]}, summarizer.name)
             # Assemble file entry for manifest
             file_entry = {
                 "filename": os.path.basename(file_path),
@@ -310,11 +306,12 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
                 "read_order": 0,
             }
             manifest["files"].append(file_entry)
+            group.agent_action("file_added_to_manifest", {"file": file_path}, "System")
             logger.info(f"Added {file_path} to manifest")
-        except Exception as e:
-            logger.error(f"Failed to process {file_path}: {e}")
-            continue
-    logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
+        # Validate manifest at the end
+        valid = validator.validate(manifest, MINIMAL_MANIFEST_SCHEMA)
+        group.agent_action("manifest_validated", {"result": valid}, validator.name)
+        logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
     return manifest
 
 async def main(max_round: int = 10) -> None:
