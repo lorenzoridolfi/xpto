@@ -1,6 +1,7 @@
 import pytest
 from src.tool_analytics import ToolAnalytics
 
+
 def test_tool_analytics_metrics():
     analytics = ToolAnalytics()
     # If ToolAnalytics has a method like get_metrics or similar, use it here. Otherwise, skip the test.

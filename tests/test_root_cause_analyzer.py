@@ -1,6 +1,7 @@
 from src.root_cause_analyzer import RootCauseAnalyzer, AnalysisConfig
 from src.agent_tracer import AgentTracer
 
+
 def test_root_cause_analyzer_analyze():
     config = AnalysisConfig()
     analyzer = RootCauseAnalyzer(config)

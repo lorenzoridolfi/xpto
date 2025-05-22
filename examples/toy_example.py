@@ -52,6 +52,7 @@ from autogen_extensions.load_openai import get_openai_client
 from autogen_extensions.config import load_merged_config
 from autogen_extensions.trace_collector_agent import TraceCollectorAgent
 from autogen_extensions.errors import ConfigError
+
 # from autogen_extensions.file_reader_agent import FileReaderAgent
 from autogen_extensions.group_chat import GroupChat
 from examples.common import load_manifest_data
@@ -66,15 +67,14 @@ USE_LLM_CACHE = False  # Set to True to enable LLM cache usage
 # --- Load config and .env for LLM ---
 load_dotenv()
 config = load_merged_config(
-    "config/shared/base_config.json",
-    "config/toy_example/program_config.json"
+    "config/shared/base_config.json", "config/toy_example/program_config.json"
 )
 llm_config = config.get("llm_config", {})
 # Extract only the valid OpenAI parameters
 openai_params = {
     "model": llm_config.get("model", "gpt-4"),
     "temperature": llm_config.get("temperature", 0.7),
-    "max_tokens": llm_config.get("max_tokens", 4096)
+    "max_tokens": llm_config.get("max_tokens", 4096),
 }
 logger.info(f"Using OpenAI parameters: {openai_params}")
 openai_api_key = os.environ.get("OPENAI_API_KEY")
@@ -102,6 +102,7 @@ try:
 except Exception as e:
     print(f"ERROR: Could not initialize OpenAI client: {e}")
     llm_client = None
+
 
 # -----------------------------------------------------------------------------
 # Schema validation
@@ -148,7 +149,9 @@ def validate_agent_output(agent_name: str, output: Dict[str, Any]) -> bool:
         validate(instance=output, schema=schema)
         return True
     except jsonschema.ValidationError as e:
-        raise jsonschema.ValidationError(f"Schema validation failed for {agent_name}: {str(e)}")
+        raise jsonschema.ValidationError(
+            f"Schema validation failed for {agent_name}: {str(e)}"
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -280,7 +283,9 @@ def get_user_feedback() -> str:
 #     ...
 
 
-def create_agents(config: dict, manifest_data: dict, tracer, model_client) -> Dict[str, Any]:
+def create_agents(
+    config: dict, manifest_data: dict, tracer, model_client
+) -> Dict[str, Any]:
     """
     Create and initialize all required agents with real LLM client and tracer, loading agent descriptions and system messages from config JSON.
     manifest_data: dict loaded from manifest file, e.g., {"files": [...], ...}
@@ -292,19 +297,25 @@ def create_agents(config: dict, manifest_data: dict, tracer, model_client) -> Di
         agents = {
             "assistant": AssistantAgent(
                 name=assistant_cfg.get("name", "assistant"),
-                system_message=assistant_cfg.get("system_message", "You are an assistant."),
-                llm_config=config.get("llm_config", {"config_list": [{"model": "gpt-4"}]}),
+                system_message=assistant_cfg.get(
+                    "system_message", "You are an assistant."
+                ),
+                llm_config=config.get(
+                    "llm_config", {"config_list": [{"model": "gpt-4"}]}
+                ),
                 description=assistant_cfg.get("description", "Assistant agent"),
                 tracer=tracer,
-                model_client=model_client
+                model_client=model_client,
             ),
             "user": UserProxyAgent(
                 name=user_cfg.get("name", "user"),
                 system_message=user_cfg.get("system_message", "You are a user."),
-                llm_config=config.get("llm_config", {"config_list": [{"model": "gpt-4"}]}),
+                llm_config=config.get(
+                    "llm_config", {"config_list": [{"model": "gpt-4"}]}
+                ),
                 description=user_cfg.get("description", "User agent"),
                 tracer=tracer,
-                model_client=model_client
+                model_client=model_client,
             ),
         }
         return agents
@@ -313,7 +324,9 @@ def create_agents(config: dict, manifest_data: dict, tracer, model_client) -> Di
         raise Exception(f"Failed to create agents: {str(e)}")
 
 
-async def run_toy_example_workflow(document_path: str, config_override: dict = None, manifest_path: str = None) -> dict:
+async def run_toy_example_workflow(
+    document_path: str, config_override: dict = None, manifest_path: str = None
+) -> dict:
     """
     Run the toy_example workflow for a given document path and optional config override.
     Returns a dict with the result, trace, and agents.
@@ -322,12 +335,22 @@ async def run_toy_example_workflow(document_path: str, config_override: dict = N
     manifest_path = manifest_path or "config/update_manifest.json"
     manifest_data = load_manifest_data(manifest_path)
     test_tracer = AgentTracer(config_to_use)
-    test_model_client = get_openai_client(api_key=os.environ.get("OPENAI_API_KEY"), **openai_params)
-    agents_dict = create_agents(config_to_use, manifest_data, test_tracer, test_model_client)
+    test_model_client = get_openai_client(
+        api_key=os.environ.get("OPENAI_API_KEY"), **openai_params
+    )
+    agents_dict = create_agents(
+        config_to_use, manifest_data, test_tracer, test_model_client
+    )
     llm_config = config_to_use.get("llm_config")
     if not (isinstance(llm_config, dict) and "config_list" in llm_config):
         llm_config = {"config_list": [{"model": "gpt-4"}]}
-    trace_collector = TraceCollectorAgent(name="trace_collector", system_message="Trace collector agent", llm_config=llm_config, description="Collects all messages", tracer=test_tracer)
+    trace_collector = TraceCollectorAgent(
+        name="trace_collector",
+        system_message="Trace collector agent",
+        llm_config=llm_config,
+        description="Collects all messages",
+        tracer=test_tracer,
+    )
     agents = list(agents_dict.values()) + [trace_collector]
     group_chat = GroupChat(agents=agents, messages=[], max_round=5)
     result = await group_chat.run(document_path)
@@ -356,7 +379,11 @@ async def main() -> None:
         print("- AgentTracer used: trace_event logged")
         print("- ToolAnalytics used: tool usage recorded")
         print(f"- LLMCache used: {'yes' if USE_LLM_CACHE else 'no'}")
-        print("- OpenAI LLM used: yes" if llm_client else "- OpenAI LLM used: NO (client not available)")
+        print(
+            "- OpenAI LLM used: yes"
+            if llm_client
+            else "- OpenAI LLM used: NO (client not available)"
+        )
         print("- Agent message passing: GroupChat with real LLM")
         print("- StateManager: not used in this example")
         print("- Manifest validation: success and error cases")
@@ -378,8 +405,10 @@ if __name__ == "__main__":
         asyncio.run(main())
     except Exception:
         import traceback
+
         traceback.print_exc()
         import sys
+
         sys.exit(1)
 
 # Ensure these are module-level variables for import
@@ -393,5 +422,5 @@ __all__ = [
     "llm_config",
     "tool_analytics",
     "llm_cache",
-    "run_toy_example_workflow"
+    "run_toy_example_workflow",
 ]

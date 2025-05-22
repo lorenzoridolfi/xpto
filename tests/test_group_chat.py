@@ -1,5 +1,6 @@
 from autogen_extensions.traced_group_chat import TracedGroupChat
 
+
 class TestTracedGroupChat:
     def test_traced_group_chat_instantiation(self):
         group = TracedGroupChat(agents=[], trace_path="/tmp/trace.json", messages=[])
@@ -19,7 +20,8 @@ class TestTracedGroupChat:
         group._log_action("test_action", {"foo": "bar"}, "TestAgent")
         group._save_trace()
         import json
+
         with open(trace_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         assert "actions" in data
-        assert data["actions"][0]["action_type"] == "test_action" 
+        assert data["actions"][0]["action_type"] == "test_action"

@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 
 from examples.update_manifest import main as update_manifest_main
 
+
 @pytest.mark.asyncio
 async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
     # Setup: create a text directory with sample files in the expected location
@@ -12,7 +13,9 @@ async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
     text_dir = project_root / "text"
     text_dir.mkdir(exist_ok=True)
     sample_file = text_dir / "sample.txt"
-    sample_file.write_text("This is a test file for manifest integration.", encoding="utf-8")
+    sample_file.write_text(
+        "This is a test file for manifest integration.", encoding="utf-8"
+    )
 
     # Remove manifest and trace if they exist
     manifest_path = project_root / "manifest.json"
@@ -48,7 +51,10 @@ async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
         trace = json.load(f)
     assert "actions" in trace
     # Check for at least one group chat action
-    assert any(a["action_type"] in ("message_sent", "message_received") for a in trace["actions"])
+    assert any(
+        a["action_type"] in ("message_sent", "message_received")
+        for a in trace["actions"]
+    )
 
     # Cleanup
     sample_file.unlink()
@@ -57,4 +63,4 @@ async def test_update_manifest_workflow_creates_manifest_and_trace(tmp_path):
     if trace_path.exists():
         trace_path.unlink()
     if text_dir.exists():
-        text_dir.rmdir() 
+        text_dir.rmdir()

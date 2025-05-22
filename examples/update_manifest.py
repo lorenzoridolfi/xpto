@@ -31,8 +31,7 @@ from examples.common import (
 
 # Set up logging before any logger.info calls
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ PROJECT_ROOT = "/Users/lorenzo/Sync/Source/AI/autogen"
 logger.info(f"Project root: {PROJECT_ROOT}")
 
 # Load .env from the project root
-load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, '.env'))
+load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
@@ -50,8 +49,12 @@ if not openai_api_key:
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
 # Update paths to use project root
-DEFAULT_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "update_manifest", "program_config.json")
-DEFAULT_SCHEMA_PATH = os.path.join(PROJECT_ROOT, "manifest_schema.json")  # Schema is in root
+DEFAULT_CONFIG_PATH = os.path.join(
+    PROJECT_ROOT, "config", "update_manifest", "program_config.json"
+)
+DEFAULT_SCHEMA_PATH = os.path.join(
+    PROJECT_ROOT, "manifest_schema.json"
+)  # Schema is in root
 DEFAULT_MANIFEST_PATH = os.path.join(PROJECT_ROOT, "manifest.json")  # Shared manifest
 TRACE_PATH = os.path.join(PROJECT_ROOT, "update_manifest_trace.json")
 
@@ -75,7 +78,21 @@ MINIMAL_MANIFEST_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["filename", "path", "description", "status", "metadata", "sha256", "modified_date", "file_type", "encoding", "size", "dependencies", "category", "read_order"],
+                "required": [
+                    "filename",
+                    "path",
+                    "description",
+                    "status",
+                    "metadata",
+                    "sha256",
+                    "modified_date",
+                    "file_type",
+                    "encoding",
+                    "size",
+                    "dependencies",
+                    "category",
+                    "read_order",
+                ],
                 "properties": {
                     "filename": {"type": "string"},
                     "path": {"type": "string"},
@@ -88,8 +105,8 @@ MINIMAL_MANIFEST_SCHEMA = {
                             "summary": {"type": "string"},  # No maxLength
                             "keywords": {"type": "array", "items": {"type": "string"}},
                             "topics": {"type": "array", "items": {"type": "string"}},
-                            "entities": {"type": "array", "items": {"type": "string"}}
-                        }
+                            "entities": {"type": "array", "items": {"type": "string"}},
+                        },
                     },
                     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
                     "modified_date": {"type": "string"},
@@ -98,19 +115,19 @@ MINIMAL_MANIFEST_SCHEMA = {
                     "size": {"type": "integer"},
                     "dependencies": {"type": "array", "items": {"type": "string"}},
                     "category": {"type": "string"},
-                    "read_order": {"type": "integer"}
-                }
-            }
+                    "read_order": {"type": "integer"},
+                },
+            },
         },
         "metadata": {
             "type": "object",
             "properties": {
                 "statistics": {"type": "object"},
                 "topics": {"type": "object"},
-                "entities": {"type": "object"}
-            }
-        }
-    }
+                "entities": {"type": "object"},
+            },
+        },
+    },
 }
 
 # --- Agent Classes ---
@@ -119,17 +136,20 @@ llm_config = {
     "model": "gpt-4",
 }
 
+
 class FileReaderAgent(AssistantAgent):
     """
     Agent responsible for reading file content.
     """
+
     def __init__(self, name: str, llm_config, functions, system_message: str):
         super().__init__(
             name=name,
             llm_config=llm_config,
             functions=functions,
-            system_message=system_message
+            system_message=system_message,
         )
+
     def read(self, file_path: str) -> str:
         """
         Read the content of a file and log the action.
@@ -137,17 +157,20 @@ class FileReaderAgent(AssistantAgent):
         content = read_file_content(file_path)
         return content
 
+
 class SummarizerAgent(AssistantAgent):
     """
     Agent responsible for summarizing file content using an LLM.
     """
+
     def __init__(self, name: str, llm_config, functions, system_message: str):
         super().__init__(
             name=name,
             llm_config=llm_config,
             functions=functions,
-            system_message=system_message
+            system_message=system_message,
         )
+
     def summarize(self, file_path: str, content: str) -> Dict[str, Any]:
         """
         Summarize the content of a file using OpenAI's API and log the action.
@@ -155,13 +178,17 @@ class SummarizerAgent(AssistantAgent):
         logger.debug(f"SummarizerAgent: Preparing to summarize file: {file_path}")
         # Estimate token count (1 token ≈ 4 chars for rough estimate)
         max_tokens = 8192 - 1000  # leave room for completion
+
         def num_tokens(text: str) -> int:
             return len(text) // 4
+
         if num_tokens(content) > max_tokens:
-            logger.warning(f"File {file_path} is too large for LLM context window, skipping.")
+            logger.warning(
+                f"File {file_path} is too large for LLM context window, skipping."
+            )
             return {
                 "description": f"Arquivo de texto: {os.path.basename(file_path)} (excedeu limite de contexto LLM)",
-                "summary": "Arquivo muito grande para resumir automaticamente."
+                "summary": "Arquivo muito grande para resumir automaticamente.",
             }
         prompt = (
             f"Por favor, analise este arquivo de texto e forneça:\n"
@@ -183,28 +210,31 @@ class SummarizerAgent(AssistantAgent):
         response_text = response.choices[0].message.content.strip()
         description = ""
         summary = ""
-        for line in response_text.split('\n'):
-            if line.startswith('DESCRIÇÃO:'):
-                description = line.replace('DESCRIÇÃO:', '').strip()
-            elif line.startswith('RESUMO:'):
-                summary = line.replace('RESUMO:', '').strip()
+        for line in response_text.split("\n"):
+            if line.startswith("DESCRIÇÃO:"):
+                description = line.replace("DESCRIÇÃO:", "").strip()
+            elif line.startswith("RESUMO:"):
+                summary = line.replace("RESUMO:", "").strip()
         if not description or not summary:
             description = f"Arquivo de texto: {os.path.basename(file_path)}"
             summary = "Falha ao gerar resumo. Conteúdo original preservado."
         logger.debug(f"SummarizerAgent: Completed summarization for file: {file_path}")
         return {"description": description, "summary": summary}
 
+
 class ValidatorAgent(AssistantAgent):
     """
     Agent responsible for validating the manifest against a schema.
     """
+
     def __init__(self, name: str, llm_config, functions, system_message: str):
         super().__init__(
             name=name,
             llm_config=llm_config,
             functions=functions,
-            system_message=system_message
+            system_message=system_message,
         )
+
     def validate(self, manifest: Dict[str, Any], schema: Dict[str, Any]) -> bool:
         """
         Validate the manifest using the provided schema and log the result.
@@ -218,6 +248,7 @@ class ValidatorAgent(AssistantAgent):
         except Exception:
             raise
 
+
 # --- Main Workflow ---
 def compute_sha256(file_path: str) -> str:
     """
@@ -230,13 +261,18 @@ def compute_sha256(file_path: str) -> str:
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
+
 def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str, Any]:
     logger.info(f"Starting manifest build for directory: {text_dir}")
     if not os.path.exists(text_dir):
         logger.error(f"Directory does not exist: {text_dir}")
         raise FileNotFoundError(f"Directory not found: {text_dir}")
-    files = [os.path.join(text_dir, f) for f in os.listdir(text_dir) if os.path.isfile(os.path.join(text_dir, f))]
-    files = [f for f in files if not os.path.basename(f).startswith('.')]
+    files = [
+        os.path.join(text_dir, f)
+        for f in os.listdir(text_dir)
+        if os.path.isfile(os.path.join(text_dir, f))
+    ]
+    files = [f for f in files if not os.path.basename(f).startswith(".")]
     logger.info(f"Found {len(files)} files to process")
     manifest = {
         "version": "1.0.0",
@@ -245,7 +281,9 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
             "statistics": {
                 "total_files": len(files),
                 "total_size": sum(os.path.getsize(f) for f in files),
-                "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "last_updated": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat(),
             },
             "topics": {},
             "entities": {},
@@ -256,19 +294,19 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         name="FileReaderAgent",
         llm_config=llm_config,
         functions=[],
-        system_message="Reads file content for manifest generation."
+        system_message="Reads file content for manifest generation.",
     )
     summarizer = SummarizerAgent(
         name="SummarizerAgent",
         llm_config=llm_config,
         functions=[],
-        system_message="Summarizes file content using LLM."
+        system_message="Summarizes file content using LLM.",
     )
     validator = ValidatorAgent(
         name="ValidatorAgent",
         llm_config=llm_config,
         functions=[],
-        system_message="Validates the manifest against the schema."
+        system_message="Validates the manifest against the schema.",
     )
     agents = [file_reader, summarizer, validator]
     group_description = (
@@ -276,7 +314,9 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         "This group coordinates FileReaderAgent, SummarizerAgent, and ValidatorAgent "
         "to build, summarize, and validate a manifest for project files."
     )
-    with AutoTracingGroupChat(agents=agents, trace_file=TRACE_PATH, description=group_description) as group:
+    with AutoTracingGroupChat(
+        agents=agents, trace_file=TRACE_PATH, description=group_description
+    ) as group:
         for file_path in files:
             logger.info(f"Processing file: {file_path}")
             # FileReaderAgent reads the file
@@ -284,7 +324,11 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
             group.agent_action("file_read", {"file": file_path}, file_reader.name)
             # SummarizerAgent summarizes the file
             summary_data = summarizer.summarize(file_path, content)
-            group.agent_action("file_summarized", {"file": file_path, "summary": summary_data["summary"]}, summarizer.name)
+            group.agent_action(
+                "file_summarized",
+                {"file": file_path, "summary": summary_data["summary"]},
+                summarizer.name,
+            )
             # Assemble file entry for manifest
             file_entry = {
                 "filename": os.path.basename(file_path),
@@ -295,12 +339,11 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
                     "summary": summary_data["summary"],
                     "keywords": ["ai", "text", "analysis"],
                     "topics": ["artificial intelligence"],
-                    "entities": ["llm", "agent"]
+                    "entities": ["llm", "agent"],
                 },
                 "sha256": compute_sha256(file_path),
                 "modified_date": datetime.datetime.fromtimestamp(
-                    os.path.getmtime(file_path), 
-                    tz=datetime.timezone.utc
+                    os.path.getmtime(file_path), tz=datetime.timezone.utc
                 ).isoformat(),
                 "file_type": "text",
                 "encoding": "utf-8",
@@ -315,8 +358,11 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         # Validate manifest at the end
         valid = validator.validate(manifest, MINIMAL_MANIFEST_SCHEMA)
         group.agent_action("manifest_validated", {"result": valid}, validator.name)
-        logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
+        logger.info(
+            f"Manifest build completed. Total files processed: {len(manifest['files'])}"
+        )
     return manifest
+
 
 async def main(max_round: int = 10) -> None:
     """
@@ -349,13 +395,20 @@ async def main(max_round: int = 10) -> None:
     try:
         logger.info(f"Loading schema from {DEFAULT_SCHEMA_PATH}")
         if not os.path.exists(DEFAULT_SCHEMA_PATH):
-            logger.warning(f"Schema file {DEFAULT_SCHEMA_PATH} does not exist. Creating minimal schema.")
+            logger.warning(
+                f"Schema file {DEFAULT_SCHEMA_PATH} does not exist. Creating minimal schema."
+            )
             save_json_file(MINIMAL_MANIFEST_SCHEMA, DEFAULT_SCHEMA_PATH)
             logger.info(f"Created minimal schema at {DEFAULT_SCHEMA_PATH}")
         schema = load_json_file(DEFAULT_SCHEMA_PATH)
         logger.info("Successfully loaded schema")
         logger.info("Validating manifest against schema")
-        validator = ValidatorAgent("ValidatorAgent", llm_config, [], "Validates the manifest against the schema.")
+        validator = ValidatorAgent(
+            "ValidatorAgent",
+            llm_config,
+            [],
+            "Validates the manifest against the schema.",
+        )
         valid = validator.validate(manifest, schema)
         if valid:
             logger.info(f"Manifest validation successful: {DEFAULT_MANIFEST_PATH}")
@@ -365,6 +418,8 @@ async def main(max_round: int = 10) -> None:
         logger.error(f"Unexpected error during validation: {e}")
         raise
 
+
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main(max_round=10))  
+
+    asyncio.run(main(max_round=10))

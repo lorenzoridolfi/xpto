@@ -1,5 +1,6 @@
 from src.supervisor_trace import SupervisorTrace
 
+
 def test_supervisor_trace_lifecycle():
     trace = SupervisorTrace({})
     trace.start_trace({"task": "t"})

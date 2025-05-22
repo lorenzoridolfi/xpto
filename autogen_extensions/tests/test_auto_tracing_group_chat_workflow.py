@@ -3,6 +3,7 @@ from pathlib import Path
 from autogen_extensions.auto_tracing_group_chat import AutoTracingGroupChat
 import pytest
 
+
 class DummyAgent:
     def __init__(self, name, description, system_message):
         self.name = name
@@ -18,21 +19,34 @@ class DummyAgent:
     def validate(self, manifest, schema):
         return True
 
+
 def build_simple_manifest_with_tracing(text_dir, trace_file):
-    file_reader = DummyAgent("FileReaderAgent", "Reads file content.", "Reads file content.")
-    summarizer = DummyAgent("SummarizerAgent", "Summarizes file content.", "Summarizes file content.")
-    validator = DummyAgent("ValidatorAgent", "Validates manifest.", "Validates manifest.")
+    file_reader = DummyAgent(
+        "FileReaderAgent", "Reads file content.", "Reads file content."
+    )
+    summarizer = DummyAgent(
+        "SummarizerAgent", "Summarizes file content.", "Summarizes file content."
+    )
+    validator = DummyAgent(
+        "ValidatorAgent", "Validates manifest.", "Validates manifest."
+    )
     agents = [file_reader, summarizer, validator]
     group_description = "Test group for manifest workflow."
     manifest = {"version": "1.0.0", "files": [], "metadata": {"statistics": {}}}
-    with AutoTracingGroupChat(agents=agents, trace_file=trace_file, description=group_description) as group:
+    with AutoTracingGroupChat(
+        agents=agents, trace_file=trace_file, description=group_description
+    ) as group:
         for file_path in Path(text_dir).iterdir():
-            if file_path.name.startswith('.') or not file_path.is_file():
+            if file_path.name.startswith(".") or not file_path.is_file():
                 continue
             content = file_reader.read(file_path)
             group.agent_action("file_read", {"file": str(file_path)}, file_reader.name)
             summary_data = summarizer.summarize(file_path, content)
-            group.agent_action("file_summarized", {"file": str(file_path), "summary": summary_data["summary"]}, summarizer.name)
+            group.agent_action(
+                "file_summarized",
+                {"file": str(file_path), "summary": summary_data["summary"]},
+                summarizer.name,
+            )
             file_entry = {
                 "filename": file_path.name,
                 "path": str(file_path),
@@ -49,10 +63,13 @@ def build_simple_manifest_with_tracing(text_dir, trace_file):
                 "read_order": 0,
             }
             manifest["files"].append(file_entry)
-            group.agent_action("file_added_to_manifest", {"file": str(file_path)}, "System")
+            group.agent_action(
+                "file_added_to_manifest", {"file": str(file_path)}, "System"
+            )
         valid = validator.validate(manifest, {})
         group.agent_action("manifest_validated", {"result": valid}, validator.name)
     return manifest
+
 
 @pytest.mark.asyncio
 async def test_auto_tracing_group_chat_workflow(tmp_path):
@@ -79,4 +96,4 @@ async def test_auto_tracing_group_chat_workflow(tmp_path):
     assert "manifest_validated" in action_types
     # Clean up
     sample_file.unlink()
-    trace_file.unlink() 
+    trace_file.unlink()

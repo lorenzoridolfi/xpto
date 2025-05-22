@@ -1,5 +1,6 @@
 from src.agent_tracer import AgentTracer
 
+
 def test_agent_tracer_trace():
     tracer = AgentTracer({})
     tracer.on_messages_invoke("agent", [{"content": "msg"}], None)

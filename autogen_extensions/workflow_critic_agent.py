@@ -1,11 +1,13 @@
 import json
 from typing import Dict, Any, Optional
 
+
 class WorkflowCriticAgent:
     """
     Analyzes a workflow trace and human feedback to generate a critique and action plan for improvement.
     Optionally writes the output to a file if output_file is provided.
     """
+
     def __init__(self, trace_path: str, output_file: Optional[str] = None):
         self.trace_path = trace_path
         self.output_file = output_file
@@ -33,19 +35,22 @@ class WorkflowCriticAgent:
                 agent_action_counts[agent] += 1
         for agent, meta in self.agent_metadata.items():
             if agent_action_counts[agent] == 0:
-                critique_lines.append(f"Agent '{agent}' ({meta.get('description','')}) did not perform any actions.")
-                action_plan.append(f"Review the role and integration of agent '{agent}'.")
+                critique_lines.append(
+                    f"Agent '{agent}' ({meta.get('description','')}) did not perform any actions."
+                )
+                action_plan.append(
+                    f"Review the role and integration of agent '{agent}'."
+                )
         # Example: suggest reviewing system messages
         for agent, meta in self.agent_metadata.items():
             if not meta.get("system_message"):
-                action_plan.append(f"Add or clarify system_message for agent '{agent}'.")
+                action_plan.append(
+                    f"Add or clarify system_message for agent '{agent}'."
+                )
         # Example: generic improvement step
         action_plan.append("Consider using an LLM for deeper workflow analysis.")
-        result = {
-            "critique": "\n".join(critique_lines),
-            "action_plan": action_plan
-        }
+        result = {"critique": "\n".join(critique_lines), "action_plan": action_plan}
         if self.output_file:
             with open(self.output_file, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
-        return result 
+        return result
