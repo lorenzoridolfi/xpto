@@ -1,0 +1,7 @@
+{
+    "input_segment_file": "input/segments.json",
+    "synthetic_user_schema_file": "input/synthetic_user_schema.json",
+    "output_file": "output/synthetic_users.json",
+    "log_file": "logs/trace_run.json",
+    "users_per_segment": 5
+} 

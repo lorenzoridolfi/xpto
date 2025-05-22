@@ -1,0 +1,20 @@
+{
+  "segmentos": [
+    {
+      "nome": "Planejadores",
+      "descricao": "Segmento focado em planejamento financeiro e investimentos.",
+      "atributos": [
+        {"categoria": "Demografia", "atributo": "Idade Média", "valor": "35", "fonte": "IBGE"},
+        {"categoria": "Comportamento", "atributo": "Poupança", "valor": "Alta", "fonte": "Pesquisa"}
+      ]
+    },
+    {
+      "nome": "Consumistas",
+      "descricao": "Segmento focado em consumo imediato e gratificação.",
+      "atributos": [
+        {"categoria": "Demografia", "atributo": "Idade Média", "valor": "28", "fonte": "IBGE"},
+        {"categoria": "Comportamento", "atributo": "Poupança", "valor": "Baixa", "fonte": "Pesquisa"}
+      ]
+    }
+  ]
+} 
