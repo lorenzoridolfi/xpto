@@ -14,11 +14,8 @@ ensuring reliable operation of the system.
 #!/usr/bin/env python3
 
 import sys
-import os
-from pathlib import Path
 import unittest
-from typing import Dict, Any, Optional, TypedDict, Union
-import requests
+from typing import Dict, Optional, TypedDict
 from openai import OpenAI
 from src.load_openai import get_openai_config
 

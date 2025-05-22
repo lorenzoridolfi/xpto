@@ -1,6 +1,3 @@
-import tempfile
-import os
-import json
 from src.base_agent_system import setup_logging, log_event, load_json_file, save_json_file
 
 def test_setup_logging_creates_logger():

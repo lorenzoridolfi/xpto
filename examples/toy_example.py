@@ -34,36 +34,27 @@ import json
 import logging
 import asyncio
 import datetime
-from typing import List, Dict, Any, Optional, Set, Union, TypedDict, Tuple
+from typing import List, Dict, Any
 import jsonschema
-from jsonschema import validate, ValidationError as JsonValidationError
+from jsonschema import validate
 import sys
 from prompt_toolkit import prompt
 from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
-import psutil
-import time
-from pathlib import Path
-from dataclasses import dataclass
-from enum import Enum
 from dotenv import load_dotenv
-from openai.types.chat import ChatCompletion
-from openai import OpenAI
 
-from autogen_extensions.messages import TextMessage, BaseChatMessage
+from autogen_extensions.messages import BaseChatMessage
 from autogen_extensions.response import Response
 from autogen_extensions.llm_cache import LLMCache
 from autogen_extensions.agent_tracer import AgentTracer
 from autogen_extensions.tool_analytics import ToolAnalytics
 from autogen_extensions.load_openai import get_openai_client
-from autogen_extensions.utils import get_project_root, validate_manifest, load_manifest_schema, FileOperationError, ManifestValidationError
 from autogen_extensions.config import load_merged_config
-from autogen_extensions.common_io import load_json_file, save_json_file
 from autogen_extensions.trace_collector_agent import TraceCollectorAgent
 from autogen_extensions.errors import ConfigError
 # from autogen_extensions.file_reader_agent import FileReaderAgent
 from autogen_extensions.group_chat import GroupChat
-from examples.common import load_manifest_data, validate_manifest_for_toy_example
+from examples.common import load_manifest_data
 from autogen import AssistantAgent, UserProxyAgent
 
 # Use a single logger instance

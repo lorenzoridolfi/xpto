@@ -1,5 +1,3 @@
-import tempfile
-import os
 from src.config import load_config, save_config, Config
 
 def test_load_and_save_config(tmp_path):

@@ -1,4 +1,3 @@
-import pytest
 from src.root_cause_analyzer import RootCauseAnalyzer, AnalysisConfig
 from src.agent_tracer import AgentTracer
 

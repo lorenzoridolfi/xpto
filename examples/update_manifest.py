@@ -12,13 +12,12 @@ Uses autogen's GroupChat for orchestration and real agent implementations.
 
 import os
 import logging
-import json
 import hashlib
 import datetime
 from dotenv import load_dotenv
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 import openai
-from autogen import GroupChat, AssistantAgent
+from autogen import AssistantAgent
 from openai import OpenAI
 from autogen_extensions.auto_tracing_group_chat import AutoTracingGroupChat
 
@@ -214,9 +213,9 @@ class ValidatorAgent(AssistantAgent):
         try:
             validate_manifest(manifest, schema)
             return True
-        except JsonSchemaValidationError as e:
+        except JsonSchemaValidationError:
             return False
-        except Exception as e:
+        except Exception:
             raise
 
 # --- Main Workflow ---

@@ -5,7 +5,7 @@ import hashlib
 from typing import Any, Dict, Tuple, List
 import datetime
 import openai
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 class JsonSchemaValidationError(Exception):
     """Raised when JSON schema validation fails."""

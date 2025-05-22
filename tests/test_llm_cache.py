@@ -1,4 +1,3 @@
-import tempfile
 from src.llm_cache import LLMCache
 
 def test_llm_cache_hit_and_miss(tmp_path):

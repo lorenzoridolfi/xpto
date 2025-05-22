@@ -1,0 +1,652 @@
+autogen_extensions/auto_tracing_group_chat.py:25:89: E501 Line too long (99 > 88)
+   |
+23 | class AutoTracingGroupChat(GroupChat):
+24 |     """
+25 |     GroupChat that automatically traces all agent actions and messages using a TraceCollectorAgent.
+   |                                                                                         ^^^^^^^^^^^ E501
+26 |     No manual logging or user intervention required.
+27 |     """
+   |
+
+autogen_extensions/auto_tracing_group_chat.py:76:89: E501 Line too long (105 > 88)
+   |
+74 |             "stats": {
+75 |                 "total_actions": len(self.trace_collector.collected_actions),
+76 |                 "agents": list(set(action["agent"] for action in self.trace_collector.collected_actions))
+   |                                                                                         ^^^^^^^^^^^^^^^^^ E501
+77 |             },
+78 |             "actions": self.trace_collector.collected_actions
+   |
+
+autogen_extensions/llm_mock.py:3:89: E501 Line too long (89 > 88)
+  |
+1 | class LLMMock:
+2 |     def __init__(self, static_response=None):
+3 |         self.static_response = static_response or "DESCRIÇÃO: Mock\nRESUMO: Mock summary"
+  |                                                                                         ^ E501
+4 |         self.calls = []
+  |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:22:89: E501 Line too long (93 > 88)
+   |
+21 | def build_simple_manifest_with_tracing(text_dir, trace_file):
+22 |     file_reader = DummyAgent("FileReaderAgent", "Reads file content.", "Reads file content.")
+   |                                                                                         ^^^^^ E501
+23 |     summarizer = DummyAgent("SummarizerAgent", "Summarizes file content.", "Summarizes file content.")
+24 |     validator = DummyAgent("ValidatorAgent", "Validates manifest.", "Validates manifest.")
+   |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:23:89: E501 Line too long (102 > 88)
+   |
+21 | def build_simple_manifest_with_tracing(text_dir, trace_file):
+22 |     file_reader = DummyAgent("FileReaderAgent", "Reads file content.", "Reads file content.")
+23 |     summarizer = DummyAgent("SummarizerAgent", "Summarizes file content.", "Summarizes file content.")
+   |                                                                                         ^^^^^^^^^^^^^^ E501
+24 |     validator = DummyAgent("ValidatorAgent", "Validates manifest.", "Validates manifest.")
+25 |     agents = [file_reader, summarizer, validator]
+   |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:24:89: E501 Line too long (90 > 88)
+   |
+22 |     file_reader = DummyAgent("FileReaderAgent", "Reads file content.", "Reads file content.")
+23 |     summarizer = DummyAgent("SummarizerAgent", "Summarizes file content.", "Summarizes file content.")
+24 |     validator = DummyAgent("ValidatorAgent", "Validates manifest.", "Validates manifest.")
+   |                                                                                         ^^ E501
+25 |     agents = [file_reader, summarizer, validator]
+26 |     group_description = "Test group for manifest workflow."
+   |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:28:89: E501 Line too long (108 > 88)
+   |
+26 |     group_description = "Test group for manifest workflow."
+27 |     manifest = {"version": "1.0.0", "files": [], "metadata": {"statistics": {}}}
+28 |     with AutoTracingGroupChat(agents=agents, trace_file=trace_file, description=group_description) as group:
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^ E501
+29 |         for file_path in Path(text_dir).iterdir():
+30 |             if file_path.name.startswith('.') or not file_path.is_file():
+   |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:35:89: E501 Line too long (128 > 88)
+   |
+33 |             group.agent_action("file_read", {"file": str(file_path)}, file_reader.name)
+34 |             summary_data = summarizer.summarize(file_path, content)
+35 |             group.agent_action("file_summarized", {"file": str(file_path), "summary": summary_data["summary"]}, summarizer.name)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+36 |             file_entry = {
+37 |                 "filename": file_path.name,
+   |
+
+autogen_extensions/tests/test_auto_tracing_group_chat_workflow.py:52:89: E501 Line too long (92 > 88)
+   |
+50 |             }
+51 |             manifest["files"].append(file_entry)
+52 |             group.agent_action("file_added_to_manifest", {"file": str(file_path)}, "System")
+   |                                                                                         ^^^^ E501
+53 |         valid = validator.validate(manifest, {})
+54 |         group.agent_action("manifest_validated", {"result": valid}, validator.name)
+   |
+
+autogen_extensions/tests/test_llm_mock.py:6:89: E501 Line too long (89 > 88)
+  |
+4 |     mock = LLMMock(static_response="DESCRIÇÃO: Test\nRESUMO: Test summary")
+5 |     response = mock.create(model="gpt-4", messages=[{"role": "user", "content": "foo"}])
+6 |     assert response.choices[0].message.content == "DESCRIÇÃO: Test\nRESUMO: Test summary"
+  |                                                                                         ^ E501
+7 |     assert len(mock.calls) == 1
+8 |     assert mock.calls[0][1]["model"] == "gpt-4"
+  |
+
+autogen_extensions/traced_group_chat.py:21:89: E501 Line too long (94 > 88)
+   |
+19 |         self.action_trace: List[Dict[str, Any]] = []
+20 |         
+21 |     def _log_action(self, action_type: str, details: Dict[str, Any], agent_name: str) -> None:
+   |                                                                                         ^^^^^^ E501
+22 |         """Log an action to the trace with timestamp and agent information."""
+23 |         self.action_trace.append({
+   |
+
+autogen_extensions/workflow_critic_agent.py:6:89: E501 Line too long (104 > 88)
+  |
+4 | class WorkflowCriticAgent:
+5 |     """
+6 |     Analyzes a workflow trace and human feedback to generate a critique and action plan for improvement.
+  |                                                                                         ^^^^^^^^^^^^^^^^ E501
+7 |     Optionally writes the output to a file if output_file is provided.
+8 |     """
+  |
+
+autogen_extensions/workflow_critic_agent.py:36:89: E501 Line too long (117 > 88)
+   |
+34 |         for agent, meta in self.agent_metadata.items():
+35 |             if agent_action_counts[agent] == 0:
+36 |                 critique_lines.append(f"Agent '{agent}' ({meta.get('description','')}) did not perform any actions.")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+37 |                 action_plan.append(f"Review the role and integration of agent '{agent}'.")
+38 |         # Example: suggest reviewing system messages
+   |
+
+autogen_extensions/workflow_critic_agent.py:37:89: E501 Line too long (90 > 88)
+   |
+35 |             if agent_action_counts[agent] == 0:
+36 |                 critique_lines.append(f"Agent '{agent}' ({meta.get('description','')}) did not perform any actions.")
+37 |                 action_plan.append(f"Review the role and integration of agent '{agent}'.")
+   |                                                                                         ^^ E501
+38 |         # Example: suggest reviewing system messages
+39 |         for agent, meta in self.agent_metadata.items():
+   |
+
+autogen_extensions/workflow_critic_agent.py:41:89: E501 Line too long (89 > 88)
+   |
+39 |         for agent, meta in self.agent_metadata.items():
+40 |             if not meta.get("system_message"):
+41 |                 action_plan.append(f"Add or clarify system_message for agent '{agent}'.")
+   |                                                                                         ^ E501
+42 |         # Example: generic improvement step
+43 |         action_plan.append("Consider using an LLM for deeper workflow analysis.")
+   |
+
+examples/common.py:52:89: E501 Line too long (112 > 88)
+   |
+50 |         JsonSchemaValidationError: If the data does not conform to the schema.
+51 |     """
+52 |     print(f"DEBUG: validate_json_file_with_schema called with data_path={data_path}, schema_path={schema_path}")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^ E501
+53 |     if not os.path.exists(data_path):
+54 |         raise FileNotFoundError(f"Data file not found: {data_path}")
+   |
+
+examples/common.py:122:89: E501 Line too long (117 > 88)
+    |
+120 |         raise FileNotFoundError(f"Directory '{directory}' does not exist")
+121 |         
+122 |     files = [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+123 |     manifest = {
+124 |         "version": "1.0.0",
+    |
+
+examples/common.py:130:89: E501 Line too long (89 > 88)
+    |
+128 |                 "total_files": len(files),
+129 |                 "total_size": sum(os.path.getsize(f) for f in files),
+130 |                 "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    |                                                                                         ^ E501
+131 |             },
+132 |             "topics": {},
+    |
+
+examples/common.py:145:89: E501 Line too long (91 > 88)
+    |
+143 |         raise JsonSchemaValidationError(f"Manifest validation failed: {e.message}")
+144 |
+145 | def update_and_save_manifest(directory: str, manifest_path: str, schema_path: str) -> None:
+    |                                                                                         ^^^ E501
+146 |     """Generate, validate, and save a manifest for a directory."""
+147 |     manifest, _ = generate_manifest(directory)
+    |
+
+examples/common.py:161:89: E501 Line too long (99 > 88)
+    |
+159 |         content = f.read(2000)  # Limit to first 2000 chars for prompt
+160 |     prompt = (
+161 |         "Summarize the following file content in less than 200 words for a technical manifest:\n\n"
+    |                                                                                         ^^^^^^^^^^^ E501
+162 |         f"{content}\n\nSummary:"
+163 |     )
+    |
+
+examples/common.py:178:89: E501 Line too long (99 > 88)
+    |
+177 | def parse_file_summary_response(json_str: str) -> FileSummaryResponse:
+178 |     """Parse and validate the LLM output for a file summary using the FileSummaryResponse model."""
+    |                                                                                         ^^^^^^^^^^^ E501
+179 |     return FileSummaryResponse.model_validate_json(json_str) 
+    |
+
+examples/tests/test_update_manifest.py:47:89: E501 Line too long (110 > 88)
+   |
+45 |     Path(temp_text_dir_fixture, "a.txt").write_text("A", encoding="utf-8")
+46 |     manifest = build_manifest_with_agents(temp_text_dir_fixture)
+47 |     validator = ValidatorAgent("ValidatorAgent", llm_config, [], "Validates the manifest against the schema.")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^ E501
+48 |     assert validator.validate(manifest, MINIMAL_MANIFEST_SCHEMA)
+49 |     # Remove required field to trigger error
+   |
+
+examples/tests/test_update_manifest_integration.py:15:89: E501 Line too long (93 > 88)
+   |
+13 |     text_dir.mkdir(exist_ok=True)
+14 |     sample_file = text_dir / "sample.txt"
+15 |     sample_file.write_text("This is a test file for manifest integration.", encoding="utf-8")
+   |                                                                                         ^^^^^ E501
+16 |
+17 |     # Remove manifest and trace if they exist
+   |
+
+examples/tests/test_update_manifest_integration.py:51:89: E501 Line too long (98 > 88)
+   |
+49 |     assert "actions" in trace
+50 |     # Check for at least one group chat action
+51 |     assert any(a["action_type"] in ("message_sent", "message_received") for a in trace["actions"])
+   |                                                                                         ^^^^^^^^^^ E501
+52 |
+53 |     # Cleanup
+   |
+
+examples/toy_example.py:4:89: E501 Line too long (106 > 88)
+  |
+2 | Multi-Agent Human Feedback System
+3 |
+4 | This module implements a multi-agent system for processing and analyzing text content with human feedback.
+  |                                                                                         ^^^^^^^^^^^^^^^^^^ E501
+5 | The system uses multiple specialized agents to read, analyze, and generate content, with a focus on
+6 | quality control and human-in-the-loop feedback.
+  |
+
+examples/toy_example.py:5:89: E501 Line too long (99 > 88)
+  |
+4 | This module implements a multi-agent system for processing and analyzing text content with human feedback.
+5 | The system uses multiple specialized agents to read, analyze, and generate content, with a focus on
+  |                                                                                         ^^^^^^^^^^^ E501
+6 | quality control and human-in-the-loop feedback.
+  |
+
+examples/toy_example.py:16:89: E501 Line too long (90 > 88)
+   |
+14 | - RootCauseAnalyzerAgent: Analyzes feedback and system behavior
+15 |
+16 | The system operates in iterative rounds, with each round potentially improving the content
+   |                                                                                         ^^ E501
+17 | based on agent feedback and human input. The workflow is as follows:
+18 | 1. FileReader reads the input files
+   |
+
+examples/toy_example.py:26:89: E501 Line too long (94 > 88)
+   |
+24 | 7. System iterates if needed
+25 |
+26 | Each agent has specific responsibilities and communicates through a structured message system.
+   |                                                                                         ^^^^^^ E501
+27 | The system includes comprehensive logging, error handling, and validation throughout the process.
+   |
+
+examples/toy_example.py:27:89: E501 Line too long (97 > 88)
+   |
+26 | Each agent has specific responsibilities and communicates through a structured message system.
+27 | The system includes comprehensive logging, error handling, and validation throughout the process.
+   |                                                                                         ^^^^^^^^^ E501
+28 |
+29 | It uses the new GroupChat + TraceCollectorAgent pattern for robust, auditable traceability, as recommended for all workflows.
+   |
+
+examples/toy_example.py:29:89: E501 Line too long (125 > 88)
+   |
+27 | The system includes comprehensive logging, error handling, and validation throughout the process.
+28 |
+29 | It uses the new GroupChat + TraceCollectorAgent pattern for robust, auditable traceability, as recommended for all workflows.
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+30 | """
+   |
+
+examples/toy_example.py:83:89: E501 Line too long (90 > 88)
+   |
+81 | if not openai_api_key:
+82 |     print(
+83 |         "WARNING: OPENAI_API_KEY environment variable is not set. OpenAI calls will fail."
+   |                                                                                         ^^ E501
+84 |     )
+   |
+
+examples/toy_example.py:151:89: E501 Line too long (96 > 88)
+    |
+149 |         return True
+150 |     except jsonschema.ValidationError as e:
+151 |         raise jsonschema.ValidationError(f"Schema validation failed for {agent_name}: {str(e)}")
+    |                                                                                         ^^^^^^^^ E501
+    |
+
+examples/toy_example.py:165:89: E501 Line too long (92 > 88)
+    |
+163 |     Args:
+164 |         agent_name (str): Name of the agent generating the event
+165 |         event_type (str): Type of event (e.g., 'on_messages_invoke', 'on_messages_complete')
+    |                                                                                         ^^^^ E501
+166 |         inputs (List[BaseChatMessage]): Input messages to the agent
+167 |         outputs: Output from the agent (can be Response, list of Responses, or other types)
+    |
+
+examples/toy_example.py:167:89: E501 Line too long (91 > 88)
+    |
+165 |         event_type (str): Type of event (e.g., 'on_messages_invoke', 'on_messages_complete')
+166 |         inputs (List[BaseChatMessage]): Input messages to the agent
+167 |         outputs: Output from the agent (can be Response, list of Responses, or other types)
+    |                                                                                         ^^^ E501
+168 |
+169 |     Raises:
+    |
+
+examples/toy_example.py:283:89: E501 Line too long (93 > 88)
+    |
+283 | def create_agents(config: dict, manifest_data: dict, tracer, model_client) -> Dict[str, Any]:
+    |                                                                                         ^^^^^ E501
+284 |     """
+285 |     Create and initialize all required agents with real LLM client and tracer, loading agent descriptions and system messages from co…
+    |
+
+examples/toy_example.py:285:89: E501 Line too long (143 > 88)
+    |
+283 | … tracer, model_client) -> Dict[str, Any]:
+284 | …
+285 | …eal LLM client and tracer, loading agent descriptions and system messages from config JSON.
+    |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+286 | ….g., {"files": [...], ...}
+287 | …
+    |
+
+examples/toy_example.py:295:89: E501 Line too long (92 > 88)
+    |
+293 |             "assistant": AssistantAgent(
+294 |                 name=assistant_cfg.get("name", "assistant"),
+295 |                 system_message=assistant_cfg.get("system_message", "You are an assistant."),
+    |                                                                                         ^^^^ E501
+296 |                 llm_config=config.get("llm_config", {"config_list": [{"model": "gpt-4"}]}),
+297 |                 description=assistant_cfg.get("description", "Assistant agent"),
+    |
+
+examples/toy_example.py:296:89: E501 Line too long (91 > 88)
+    |
+294 |                 name=assistant_cfg.get("name", "assistant"),
+295 |                 system_message=assistant_cfg.get("system_message", "You are an assistant."),
+296 |                 llm_config=config.get("llm_config", {"config_list": [{"model": "gpt-4"}]}),
+    |                                                                                         ^^^ E501
+297 |                 description=assistant_cfg.get("description", "Assistant agent"),
+298 |                 tracer=tracer,
+    |
+
+examples/toy_example.py:304:89: E501 Line too long (91 > 88)
+    |
+302 |                 name=user_cfg.get("name", "user"),
+303 |                 system_message=user_cfg.get("system_message", "You are a user."),
+304 |                 llm_config=config.get("llm_config", {"config_list": [{"model": "gpt-4"}]}),
+    |                                                                                         ^^^ E501
+305 |                 description=user_cfg.get("description", "User agent"),
+306 |                 tracer=tracer,
+    |
+
+examples/toy_example.py:316:89: E501 Line too long (120 > 88)
+    |
+316 | async def run_toy_example_workflow(document_path: str, config_override: dict = None, manifest_path: str = None) -> dict:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+317 |     """
+318 |     Run the toy_example workflow for a given document path and optional config override.
+    |
+
+examples/toy_example.py:325:89: E501 Line too long (100 > 88)
+    |
+323 |     manifest_data = load_manifest_data(manifest_path)
+324 |     test_tracer = AgentTracer(config_to_use)
+325 |     test_model_client = get_openai_client(api_key=os.environ.get("OPENAI_API_KEY"), **openai_params)
+    |                                                                                         ^^^^^^^^^^^^ E501
+326 |     agents_dict = create_agents(config_to_use, manifest_data, test_tracer, test_model_client)
+327 |     llm_config = config_to_use.get("llm_config")
+    |
+
+examples/toy_example.py:326:89: E501 Line too long (93 > 88)
+    |
+324 |     test_tracer = AgentTracer(config_to_use)
+325 |     test_model_client = get_openai_client(api_key=os.environ.get("OPENAI_API_KEY"), **openai_params)
+326 |     agents_dict = create_agents(config_to_use, manifest_data, test_tracer, test_model_client)
+    |                                                                                         ^^^^^ E501
+327 |     llm_config = config_to_use.get("llm_config")
+328 |     if not (isinstance(llm_config, dict) and "config_list" in llm_config):
+    |
+
+examples/toy_example.py:330:89: E501 Line too long (185 > 88)
+    |
+328 | …:
+329 | …
+330 | …message="Trace collector agent", llm_config=llm_config, description="Collects all messages", tracer=test_tracer)
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+331 | …
+332 | …
+    |
+
+examples/toy_example.py:359:89: E501 Line too long (105 > 88)
+    |
+357 |         print("- ToolAnalytics used: tool usage recorded")
+358 |         print(f"- LLMCache used: {'yes' if USE_LLM_CACHE else 'no'}")
+359 |         print("- OpenAI LLM used: yes" if llm_client else "- OpenAI LLM used: NO (client not available)")
+    |                                                                                         ^^^^^^^^^^^^^^^^^ E501
+360 |         print("- Agent message passing: GroupChat with real LLM")
+361 |         print("- StateManager: not used in this example")
+    |
+
+examples/update_manifest.py:53:89: E501 Line too long (100 > 88)
+   |
+52 | # Update paths to use project root
+53 | DEFAULT_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "update_manifest", "program_config.json")
+   |                                                                                         ^^^^^^^^^^^^ E501
+54 | DEFAULT_SCHEMA_PATH = os.path.join(PROJECT_ROOT, "manifest_schema.json")  # Schema is in root
+55 | DEFAULT_MANIFEST_PATH = os.path.join(PROJECT_ROOT, "manifest.json")  # Shared manifest
+   |
+
+examples/update_manifest.py:54:89: E501 Line too long (93 > 88)
+   |
+52 | # Update paths to use project root
+53 | DEFAULT_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "update_manifest", "program_config.json")
+54 | DEFAULT_SCHEMA_PATH = os.path.join(PROJECT_ROOT, "manifest_schema.json")  # Schema is in root
+   |                                                                                         ^^^^^ E501
+55 | DEFAULT_MANIFEST_PATH = os.path.join(PROJECT_ROOT, "manifest.json")  # Shared manifest
+56 | TRACE_PATH = os.path.join(PROJECT_ROOT, "update_manifest_trace.json")
+   |
+
+examples/update_manifest.py:78:89: E501 Line too long (188 > 88)
+   |
+76 | …
+77 | …
+78 | …"metadata", "sha256", "modified_date", "file_type", "encoding", "size", "dependencies", "category", "read_order"],
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+79 | …
+80 | …
+   |
+
+examples/update_manifest.py:161:89: E501 Line too long (94 > 88)
+    |
+159 |             return len(text) // 4
+160 |         if num_tokens(content) > max_tokens:
+161 |             logger.warning(f"File {file_path} is too large for LLM context window, skipping.")
+    |                                                                                         ^^^^^^ E501
+162 |             return {
+163 |                 "description": f"Arquivo de texto: {os.path.basename(file_path)} (excedeu limite de contexto LLM)",
+    |
+
+examples/update_manifest.py:163:89: E501 Line too long (115 > 88)
+    |
+161 |             logger.warning(f"File {file_path} is too large for LLM context window, skipping.")
+162 |             return {
+163 |                 "description": f"Arquivo de texto: {os.path.basename(file_path)} (excedeu limite de contexto LLM)",
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+164 |                 "summary": "Arquivo muito grande para resumir automaticamente."
+165 |             }
+    |
+
+examples/update_manifest.py:238:89: E501 Line too long (114 > 88)
+    |
+236 |         logger.error(f"Directory does not exist: {text_dir}")
+237 |         raise FileNotFoundError(f"Directory not found: {text_dir}")
+238 |     files = [os.path.join(text_dir, f) for f in os.listdir(text_dir) if os.path.isfile(os.path.join(text_dir, f))]
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+239 |     files = [f for f in files if not os.path.basename(f).startswith('.')]
+240 |     logger.info(f"Found {len(files)} files to process")
+    |
+
+examples/update_manifest.py:248:89: E501 Line too long (89 > 88)
+    |
+246 |                 "total_files": len(files),
+247 |                 "total_size": sum(os.path.getsize(f) for f in files),
+248 |                 "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    |                                                                                         ^ E501
+249 |             },
+250 |             "topics": {},
+    |
+
+examples/update_manifest.py:254:5: F841 Local variable `openai_client` is assigned to but never used
+    |
+252 |         },
+253 |     }
+254 |     openai_client = OpenAI(api_key=openai_api_key)
+    |     ^^^^^^^^^^^^^ F841
+255 |     file_reader = FileReaderAgent(
+256 |         name="FileReaderAgent",
+    |
+    = help: Remove assignment to unused variable `openai_client`
+
+examples/update_manifest.py:279:89: E501 Line too long (108 > 88)
+    |
+277 |         "to build, summarize, and validate a manifest for project files."
+278 |     )
+279 |     with AutoTracingGroupChat(agents=agents, trace_file=TRACE_PATH, description=group_description) as group:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^ E501
+280 |         for file_path in files:
+281 |             logger.info(f"Processing file: {file_path}")
+    |
+
+examples/update_manifest.py:287:89: E501 Line too long (123 > 88)
+    |
+285 |             # SummarizerAgent summarizes the file
+286 |             summary_data = summarizer.summarize(file_path, content)
+287 |             group.agent_action("file_summarized", {"file": file_path, "summary": summary_data["summary"]}, summarizer.name)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+288 |             # Assemble file entry for manifest
+289 |             file_entry = {
+    |
+
+examples/update_manifest.py:318:89: E501 Line too long (97 > 88)
+    |
+316 |         valid = validator.validate(manifest, MINIMAL_MANIFEST_SCHEMA)
+317 |         group.agent_action("manifest_validated", {"result": valid}, validator.name)
+318 |         logger.info(f"Manifest build completed. Total files processed: {len(manifest['files'])}")
+    |                                                                                         ^^^^^^^^^ E501
+319 |     return manifest
+    |
+
+examples/update_manifest.py:352:89: E501 Line too long (105 > 88)
+    |
+350 |         logger.info(f"Loading schema from {DEFAULT_SCHEMA_PATH}")
+351 |         if not os.path.exists(DEFAULT_SCHEMA_PATH):
+352 |             logger.warning(f"Schema file {DEFAULT_SCHEMA_PATH} does not exist. Creating minimal schema.")
+    |                                                                                         ^^^^^^^^^^^^^^^^^ E501
+353 |             save_json_file(MINIMAL_MANIFEST_SCHEMA, DEFAULT_SCHEMA_PATH)
+354 |             logger.info(f"Created minimal schema at {DEFAULT_SCHEMA_PATH}")
+    |
+
+examples/update_manifest.py:358:89: E501 Line too long (114 > 88)
+    |
+356 |         logger.info("Successfully loaded schema")
+357 |         logger.info("Validating manifest against schema")
+358 |         validator = ValidatorAgent("ValidatorAgent", llm_config, [], "Validates the manifest against the schema.")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+359 |         valid = validator.validate(manifest, schema)
+360 |         if valid:
+    |
+
+tests/conftest.py:11:89: E501 Line too long (147 > 88)
+   |
+ 9 | …tion and fixtures.
+10 | …
+11 | … error response patterns, and complex response patterns can be removed if not used elsewhere.
+   |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+12 | …
+13 | …
+   |
+
+tests/conftest.py:108:89: E501 Line too long (104 > 88)
+    |
+106 |         for required_class in required_classes:
+107 |             # Skip test if required class hasn't been run
+108 |             if not any(marker.name == f'depends_on_{required_class}' for marker in item.iter_markers()):
+    |                                                                                         ^^^^^^^^^^^^^^^^ E501
+109 |                 pytest.skip(f"Test depends on {required_class}")
+    |
+
+tests/test_base_agent_system.py:1:89: E501 Line too long (90 > 88)
+  |
+1 | from src.base_agent_system import setup_logging, log_event, load_json_file, save_json_file
+  |                                                                                         ^^ E501
+2 |
+3 | def test_setup_logging_creates_logger():
+  |
+
+tests/test_openai.py:128:89: E501 Line too long (89 > 88)
+    |
+126 |         if "AuthenticationError" in error_type:
+127 |             error_info.update({
+128 |                 "message": "Erro de autenticação: A chave da API é inválida ou expirou.",
+    |                                                                                         ^ E501
+129 |                 "details": "Verifique se a chave OPENAI_API_KEY no arquivo .env está correta."
+130 |             })
+    |
+
+tests/test_openai.py:129:89: E501 Line too long (94 > 88)
+    |
+127 |             error_info.update({
+128 |                 "message": "Erro de autenticação: A chave da API é inválida ou expirou.",
+129 |                 "details": "Verifique se a chave OPENAI_API_KEY no arquivo .env está correta."
+    |                                                                                         ^^^^^^ E501
+130 |             })
+131 |         elif "RateLimitError" in error_type:
+    |
+
+tests/test_openai.py:133:89: E501 Line too long (101 > 88)
+    |
+131 |         elif "RateLimitError" in error_type:
+132 |             error_info.update({
+133 |                 "message": "Erro de limite de taxa: Você atingiu o limite de requisições da OpenAI.",
+    |                                                                                         ^^^^^^^^^^^^^ E501
+134 |                 "details": "Verifique seus créditos e limites de uso na plataforma OpenAI."
+135 |             })
+    |
+
+tests/test_openai.py:134:89: E501 Line too long (91 > 88)
+    |
+132 |             error_info.update({
+133 |                 "message": "Erro de limite de taxa: Você atingiu o limite de requisições da OpenAI.",
+134 |                 "details": "Verifique seus créditos e limites de uso na plataforma OpenAI."
+    |                                                                                         ^^^ E501
+135 |             })
+136 |         elif "APIError" in error_type:
+    |
+
+tests/test_openai.py:143:89: E501 Line too long (89 > 88)
+    |
+141 |         elif "ConnectionError" in error_type:
+142 |             error_info.update({
+143 |                 "message": "Erro de conexão: Não foi possível conectar à API da OpenAI.",
+    |                                                                                         ^ E501
+144 |                 "details": "Verifique sua conexão com a internet e se a API da OpenAI está acessível."
+145 |             })
+    |
+
+tests/test_openai.py:144:89: E501 Line too long (102 > 88)
+    |
+142 |             error_info.update({
+143 |                 "message": "Erro de conexão: Não foi possível conectar à API da OpenAI.",
+144 |                 "details": "Verifique sua conexão com a internet e se a API da OpenAI está acessível."
+    |                                                                                         ^^^^^^^^^^^^^^ E501
+145 |             })
+146 |         else:
+    |
+
+tests/test_tool_analytics.py:6:89: E501 Line too long (103 > 88)
+  |
+4 | def test_tool_analytics_metrics():
+5 |     analytics = ToolAnalytics()
+6 |     # If ToolAnalytics has a method like get_metrics or similar, use it here. Otherwise, skip the test.
+  |                                                                                         ^^^^^^^^^^^^^^^ E501
+7 |     if hasattr(analytics, "get_metrics"):
+8 |         metrics = analytics.get_metrics()
+  |
+
+Found 119 errors (52 fixed, 67 remaining).
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
