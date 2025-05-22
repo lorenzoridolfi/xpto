@@ -4,10 +4,10 @@
     {
       "filename": "Agentes_Inteligência_Artificial.txt",
       "path": "/Users/lorenzo/Sync/Source/AI/autogen/text/Agentes_Inteligência_Artificial.txt",
-      "description": "O arquivo discute a evolução da inteligência artificial, focando nos agentes de IA, suas características, funcionalidades, aplicações e desafios, além de sua importância para o futuro da automação e colaboração humana.",
+      "description": "O arquivo discute a evolução da inteligência artificial, focando na transição dos Modelos de Linguagem de Grande Escala (LLMs) para agentes de IA, detalhando sua estrutura, funcionalidades, aplicações e desafios.",
       "status": "okay",
       "metadata": {
-        "summary": "O arquivo começa destacando a evolução da inteligência artificial (IA), passando de modelos de linguagem passivos para sistemas ativos, conhecidos como agentes de IA. Estes agentes são capazes de executar tarefas complexas com autonomia, diferindo dos Modelos de Linguagem de Grande Escala (LLMs) que são reativos, enquanto os agentes são proativos.",
+        "summary": "O arquivo começa destacando a evolução da inteligência artificial (IA), da era dos Modelos de Linguagem de Grande Escala (LLMs) para a era dos agentes de IA. Os agentes de IA são sistemas proativos que podem planejar, tomar decisões e usar ferramentas externas, ao contrário dos LLMs que são sistemas reativos que respondem a prompts e geram texto.",
         "keywords": [
           "ai",
           "text",
@@ -33,10 +33,10 @@
     {
       "filename": "A Revolução_Inteligência_Artificial.txt",
       "path": "/Users/lorenzo/Sync/Source/AI/autogen/text/A Revolução_Inteligência_Artificial.txt",
-      "description": "O arquivo discute a revolução da Inteligência Artificial com a introdução dos Modelos de Linguagem de Grande Escala (LLMs), suas capacidades, desafios, implicações para profissionais de TI, e o futuro desses modelos.",
+      "description": "O arquivo discute a revolução da Inteligência Artificial (IA) com os Modelos de Linguagem de Grande Escala (LLMs), abordando sua funcionalidade, importância, desafios e implicações futuras.",
       "status": "okay",
       "metadata": {
-        "summary": "O arquivo detalha a importância dos Modelos de Linguagem de Grande Escala (LLMs) na evolução da Inteligência Artificial, destacando-os como o maior avanço desde a invenção das redes neurais. Os LLMs são redes neurais treinadas com volumes massivos de texto, capazes de aprender padrões da linguagem humana através do aprendizado profundo. Modelos como GPT, Claude, PaLM e LLaMA são exemplos notáveis.",
+        "summary": "O texto descreve os Modelos de Linguagem de Grande Escala (LLMs) como o avanço mais significativo na história da inteligência artificial, transformando processos empresariais e a interação com computadores. Os LLMs são redes neurais treinadas com grandes volumes de texto, aprendendo estatisticamente os padrões da linguagem humana. Modelos como GPT, Claude, PaLM e LLaMA são exemplos destacados.",
         "keywords": [
           "ai",
           "text",
@@ -62,10 +62,10 @@
     {
       "filename": "Embeddings_Banco_Vetoriais.txt",
       "path": "/Users/lorenzo/Sync/Source/AI/autogen/text/Embeddings_Banco_Vetoriais.txt",
-      "description": "Este arquivo de texto discute os fundamentos da inteligência artificial moderna, focando em embeddings e bancos de dados vetoriais, seu funcionamento, evolução, desafios e aplicações.",
+      "description": "O arquivo discute os fundamentos e aplicações de embeddings e bancos de dados vetoriais na inteligência artificial moderna, destacando sua importância na compreensão semântica e na manipulação eficiente de dados em grande escala.",
       "status": "okay",
       "metadata": {
-        "summary": "O arquivo começa explicando que os embeddings são representações matemáticas densas de dados em espaços vetoriais multidimensionais, usados para transformar dados brutos (como texto, imagens ou áudio) em vetores numéricos, permitindo que as máquinas compreendam o significado e as relações entre conceitos de forma semelhante aos humanos. Os embeddings preservam relações semânticas e permitem operações algébricas complexas.",
+        "summary": "O arquivo começa explicando o conceito de embeddings, que são representações matemáticas densas de dados em espaços vetoriais multidimensionais. Eles são usados para transformar dados brutos, como texto, imagens e áudio, em vetores numéricos, permitindo que as máquinas compreendam o significado e as relações entre conceitos de forma semelhante aos humanos.",
         "keywords": [
           "ai",
           "text",
@@ -93,7 +93,7 @@
     "statistics": {
       "total_files": 3,
       "total_size": 17535,
-      "last_updated": "2025-05-22T13:39:34.882906+00:00"
+      "last_updated": "2025-05-22T13:53:47.324876+00:00"
     },
     "topics": {},
     "entities": {}
