@@ -1,74 +1,92 @@
 {
-  "timestamp": "2025-05-22T13:02:32.253587+00:00",
+  "timestamp": "2025-05-22T13:40:49.869883+00:00",
+  "group_description": "",
+  "agents": {
+    "FileReaderAgent": {
+      "name": "FileReaderAgent",
+      "description": "Reads file content for manifest generation.",
+      "system_message": "Reads file content for manifest generation."
+    },
+    "SummarizerAgent": {
+      "name": "SummarizerAgent",
+      "description": "Summarizes file content using LLM.",
+      "system_message": "Summarizes file content using LLM."
+    },
+    "ValidatorAgent": {
+      "name": "ValidatorAgent",
+      "description": "Validates the manifest against the schema.",
+      "system_message": "Validates the manifest against the schema."
+    }
+  },
   "stats": {
     "total_actions": 10,
     "agents": [
-      "ValidatorAgent",
+      "SummarizerAgent",
       "System",
       "FileReaderAgent",
-      "SummarizerAgent"
+      "ValidatorAgent"
     ]
   },
   "actions": [
     {
-      "timestamp": "2025-05-22T13:01:11.539356+00:00",
+      "timestamp": "2025-05-22T13:39:34.944093+00:00",
       "action_type": "file_read",
       "agent": "FileReaderAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Agentes_Inteligência_Artificial.txt"
     },
     {
-      "timestamp": "2025-05-22T13:01:35.426257+00:00",
+      "timestamp": "2025-05-22T13:39:58.929927+00:00",
       "action_type": "file_summarized",
       "agent": "SummarizerAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Agentes_Inteligência_Artificial.txt",
-      "summary": "O texto aborda a evolução da inteligência artificial, destacando a transição de Modelos de Linguagem de Grande Escala (LLMs) para agentes de IA, que são sistemas ativos capazes de executar tarefas complexas com autonomia. Os agentes de IA são diferentes dos LLMs, pois possuem capacidade de planejamento, tomada de decisão e utilização de ferramentas externas. A arquitetura de um agente de IA inclui um motor de raciocínio, um sistema de memória, um módulo de planejamento, um conjunto de ferramentas acessíveis via APIs e um executor."
+      "summary": "O arquivo começa destacando a evolução da inteligência artificial (IA), passando de modelos de linguagem passivos para sistemas ativos, conhecidos como agentes de IA. Estes agentes são capazes de executar tarefas complexas com autonomia, diferindo dos Modelos de Linguagem de Grande Escala (LLMs) que são reativos, enquanto os agentes são proativos."
     },
     {
-      "timestamp": "2025-05-22T13:01:35.427406+00:00",
+      "timestamp": "2025-05-22T13:39:58.930981+00:00",
       "action_type": "file_added_to_manifest",
       "agent": "System",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Agentes_Inteligência_Artificial.txt"
     },
     {
-      "timestamp": "2025-05-22T13:01:35.427896+00:00",
+      "timestamp": "2025-05-22T13:39:58.933515+00:00",
       "action_type": "file_read",
       "agent": "FileReaderAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/A Revolução_Inteligência_Artificial.txt"
     },
     {
-      "timestamp": "2025-05-22T13:02:04.168135+00:00",
+      "timestamp": "2025-05-22T13:40:24.984376+00:00",
       "action_type": "file_summarized",
       "agent": "SummarizerAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/A Revolução_Inteligência_Artificial.txt",
-      "summary": "O arquivo descreve os Modelos de Linguagem de Grande Escala (LLMs) como uma revolução significativa na inteligência artificial, superando as redes neurais. Os LLMs estão transformando processos empresariais e a maneira como interagimos com computadores. Eles são redes neurais treinadas com grandes volumes de texto, aprendendo estatisticamente os padrões da linguagem humana. Modelos como GPT da OpenAI, Claude da Anthropic, PaLM do Google e LLaMA da Meta são exemplos notáveis."
+      "summary": "O arquivo detalha a importância dos Modelos de Linguagem de Grande Escala (LLMs) na evolução da Inteligência Artificial, destacando-os como o maior avanço desde a invenção das redes neurais. Os LLMs são redes neurais treinadas com volumes massivos de texto, capazes de aprender padrões da linguagem humana através do aprendizado profundo. Modelos como GPT, Claude, PaLM e LLaMA são exemplos notáveis."
     },
     {
-      "timestamp": "2025-05-22T13:02:04.168801+00:00",
+      "timestamp": "2025-05-22T13:40:24.985796+00:00",
       "action_type": "file_added_to_manifest",
       "agent": "System",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/A Revolução_Inteligência_Artificial.txt"
     },
     {
-      "timestamp": "2025-05-22T13:02:04.169484+00:00",
+      "timestamp": "2025-05-22T13:40:24.986632+00:00",
       "action_type": "file_read",
       "agent": "FileReaderAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Embeddings_Banco_Vetoriais.txt"
     },
     {
-      "timestamp": "2025-05-22T13:02:32.244394+00:00",
+      "timestamp": "2025-05-22T13:40:49.853314+00:00",
       "action_type": "file_summarized",
       "agent": "SummarizerAgent",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Embeddings_Banco_Vetoriais.txt",
-      "summary": "O arquivo começa explicando que os embeddings são representações matemáticas densas de dados em espaços vetoriais multidimensionais, que permitem que as máquinas compreendam o significado e as relações entre conceitos de maneira semelhante aos humanos. Ele destaca que os embeddings são essenciais para a compreensão da linguagem humana, imagens e sons por computadores, e preservam relações semânticas, permitindo operações algébricas notáveis."
+      "summary": "O arquivo começa explicando que os embeddings são representações matemáticas densas de dados em espaços vetoriais multidimensionais, usados para transformar dados brutos (como texto, imagens ou áudio) em vetores numéricos, permitindo que as máquinas compreendam o significado e as relações entre conceitos de forma semelhante aos humanos. Os embeddings preservam relações semânticas e permitem operações algébricas complexas."
     },
     {
-      "timestamp": "2025-05-22T13:02:32.246489+00:00",
+      "timestamp": "2025-05-22T13:40:49.854808+00:00",
       "action_type": "file_added_to_manifest",
       "agent": "System",
       "file": "/Users/lorenzo/Sync/Source/AI/autogen/text/Embeddings_Banco_Vetoriais.txt"
     },
     {
-      "timestamp": "2025-05-22T13:02:32.253458+00:00",
+      "timestamp": "2025-05-22T13:40:49.869464+00:00",
       "action_type": "manifest_validated",
       "agent": "ValidatorAgent",
       "result": true
