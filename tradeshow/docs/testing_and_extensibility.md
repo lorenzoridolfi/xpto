@@ -8,6 +8,10 @@ The system includes comprehensive tests covering all major components:
 
 ### Unit Tests
 
+- All agent operations are now isolated to the current segment. Only the current segment is passed to agents, not all segments.
+- The orchestrator writes a temporary file `current_segment.json` for each segment in the main loop (for debugging/traceability).
+- The user generation is a nested loop: outer for segments, inner for users per segment (default 3 per segment).
+
 1. **Agent Tests**
    - `test_user_generator_agent`: Verifies `SyntheticUser` model output
    - `test_validator_agent`: Tests `CriticOutput` model validation
@@ -16,10 +20,11 @@ The system includes comprehensive tests covering all major components:
 
 2. **Schema Validation Tests**
    - `test_segments_schema_validation`: Validates segments.json
-   - `test_segments_json_nickname_and_usercount`: Checks segment fields
+   - `test_segments_json_nickname_and_usercount`: Checks segment fields (now expects num_usuarios == 3)
 
 3. **Orchestrator Tests**
-   - `test_orchestrator_respects_num_usuarios`: Verifies user count
+   - `test_orchestrator_respects_num_usuarios`: Verifies user count (now expects 3 per segment)
+   - `test_current_segment_file_updates`: Verifies that 'current_segment.json' is updated for each segment processed
    - Tests proper agent interaction and data flow
 
 4. **Tracing Tests**

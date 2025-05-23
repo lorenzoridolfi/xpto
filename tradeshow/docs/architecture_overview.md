@@ -19,6 +19,7 @@ The synthetic user generation system follows a modular, agent-based architecture
    - Handles input/output file operations
    - Validates segment schema at runtime
    - Maintains tracing and logging
+   - **Writes a temporary file `current_segment.json` for each segment processed, containing only the current segment's data (for debugging/traceability).**
 
 2. **Pydantic Models**
    - `SyntheticUser`: Strict type validation for user data
@@ -33,7 +34,7 @@ The synthetic user generation system follows a modular, agent-based architecture
 ### Agents
 
 1. **UserGeneratorAgent**
-   - Generates synthetic users based on segment data
+   - Generates synthetic users based on the current segment only (not all segments)
    - Returns structured `SyntheticUser` Pydantic model
    - Uses OpenAI GPT-4 with response format validation
    - Maintains sequential user ID generation
@@ -49,6 +50,10 @@ The synthetic user generation system follows a modular, agent-based architecture
    - Incorporates validator feedback for improvements
 
 ### Data Flow
+
+- The orchestrator uses a **nested loop**: the outer loop iterates over segments, and the inner loop iterates over the number of users to generate for that segment.
+- Only the current segment is passed to each agent for user generation, validation, and review.
+- The temporary file `current_segment.json` is updated for each segment processed.
 
 ```mermaid
 graph TD

@@ -407,7 +407,7 @@ class Orchestrator:
         all_users = []  # List to collect all generated users
         for segment in self.segments:
             # Save current segment to a temporary file for agent use/debugging
-            with open('current_segment.json', 'w', encoding='utf-8') as f:
+            with open("current_segment.json", "w", encoding="utf-8") as f:
                 json.dump(segment, f, ensure_ascii=False, indent=2)
             self.tracer.log(
                 message=f"Processing segment: {segment['nome']}",

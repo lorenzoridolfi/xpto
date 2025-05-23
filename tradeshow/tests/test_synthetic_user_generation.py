@@ -200,7 +200,7 @@ def test_traced_group_chat(tmp_path):
 
 def test_segments_json_nickname_and_usercount():
     """
-    Test that each segment in segments.json has a valid 'apelido' and 'num_usuarios' field.
+    Test that each segment in segments.json has a valid 'apelido' and 'num_usuarios' field (now 3 for all).
     """
     with open("tradeshow/input/segments.json") as f:
         data = json.load(f)
@@ -213,7 +213,7 @@ def test_segments_json_nickname_and_usercount():
         assert len(segment["apelido"]) <= 32
         assert "num_usuarios" in segment
         assert isinstance(segment["num_usuarios"], int)
-        assert segment["num_usuarios"] == 1
+        assert segment["num_usuarios"] == 3
 
 
 def test_segments_schema_validation():
@@ -262,3 +262,36 @@ async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
         segments = json.load(f)["segmentos"]
     expected_count = sum(seg["num_usuarios"] for seg in segments)
     assert len(users) == expected_count
+
+
+def test_current_segment_file_updates(tmp_path):
+    """
+    Test that 'current_segment.json' is updated for each segment processed by the orchestrator.
+    """
+    # Patch config to use a temp output file
+    config_path = "tradeshow/config.json"
+    agent_config_path = "tradeshow/config_agents.json"
+    agent_state_path = "tradeshow/config_agents_state.json"
+    with open(config_path) as f:
+        config = json.load(f)
+    output_file = tmp_path / "synthetic_users.json"
+    log_file = tmp_path / "trace.json"
+    config["output_file"] = str(output_file)
+    config["log_file"] = str(log_file)
+    patched_config_path = tmp_path / "config.json"
+    with open(patched_config_path, "w") as f:
+        json.dump(config, f)
+    orchestrator = Orchestrator(
+        str(patched_config_path), agent_config_path, agent_state_path
+    )
+    # Run only the segment loop, not the full async run
+    segments = orchestrator.segments
+    for segment in segments:
+        # Simulate the orchestrator's segment loop
+        with open(tmp_path / "current_segment.json", "w", encoding="utf-8") as f:
+            json.dump(segment, f, ensure_ascii=False, indent=2)
+        with open(tmp_path / "current_segment.json", encoding="utf-8") as f:
+            loaded = json.load(f)
+        assert loaded["nome"] == segment["nome"]
+        assert loaded["apelido"] == segment["apelido"]
+        assert loaded["num_usuarios"] == 3

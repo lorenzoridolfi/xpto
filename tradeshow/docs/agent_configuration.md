@@ -8,7 +8,8 @@ The system uses three specialized agents, each with specific roles and structure
 
 ### UserGeneratorAgent
 
-- **Description**: Generates synthetic user profiles based on segment data, ensuring adherence to the user schema and segment characteristics.
+- **Description**: Generates synthetic user profiles based only on the current segment (not all segments), ensuring adherence to the user schema and segment characteristics.
+- **Input**: Only the current segment is passed to the agent. The orchestrator writes a temporary file `current_segment.json` for each segment processed, containing only the current segment's data (for debugging/traceability).
 - **Output**: Returns a `SyntheticUser` Pydantic model
 - **Configuration**:
   ```json
@@ -120,7 +121,7 @@ class CriticOutput(BaseModel):
 ## Agent Interaction Flow
 
 1. **UserGeneratorAgent**:
-   - Receives segment data
+   - Receives only the current segment
    - Generates `SyntheticUser` instance
    - Ensures all required fields are present
 
@@ -163,3 +164,4 @@ See `architecture_overview.md` for how this fits into the overall system.
 
 **Note:**
 - The temperature values for each agent are chosen to optimize their specific roles. See `docs/model_temperatures.md` for the rationale behind each value. 
+- The orchestrator uses a nested loop: the outer loop iterates over segments, and the inner loop iterates over the number of users to generate for that segment. The temporary file `current_segment.json` is updated for each segment processed.

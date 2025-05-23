@@ -14,10 +14,14 @@ The synthetic user generation process follows these steps:
 
 2. **Segment Processing**
    - For each segment in segments.json:
+     - The orchestrator writes a temporary file `current_segment.json` containing only the current segment's data (for debugging/traceability).
      - Validate segment fields
-     - Process requested number of users
+     - Process requested number of users (now default 3 per segment)
 
 3. **User Generation Cycle**
+   - The orchestrator uses a **nested loop**: the outer loop iterates over segments, and the inner loop iterates over the number of users to generate for that segment.
+   - Only the current segment is passed to each agent for user generation, validation, and review.
+   - The temporary file `current_segment.json` is updated for each segment processed.
    ```mermaid
    sequenceDiagram
        participant O as Orchestrator
