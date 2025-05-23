@@ -406,6 +406,9 @@ class Orchestrator:
     async def run(self):
         all_users = []  # List to collect all generated users
         for segment in self.segments:
+            # Save current segment to a temporary file for agent use/debugging
+            with open('current_segment.json', 'w', encoding='utf-8') as f:
+                json.dump(segment, f, ensure_ascii=False, indent=2)
             self.tracer.log(
                 message=f"Processing segment: {segment['nome']}",
                 agent=None,
@@ -418,7 +421,7 @@ class Orchestrator:
                 raise ValueError(
                     f"Segment '{segment.get('nome', '<unknown>')}' is missing a valid 'num_usuarios' field."
                 )
-            # Instantiate agents for this segment
+            # Instantiate agents for this segment (only pass the current segment)
             generator = UserGeneratorAgent(
                 segment,
                 self.agent_config["UserGeneratorAgent"],

@@ -18,10 +18,9 @@
               "properties": {
                 "categoria": { "type": "string" },
                 "atributo": { "type": "string" },
-                "valor": { "type": "string" },
-                "fonte": { "type": "string" }
+                "valor": { "type": "string" }
               },
-              "required": ["categoria", "atributo", "valor", "fonte"]
+              "required": ["categoria", "atributo", "valor"]
             }
           }
         },
