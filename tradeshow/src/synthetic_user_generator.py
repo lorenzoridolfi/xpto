@@ -451,7 +451,11 @@ class Orchestrator:
     def run(self):
         logger.info("Orchestrator.run started")
         all_users = []
-        for segment in self.segments:
+        # Reset user_id to 1 at the start of each run
+        self.agent_state[self.user_id_field] = 1
+        save_json(AGENT_STATE_PATH, self.agent_state)
+        overall_user_count = 0
+        for seg_idx, segment in enumerate(self.segments, start=1):
             logger.info(f"Processing segment: {segment['nome']}")
             # Removed writing current_segment.json
             self.tracer.log(
@@ -482,6 +486,16 @@ class Orchestrator:
             reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"], self.schema)
             segment_users = []
             for i in range(num_usuarios):
+                overall_user_count += 1
+                highlight_msg = (
+                    f"\n{'='*60}\n"
+                    f"  STARTING USER CREATION\n"
+                    f"  Segment: {segment['nome']} (Segment {seg_idx}/{len(self.segments)})\n"
+                    f"  User in segment: {i+1}/{num_usuarios}\n"
+                    f"  User overall: {overall_user_count}\n"
+                    f"{'='*60}\n"
+                )
+                logger.info(highlight_msg)
                 logger.debug("Running garbage collection before user generation...")
                 gc.collect()
                 logger.debug("Garbage collection complete.")
