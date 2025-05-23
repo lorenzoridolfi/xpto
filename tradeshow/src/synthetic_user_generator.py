@@ -193,13 +193,13 @@ class UserGeneratorAgent:
         logger.debug(
             f"Generating user for segment: {self.segment.get('nome')} with user_id: {user_id}"
         )
+        # Construct the user prompt dynamically using the agent's description and the FULL segment JSON
+        segment_json = json.dumps(self.segment, ensure_ascii=False, indent=2)
         prompt = (
-            f"Generate a synthetic user profile as a JSON object for the following market segment. "
-            f"The JSON must match the provided schema and include all required fields. "
-            f"Segment name: {self.segment['nome']}\n"
-            f"Segment description: {self.segment['descricao']}\n"
-            f"Segment attributes: {json.dumps(self.segment['atributos'], ensure_ascii=False)}\n"
+            f"{self.description}\n"
+            f"Segment: {segment_json}"
         )
+        logger.debug(f"User prompt constructed (full segment): {prompt}")
         messages = [
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
@@ -278,10 +278,12 @@ class ValidatorAgent:
         self, user: SyntheticUser, tracer: TracedGroupChat = None
     ) -> CriticOutput:
         logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
+        # Construct the validation prompt dynamically using the agent's description and user data
         prompt = (
-            f"Validate the following synthetic user profile for realism, internal consistency, and segment alignment. "
+            f"{self.description}\n"
             f"User: {user.model_dump_json()}"
         )
+        logger.debug(f"Validator prompt constructed: {prompt}")
         messages = [
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
@@ -358,10 +360,13 @@ class ReviewerAgent:
         logger.debug(
             f"ReviewerAgent.review_user called for user: {user}, critic_output: {critic_output}"
         )
+        # Construct the review prompt dynamically using the agent's description, user, and critic data
         prompt = (
-            f"Review and improve the following synthetic user profile based on the critic output. "
-            f"User: {user.model_dump_json()}\nCritic: {critic_output.model_dump_json()}"
+            f"{self.description}\n"
+            f"User: {user.model_dump_json()}\n"
+            f"Critic: {critic_output.model_dump_json()}"
         )
+        logger.debug(f"Reviewer prompt constructed: {prompt}")
         messages = [
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
