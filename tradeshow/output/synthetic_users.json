@@ -1,0 +1,902 @@
+[
+  {
+    "user_id": "40",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 12000.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Engenheiro de Software",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": true,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "41",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 12000.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Engenheiro de Software",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": true,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "42",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 10101.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Gerente de Projetos",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": true,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 4.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.25,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "43",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Analista Administrativo",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.2,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "44",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Analista de Administra\u00e7\u00e3o P\u00fablica",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.2,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "45",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Analista de Sistemas",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.25,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "46",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 3500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Marketing Specialist",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "47",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Analista de Marketing",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "48",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Analista de Marketing",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "49",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 1800.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Vendedor de Lojas",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.65,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "50",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Operador de produ\u00e7\u00e3o",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.6,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "occasional"
+  },
+  {
+    "user_id": "51",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Operador de M\u00e1quina",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "52",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2800.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Motorista de aplicativo",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "53",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Operador de M\u00e1quinas",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.4,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "54",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2800.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Funcion\u00e1rio de almoxarifado",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.65,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "55",
+    "segment_label": {
+      "value": "Endividados",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 1800.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Operador de Produ\u00e7\u00e3o",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "56",
+    "segment_label": {
+      "value": "Endividados",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2200.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Vendedor em loja de eletrodom\u00e9sticos",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "57",
+    "segment_label": {
+      "value": "Endividados",
+      "source": "IBGE/2023"
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": "Serasa/2024"
+    },
+    "monthly_income": {
+      "value": 2200.0,
+      "source": "IBGE/2023"
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": "IBGE/2023"
+    },
+    "occupation": {
+      "value": "Vendedor de Loja",
+      "source": "IBGE/2023"
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": "FEBRABAN/2024"
+    },
+    "uses_broker": {
+      "value": false,
+      "source": "ANBIMA/2024"
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": "Serasa/2024"
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": "Serasa/2024"
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": "ANBIMA/2024"
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  }
+]

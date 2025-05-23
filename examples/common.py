@@ -4,7 +4,9 @@ import jsonschema
 import hashlib
 from typing import Any, Dict, Tuple, List
 import datetime
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 from pydantic import BaseModel
 
 
@@ -185,13 +187,11 @@ def summarize_file_with_llm(file_path: str) -> str:
         "Summarize the following file content in less than 200 words for a technical manifest:\n\n"
         f"{content}\n\nSummary:"
     )
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=300,
-        temperature=0.3,
-    )
-    return response.choices[0].message["content"].strip()
+    response = client.chat.completions.create(model="gpt-4",
+    messages=[{"role": "user", "content": prompt}],
+    max_tokens=300,
+    temperature=0.3)
+    return response.choices[0].message.content.strip()
 
 
 def read_file_content(file_path: str) -> str:

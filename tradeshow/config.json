@@ -1,7 +1,7 @@
 {
-    "input_segment_file": "input/segments.json",
-    "synthetic_user_schema_file": "schema/synthetic_user_schema.json",
-    "output_file": "output/synthetic_users.json",
-    "log_file": "logs/trace_run.json",
+    "input_segment_file": "tradeshow/input/segments.json",
+    "synthetic_user_schema_file": "tradeshow/schema/synthetic_user_schema.json",
+    "output_file": "tradeshow/output/synthetic_users.json",
+    "log_file": "tradeshow/logs/trace_run.json",
     "users_per_segment": 5
 } 
