@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from typing import Optional
 
+
 def load_openai_config() -> Optional[str]:
     """
     Load OpenAI API key from environment variables or .env file.
@@ -9,17 +10,18 @@ def load_openai_config() -> Optional[str]:
     """
     # Load environment variables from .env file
     load_dotenv()
-    
+
     # Try to get API key from environment
     api_key = os.getenv("OPENAI_API_KEY")
-    
+
     if not api_key:
         raise ValueError(
             "OpenAI API key not found. Please set OPENAI_API_KEY environment variable "
             "or add it to your .env file."
         )
-    
+
     return api_key
+
 
 def get_openai_config() -> dict:
     """
@@ -27,7 +29,7 @@ def get_openai_config() -> dict:
     Returns a dictionary with the configuration.
     """
     api_key = load_openai_config()
-    
+
     return {
         "api_key": api_key,
         "model": "gpt-4",  # Default model
@@ -35,5 +37,5 @@ def get_openai_config() -> dict:
         "max_tokens": 4096,
         "top_p": 1.0,
         "frequency_penalty": 0.0,
-        "presence_penalty": 0.0
-    } 
+        "presence_penalty": 0.0,
+    }

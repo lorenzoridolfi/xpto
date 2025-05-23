@@ -14,13 +14,16 @@ from dataclasses import dataclass
 
 logger = logging.getLogger("LLMCache")
 
+
 @dataclass
 class CacheEntry:
     """Represents a single cache entry with metadata."""
+
     response: Any
     timestamp: datetime
     hash: str
     metadata: Dict[str, Any]
+
 
 class LLMCache:
     """
@@ -61,7 +64,8 @@ class LLMCache:
     def _clean_expired_entries(self) -> None:
         now = datetime.utcnow()
         expired = [
-            h for h, entry in self.cache.items()
+            h
+            for h, entry in self.cache.items()
             if now - entry.timestamp > timedelta(hours=self.expiration_hours)
         ]
         for h in expired:
@@ -78,7 +82,12 @@ class LLMCache:
         logger.info("Cache miss")
         return None
 
-    def put(self, messages: List[Dict[str, Any]], response: Any, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def put(
+        self,
+        messages: List[Dict[str, Any]],
+        response: Any,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self._clean_expired_entries()
         if len(self.cache) >= self.max_size:
             # Remove oldest
@@ -89,7 +98,7 @@ class LLMCache:
             response=response,
             timestamp=datetime.utcnow(),
             hash=h,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
         self.cache[h] = entry
         logger.info(f"Cached response for hash: {h}")
@@ -109,14 +118,18 @@ class LLMCache:
             "size": len(self.cache),
             "max_size": self.max_size,
             "expiration_hours": self.expiration_hours,
-            "oldest_entry": min((e.timestamp for e in self.cache.values()), default=None),
-            "newest_entry": max((e.timestamp for e in self.cache.values()), default=None)
+            "oldest_entry": min(
+                (e.timestamp for e in self.cache.values()), default=None
+            ),
+            "newest_entry": max(
+                (e.timestamp for e in self.cache.values()), default=None
+            ),
         }
-        
+
         if self.llm_params:
             stats["llm_params"] = self.llm_params
             stats["params_file"] = self.PARAMS_FILE
-        
+
         return stats
 
     def clean_cache(
@@ -125,7 +138,7 @@ class LLMCache:
         min_similarity: float = 0.95,
         max_age_hours: Optional[int] = None,
         min_hits: int = 0,
-        max_size: Optional[int] = None
+        max_size: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
         Clean the cache based on various criteria.
@@ -153,29 +166,31 @@ class LLMCache:
             "similarity": 0,
             "age": 0,
             "hits": 0,
-            "size": 0
+            "size": 0,
         }
-        
+
         # Get current time for age-based cleaning
         current_time = datetime.utcnow()
-        
+
         # Create a list of entries to remove
         entries_to_remove = set()
-        
+
         if mode in ["expired", "all"]:
             # Remove expired entries
             for key, entry in self.cache.items():
-                if current_time - entry.timestamp > timedelta(hours=self.expiration_hours):
+                if current_time - entry.timestamp > timedelta(
+                    hours=self.expiration_hours
+                ):
                     entries_to_remove.add(key)
                     removed_by_reason["expired"] += 1
-        
+
         if mode in ["age", "all"] and max_age_hours is not None:
             # Remove entries older than max_age_hours
             for key, entry in self.cache.items():
                 if current_time - entry.timestamp > timedelta(hours=max_age_hours):
                     entries_to_remove.add(key)
                     removed_by_reason["age"] += 1
-        
+
         if mode in ["hits", "all"]:
             # Remove entries with fewer hits than min_hits
             for key, entry in self.cache.items():
@@ -183,26 +198,25 @@ class LLMCache:
                 if hits < min_hits:
                     entries_to_remove.add(key)
                     removed_by_reason["hits"] += 1
-        
+
         if mode in ["size", "all"] or max_size is not None:
             # Reduce cache to max_size entries
             target_size = max_size if max_size is not None else self.max_size
             if len(self.cache) > target_size:
                 # Sort entries by timestamp and remove oldest
                 sorted_entries = sorted(
-                    self.cache.items(),
-                    key=lambda x: x[1].timestamp
+                    self.cache.items(), key=lambda x: x[1].timestamp
                 )
-                for key, _ in sorted_entries[:len(self.cache) - target_size]:
+                for key, _ in sorted_entries[: len(self.cache) - target_size]:
                     entries_to_remove.add(key)
                     removed_by_reason["size"] += 1
-        
+
         # Remove the identified entries
         for key in entries_to_remove:
             if key in self.cache:
                 del self.cache[key]
                 removed_count += 1
-        
+
         # Prepare statistics
         stats = {
             "initial_size": initial_size,
@@ -210,12 +224,12 @@ class LLMCache:
             "removed_count": removed_count,
             "removed_by_reason": removed_by_reason,
             "cleaning_mode": mode,
-            "timestamp": current_time.isoformat()
+            "timestamp": current_time.isoformat(),
         }
-        
+
         logger.info(f"Cache cleaned: {removed_count} entries removed")
         logger.debug(f"Cleaning statistics: {json.dumps(stats, indent=2)}")
-        
+
         return stats
 
     def _update_vectors(self) -> None:
@@ -224,7 +238,7 @@ class LLMCache:
             self.vectors = None
             self.vector_timestamps = []
             return
-            
+
         texts = [entry.metadata.get("query_text", "") for entry in self.cache.values()]
         self.vectors = self.vectorizer.fit_transform(texts).toarray()
-        self.vector_timestamps = [entry.timestamp for entry in self.cache.values()] 
+        self.vector_timestamps = [entry.timestamp for entry in self.cache.values()]
