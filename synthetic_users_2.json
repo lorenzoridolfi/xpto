@@ -1,6 +1,6 @@
 [
   {
-    "id_usuario": "1",
+    "id_usuario": "38",
     "segmento": {
       "valor": "Planejadores"
     },
@@ -8,7 +8,46 @@
       "valor": "Multiplicar"
     },
     "renda_mensal": {
-      "valor": 13500.0
+      "valor": 12000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Gestor de Projetos"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": true
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "diversificado"
+    },
+    "score_risco_financeiro": 0.2,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "39",
+    "segmento": {
+      "valor": "Planejadores"
+    },
+    "filosofia": {
+      "valor": "Multiplicar"
+    },
+    "renda_mensal": {
+      "valor": 12000.0
     },
     "escolaridade": {
       "valor": "Superior Completo"
@@ -34,12 +73,12 @@
     "comportamento_investimentos": {
       "valor": "diversificado"
     },
-    "score_risco_financeiro": 0.2,
+    "score_risco_financeiro": 0.3,
     "engajamento_digital": "alto",
     "comportamento_poupanca": "disciplinado"
   },
   {
-    "id_usuario": "2",
+    "id_usuario": "40",
     "segmento": {
       "valor": "Planejadores"
     },
@@ -53,7 +92,7 @@
       "valor": "Superior Completo"
     },
     "ocupacao": {
-      "valor": "Gerente de Projetos em Tecnologia da Informa\u00e7\u00e3o"
+      "valor": "Gestor de Projetos"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -73,90 +112,12 @@
     "comportamento_investimentos": {
       "valor": "diversificado"
     },
-    "score_risco_financeiro": 0.3,
+    "score_risco_financeiro": 0.25,
     "engajamento_digital": "alto",
     "comportamento_poupanca": "disciplinado"
   },
   {
-    "id_usuario": "3",
-    "segmento": {
-      "valor": "Planejadores"
-    },
-    "filosofia": {
-      "valor": "Multiplicar"
-    },
-    "renda_mensal": {
-      "valor": 11000.0
-    },
-    "escolaridade": {
-      "valor": "Superior Completo"
-    },
-    "ocupacao": {
-      "valor": "Gerente de Projetos"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": true
-    },
-    "usa_corretora": {
-      "valor": true
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 1.0
-    },
-    "comportamento_gastos": {
-      "valor": "cauteloso"
-    },
-    "comportamento_investimentos": {
-      "valor": "diversificado"
-    },
-    "score_risco_financeiro": 0.3,
-    "engajamento_digital": "alto",
-    "comportamento_poupanca": "disciplinado"
-  },
-  {
-    "id_usuario": "4",
-    "segmento": {
-      "valor": "Poupadores"
-    },
-    "filosofia": {
-      "valor": "Guardar"
-    },
-    "renda_mensal": {
-      "valor": 4000.0
-    },
-    "escolaridade": {
-      "valor": "Superior Completo"
-    },
-    "ocupacao": {
-      "valor": "Analista Administrativo em empresa de grande porte"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": true
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 4.0
-    },
-    "comportamento_gastos": {
-      "valor": "cauteloso"
-    },
-    "comportamento_investimentos": {
-      "valor": "basico"
-    },
-    "score_risco_financeiro": 0.3,
-    "engajamento_digital": "medio",
-    "comportamento_poupanca": "disciplinado"
-  },
-  {
-    "id_usuario": "5",
+    "id_usuario": "41",
     "segmento": {
       "valor": "Poupadores"
     },
@@ -170,7 +131,85 @@
       "valor": "Superior Completo"
     },
     "ocupacao": {
-      "valor": "Analista de Administra\u00e7\u00e3o"
+      "valor": "Assistente Administrativo em uma empresa de grande porte"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "basico"
+    },
+    "score_risco_financeiro": 0.3,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "42",
+    "segmento": {
+      "valor": "Poupadores"
+    },
+    "filosofia": {
+      "valor": "Guardar"
+    },
+    "renda_mensal": {
+      "valor": 4500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "basico"
+    },
+    "score_risco_financeiro": 0.25,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "43",
+    "segmento": {
+      "valor": "Poupadores"
+    },
+    "filosofia": {
+      "valor": "Guardar"
+    },
+    "renda_mensal": {
+      "valor": 4500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista Administrativo em empresa de grande porte"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -190,51 +229,12 @@
     "comportamento_investimentos": {
       "valor": "basico"
     },
-    "score_risco_financeiro": 0.2,
-    "engajamento_digital": "medio",
-    "comportamento_poupanca": "disciplinado"
-  },
-  {
-    "id_usuario": "6",
-    "segmento": {
-      "valor": "Poupadores"
-    },
-    "filosofia": {
-      "valor": "Guardar"
-    },
-    "renda_mensal": {
-      "valor": 4500.0
-    },
-    "escolaridade": {
-      "valor": "Superior Completo"
-    },
-    "ocupacao": {
-      "valor": "Analista de Administra\u00e7\u00e3o P\u00fablica"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": true
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 4.0
-    },
-    "comportamento_gastos": {
-      "valor": "cauteloso"
-    },
-    "comportamento_investimentos": {
-      "valor": "basico"
-    },
     "score_risco_financeiro": 0.3,
     "engajamento_digital": "medio",
     "comportamento_poupanca": "disciplinado"
   },
   {
-    "id_usuario": "7",
+    "id_usuario": "44",
     "segmento": {
       "valor": "Materialistas"
     },
@@ -242,46 +242,7 @@
       "valor": "Gastar"
     },
     "renda_mensal": {
-      "valor": 3500.0
-    },
-    "escolaridade": {
-      "valor": "Ensino M\u00e9dio"
-    },
-    "ocupacao": {
-      "valor": "Vendedor de Loja de Eletr\u00f4nicos"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": true
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 0.0
-    },
-    "comportamento_gastos": {
-      "valor": "consumo_imediato"
-    },
-    "comportamento_investimentos": {
-      "valor": "nenhum"
-    },
-    "score_risco_financeiro": 0.8,
-    "engajamento_digital": "alto",
-    "comportamento_poupanca": "ausente"
-  },
-  {
-    "id_usuario": "8",
-    "segmento": {
-      "valor": "Materialistas"
-    },
-    "filosofia": {
-      "valor": "Gastar"
-    },
-    "renda_mensal": {
-      "valor": 6000.0
+      "valor": 3800.0
     },
     "escolaridade": {
       "valor": "Superior Completo"
@@ -312,7 +273,7 @@
     "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "9",
+    "id_usuario": "45",
     "segmento": {
       "valor": "Materialistas"
     },
@@ -320,13 +281,13 @@
       "valor": "Gastar"
     },
     "renda_mensal": {
-      "valor": 4000.0
+      "valor": 3200.0
     },
     "escolaridade": {
       "valor": "Superior Completo"
     },
     "ocupacao": {
-      "valor": "Analista de Marketing"
+      "valor": "Especialista em Marketing Digital"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -351,7 +312,46 @@
     "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "10",
+    "id_usuario": "46",
+    "segmento": {
+      "valor": "Materialistas"
+    },
+    "filosofia": {
+      "valor": "Gastar"
+    },
+    "renda_mensal": {
+      "valor": 5000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Especialista em Marketing Digital"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.8,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "47",
     "segmento": {
       "valor": "Batalhadores"
     },
@@ -359,13 +359,13 @@
       "valor": "Ganhar"
     },
     "renda_mensal": {
-      "valor": 2200.0
+      "valor": 2500.0
     },
     "escolaridade": {
       "valor": "Ensino M\u00e9dio"
     },
     "ocupacao": {
-      "valor": "Operador de M\u00e1quinas"
+      "valor": "Assistente Administrativo"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -390,129 +390,12 @@
     "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "11",
+    "id_usuario": "48",
     "segmento": {
       "valor": "Batalhadores"
     },
     "filosofia": {
       "valor": "Ganhar"
-    },
-    "renda_mensal": {
-      "valor": 2700.0
-    },
-    "escolaridade": {
-      "valor": "Ensino M\u00e9dio"
-    },
-    "ocupacao": {
-      "valor": "Vendedor em loja de varejo"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": true
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 1.0
-    },
-    "comportamento_gastos": {
-      "valor": "necessidades_basicas"
-    },
-    "comportamento_investimentos": {
-      "valor": "nenhum"
-    },
-    "score_risco_financeiro": 0.7,
-    "engajamento_digital": "medio",
-    "comportamento_poupanca": "ocasional"
-  },
-  {
-    "id_usuario": "12",
-    "segmento": {
-      "valor": "Batalhadores"
-    },
-    "filosofia": {
-      "valor": "Ganhar"
-    },
-    "renda_mensal": {
-      "valor": 2200.0
-    },
-    "escolaridade": {
-      "valor": "Ensino M\u00e9dio"
-    },
-    "ocupacao": {
-      "valor": "Auxiliar Administrativo"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": false
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 1.0
-    },
-    "comportamento_gastos": {
-      "valor": "necessidades_basicas"
-    },
-    "comportamento_investimentos": {
-      "valor": "nenhum"
-    },
-    "score_risco_financeiro": 0.7,
-    "engajamento_digital": "medio",
-    "comportamento_poupanca": "ocasional"
-  },
-  {
-    "id_usuario": "13",
-    "segmento": {
-      "valor": "C\u00e9ticos"
-    },
-    "filosofia": {
-      "valor": "Evitar"
-    },
-    "renda_mensal": {
-      "valor": 2800.0
-    },
-    "escolaridade": {
-      "valor": "Ensino M\u00e9dio"
-    },
-    "ocupacao": {
-      "valor": "Assistente Administrativo"
-    },
-    "usa_banco_tradicional": {
-      "valor": true
-    },
-    "usa_banco_digital": {
-      "valor": false
-    },
-    "usa_corretora": {
-      "valor": false
-    },
-    "frequencia_poupanca_mensal": {
-      "valor": 0.0
-    },
-    "comportamento_gastos": {
-      "valor": "cauteloso"
-    },
-    "comportamento_investimentos": {
-      "valor": "nenhum"
-    },
-    "score_risco_financeiro": 0.8,
-    "engajamento_digital": "baixo",
-    "comportamento_poupanca": "ausente"
-  },
-  {
-    "id_usuario": "14",
-    "segmento": {
-      "valor": "C\u00e9ticos"
-    },
-    "filosofia": {
-      "valor": "Evitar"
     },
     "renda_mensal": {
       "valor": 2500.0
@@ -521,7 +404,7 @@
       "valor": "Ensino M\u00e9dio"
     },
     "ocupacao": {
-      "valor": "Auxiliar Administrativo"
+      "valor": "Operador de f\u00e1brica"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -541,17 +424,17 @@
     "comportamento_investimentos": {
       "valor": "nenhum"
     },
-    "score_risco_financeiro": 0.6,
+    "score_risco_financeiro": 0.9,
     "engajamento_digital": "baixo",
-    "comportamento_poupanca": "ocasional"
+    "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "15",
+    "id_usuario": "49",
     "segmento": {
-      "valor": "C\u00e9ticos"
+      "valor": "Batalhadores"
     },
     "filosofia": {
-      "valor": "Evitar"
+      "valor": "Ganhar"
     },
     "renda_mensal": {
       "valor": 2500.0
@@ -566,6 +449,45 @@
       "valor": true
     },
     "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.7,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "50",
+    "segmento": {
+      "valor": "C\u00e9ticos"
+    },
+    "filosofia": {
+      "valor": "Evitar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Empregado em uma pequena loja de roupas"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
       "valor": false
     },
     "usa_corretora": {
@@ -580,26 +502,26 @@
     "comportamento_investimentos": {
       "valor": "nenhum"
     },
-    "score_risco_financeiro": 0.8,
+    "score_risco_financeiro": 0.75,
     "engajamento_digital": "baixo",
     "comportamento_poupanca": "ocasional"
   },
   {
-    "id_usuario": "16",
+    "id_usuario": "51",
     "segmento": {
-      "valor": "Endividados"
+      "valor": "C\u00e9ticos"
     },
     "filosofia": {
-      "valor": "Pagar"
+      "valor": "Evitar"
     },
     "renda_mensal": {
-      "valor": 2200.0
+      "valor": 2800.0
     },
     "escolaridade": {
       "valor": "Ensino M\u00e9dio"
     },
     "ocupacao": {
-      "valor": "Ajudante de Produ\u00e7\u00e3o"
+      "valor": "T\u00e9cnico em Manuten\u00e7\u00e3o"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -614,17 +536,56 @@
       "valor": 0.0
     },
     "comportamento_gastos": {
-      "valor": "consumo_imediato"
+      "valor": "necessidades_basicas"
     },
     "comportamento_investimentos": {
       "valor": "nenhum"
     },
-    "score_risco_financeiro": 0.8,
+    "score_risco_financeiro": 0.7,
     "engajamento_digital": "baixo",
     "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "17",
+    "id_usuario": "52",
+    "segmento": {
+      "valor": "C\u00e9ticos"
+    },
+    "filosofia": {
+      "valor": "Evitar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Empregado em com\u00e9rcio"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.7,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ocasional"
+  },
+  {
+    "id_usuario": "53",
     "segmento": {
       "valor": "Endividados"
     },
@@ -632,13 +593,13 @@
       "valor": "Pagar"
     },
     "renda_mensal": {
-      "valor": 2000.0
+      "valor": 1500.0
     },
     "escolaridade": {
       "valor": "Ensino M\u00e9dio"
     },
     "ocupacao": {
-      "valor": "Vendedor de Loja"
+      "valor": "Auxiliar Administrativo"
     },
     "usa_banco_tradicional": {
       "valor": true
@@ -663,7 +624,7 @@
     "comportamento_poupanca": "ausente"
   },
   {
-    "id_usuario": "18",
+    "id_usuario": "54",
     "segmento": {
       "valor": "Endividados"
     },
@@ -671,19 +632,19 @@
       "valor": "Pagar"
     },
     "renda_mensal": {
-      "valor": 2200.0
+      "valor": 2000.0
     },
     "escolaridade": {
       "valor": "Ensino M\u00e9dio"
     },
     "ocupacao": {
-      "valor": "Atendente de Loja"
+      "valor": "Auxiliar Administrativo"
     },
     "usa_banco_tradicional": {
       "valor": true
     },
     "usa_banco_digital": {
-      "valor": false
+      "valor": true
     },
     "usa_corretora": {
       "valor": false
@@ -698,7 +659,46 @@
       "valor": "nenhum"
     },
     "score_risco_financeiro": 0.85,
-    "engajamento_digital": "baixo",
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "55",
+    "segmento": {
+      "valor": "Endividados"
+    },
+    "filosofia": {
+      "valor": "Pagar"
+    },
+    "renda_mensal": {
+      "valor": 1600.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Assistente Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.85,
+    "engajamento_digital": "medio",
     "comportamento_poupanca": "ausente"
   }
 ]

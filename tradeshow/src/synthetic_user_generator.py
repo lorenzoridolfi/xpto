@@ -47,7 +47,9 @@ AGENT_STATE_PATH = os.path.join(
     os.path.dirname(__file__), "../config_agents_state.json"
 )
 SEGMENTS_PATH = os.path.join(os.path.dirname(__file__), "../input/segments.json")
-SEGMENT_SCHEMA_PATH = os.path.join(PROJECT_ROOT, "tradeshow/schema/segments_schema.json")
+SEGMENT_SCHEMA_PATH = os.path.join(
+    PROJECT_ROOT, "tradeshow/schema/segments_schema.json"
+)
 AGENTS_UPDATE_PATH = os.path.join(
     os.path.dirname(__file__), "../other/agents_update.json"
 )
@@ -138,7 +140,9 @@ class TracedGroupChat:
         def pydantic_encoder(obj):
             if isinstance(obj, pydantic.BaseModel):
                 return obj.model_dump()
-            raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+            raise TypeError(
+                f"Object of type {obj.__class__.__name__} is not JSON serializable"
+            )
 
         with open(self.log_path, "w") as f:
             json.dump(self.trace, f, indent=2, default=pydantic_encoder)
@@ -279,7 +283,9 @@ class ValidatorAgent:
             "model": self.model,
         }
 
-    def validate_user(self, user: SyntheticUser, tracer: TracedGroupChat = None) -> CriticOutput:
+    def validate_user(
+        self, user: SyntheticUser, tracer: TracedGroupChat = None
+    ) -> CriticOutput:
         logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
         schema_json = json.dumps(self.schema, ensure_ascii=False, indent=2)
         prompt = (
@@ -336,7 +342,9 @@ class ReviewerAgent:
     )
 
     def __init__(self, agent_config: Dict[str, Any], schema: Dict[str, Any]):
-        logger.debug(f"ReviewerAgent.__init__ called with agent_config={agent_config}, schema=..." )
+        logger.debug(
+            f"ReviewerAgent.__init__ called with agent_config={agent_config}, schema=..."
+        )
         self.config = agent_config
         self.temperature = self.config["temperature"]
         self.description = AGENTS_UPDATE["ReviewerAgent"]["description"]
@@ -357,7 +365,12 @@ class ReviewerAgent:
             "model": self.model,
         }
 
-    def review_user(self, user: SyntheticUser, critic_output: CriticOutput, tracer: TracedGroupChat = None) -> dict:
+    def review_user(
+        self,
+        user: SyntheticUser,
+        critic_output: CriticOutput,
+        tracer: TracedGroupChat = None,
+    ) -> dict:
         logger.debug(
             f"ReviewerAgent.review_user called for user: {user}, critic_output: {critic_output}"
         )
@@ -428,11 +441,7 @@ class Orchestrator:
         self.agent_state = load_json(agent_state_path)
         self.user_id_field = self.agent_config.get("user_id_field", "user_id")
         logger.info(f"Orchestrator initialized with user_id_field={self.user_id_field}")
-        with open(
-            os.path.join(
-                PROJECT_ROOT, self.config["input_segment_file"]
-            )
-        ) as f:
+        with open(os.path.join(PROJECT_ROOT, self.config["input_segment_file"])) as f:
             self.segments = json.load(f)["segmentos"]
         logger.debug(f"Loaded segments: {self.segments}")
         schema_path = self.config["synthetic_user_schema_file"]

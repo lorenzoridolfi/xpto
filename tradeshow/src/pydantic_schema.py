@@ -9,7 +9,7 @@ class Segmento(BaseModel):
         "Materialistas",
         "Batalhadores",
         "Céticos",
-        "Endividados"
+        "Endividados",
     ]
 
 
@@ -57,6 +57,7 @@ class SyntheticUser(BaseModel):
     """
     Pydantic model for a synthetic user profile, matching synthetic_user_schema.json.
     """
+
     id_usuario: str = Field(..., alias="id_usuario")
     segmento: Segmento
     filosofia: Filosofia
@@ -69,9 +70,15 @@ class SyntheticUser(BaseModel):
     frequencia_poupanca_mensal: FrequenciaPoupancaMensal
     comportamento_gastos: ComportamentoGastos
     comportamento_investimentos: ComportamentoInvestimentos
-    score_risco_financeiro: Optional[confloat(ge=0.0, le=1.0)] = Field(None, alias="score_risco_financeiro")
-    engajamento_digital: Optional[Literal["baixo", "medio", "alto"]] = Field(None, alias="engajamento_digital")
-    comportamento_poupanca: Optional[Literal["disciplinado", "ocasional", "ausente"]] = Field(None, alias="comportamento_poupanca")
+    score_risco_financeiro: Optional[confloat(ge=0.0, le=1.0)] = Field(
+        None, alias="score_risco_financeiro"
+    )
+    engajamento_digital: Optional[Literal["baixo", "medio", "alto"]] = Field(
+        None, alias="engajamento_digital"
+    )
+    comportamento_poupanca: Optional[
+        Literal["disciplinado", "ocasional", "ausente"]
+    ] = Field(None, alias="comportamento_poupanca")
 
     class Config:
         allow_population_by_field_name = True
