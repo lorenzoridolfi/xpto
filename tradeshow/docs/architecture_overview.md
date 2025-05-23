@@ -15,11 +15,21 @@ This system generates synthetic users for market segments using a multi-agent, t
 5. Log all actions and save outputs
 
 ## Agent Roles
-- **UserGeneratorAgent:** Generates a realistic individual synthetic user profile for a randomly chosen Brazilian financial segment, ensuring internal consistency, plausibility, and clear segment alignment. Returns a strictly-typed `SyntheticUser` Pydantic model.
-- **ValidatorAgent:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment. Returns a strictly-typed `CriticOutput` Pydantic model.
-- **ReviewerAgent:** Reviews and quality-assures synthetic user profiles using the segment definition and critic feedback, ensuring realism, coherence, and alignment. Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model.
+- **UserGeneratorAgent:** Generates a realistic individual synthetic user profile for a randomly chosen Brazilian financial segment, ensuring internal consistency, plausibility, and clear segment alignment. Returns a strictly-typed `SyntheticUser` Pydantic model. **Temperature:** 0.7
+- **ValidatorAgent:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment. Returns a strictly-typed `CriticOutput` Pydantic model. **Temperature:** 0.0
+- **ReviewerAgent:** Reviews and quality-assures synthetic user profiles using the segment definition and critic feedback, ensuring realism, coherence, and alignment. Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model. **Temperature:** 0.2
 - **TracedGroupChat:** Logs all actions/messages for auditability
 - **Orchestrator:** Coordinates the workflow
+
+## Model Temperature Rationale
+
+| Agent     | Temperature | Rationale                                                                 |
+|-----------|-------------|--------------------------------------------------------------------------|
+| Generator | 0.7         | Balances creativity and coherence, producing varied yet plausible profiles.|
+| Critic    | 0.0         | Ensures deterministic, focused analysis with minimal randomness.           |
+| Reviewer  | 0.2         | Allows slight natural variation for precise rewriting while maintaining fidelity. |
+
+See `docs/model_temperatures.md` for more details.
 
 ## Structured Outputs and Validation
 - All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.

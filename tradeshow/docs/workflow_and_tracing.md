@@ -7,14 +7,24 @@
    - Validate the segments file (`segments.json`) against the schema (`segmets_schema.json`) at runtime before any processing. If validation fails, execution halts with a clear error message.
 2. **For each segment:**
    - For the configured number of users:
-     - UserGeneratorAgent creates a user, assigns a unique user_id, and outputs a strictly-typed `SyntheticUser` Pydantic model
-     - ValidatorAgent checks the user for realism, consistency, and segment alignment, and outputs a strictly-typed `CriticOutput` Pydantic model
-     - If invalid, ReviewerAgent reviews and suggests corrections, returning a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model
+     - UserGeneratorAgent creates a user, assigns a unique user_id, and outputs a strictly-typed `SyntheticUser` Pydantic model (**Temperature:** 0.7)
+     - ValidatorAgent checks the user for realism, consistency, and segment alignment, and outputs a strictly-typed `CriticOutput` Pydantic model (**Temperature:** 0.0)
+     - If invalid, ReviewerAgent reviews and suggests corrections, returning a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model (**Temperature:** 0.2)
      - All actions are logged
 3. **Output:**
    - All users are saved in a single JSON file (e.g., `output/synthetic_users.json`)
    - All trace logs are saved in a single JSON file (e.g., `logs/trace_run.json`)
    - The user_id state is updated in `config_agents_state.json`
+
+## Model Temperature Rationale
+
+| Agent     | Temperature | Rationale                                                                 |
+|-----------|-------------|--------------------------------------------------------------------------|
+| Generator | 0.7         | Balances creativity and coherence, producing varied yet plausible profiles.|
+| Critic    | 0.0         | Ensures deterministic, focused analysis with minimal randomness.           |
+| Reviewer  | 0.2         | Allows slight natural variation for precise rewriting while maintaining fidelity. |
+
+See `docs/model_temperatures.md` for more details.
 
 ## Structured Outputs and Validation
 - All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.

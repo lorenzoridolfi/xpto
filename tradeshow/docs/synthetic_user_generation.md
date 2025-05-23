@@ -23,16 +23,19 @@ This document describes the architecture and workflow for generating synthetic u
   - Describe financial behaviors (saving, spending, investment, bank usage, credit/debt)
   - Explain motivations and attitudes toward money
   - All details must cohere with the chosen segment's known traits, be internally consistent, and grounded in a Brazilian context. Do not mention this is generated or describe your process—present it as a factual profile.
+- **Temperature:** 0.7 (see `docs/model_temperatures.md`)
 - **Output:** Returns a strictly-typed `SyntheticUser` Pydantic model.
 
 ### 3. Validator Agent
 - **Description:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment.
 - **System Message:** You are the Synthetic User Critic. You receive one profile (including its "Segment: <SegmentName>" line and structured details) plus the segment definitions. Perform checks for segment alignment, internal consistency, realism, and outliers. Output a JSON object with `score`, `issues`, and `recommendation`.
+- **Temperature:** 0.0 (see `docs/model_temperatures.md`)
 - **Output:** Returns a strictly-typed `CriticOutput` Pydantic model.
 
 ### 4. Reviewer Agent
 - **Description:** The Reviewer Agent is responsible for quality-assuring synthetic user profiles in a multi-agent AutoGen workflow. It reviews each generated profile against the target segment's definition and the critic agent's feedback. The reviewer ensures the profile is realistic, internally consistent, and aligned with the segment's philosophy, demographics, and financial behaviors. Its ultimate goal is to refine or regenerate the profile (if needed) while preserving the original persona's intent, delivering a polished profile that appears correct from the start.
 - **System Message:** You are a Reviewer Agent in a Microsoft AutoGen multi-agent setup. Your role is to validate and improve synthetic user profiles generated for specific market segments. You will receive three inputs: (1) a synthetic user profile draft, (2) the assigned segment's definition, and (3) a structured critique from a critic agent (including a score from 0–1, a list of issues, and a recommendation of "accept" or "flag for review"). Follow the instructions to produce the final profile output, ensuring alignment, coherence, and realism, and output only the improved profile data.
+- **Temperature:** 0.2 (see `docs/model_temperatures.md`)
 - **Output:** Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model.
 
 ### 5. Trace Collector Agent
@@ -90,6 +93,16 @@ tradeshow/
 - **Minimizes hallucination and schema drift**
 - **Maximizes transparency and auditability**
 - **Easily extensible and testable**
+
+## Model Temperature Rationale
+
+| Agent     | Temperature | Rationale                                                                 |
+|-----------|-------------|--------------------------------------------------------------------------|
+| Generator | 0.7         | Balances creativity and coherence, producing varied yet plausible profiles.|
+| Critic    | 0.0         | Ensures deterministic, focused analysis with minimal randomness.           |
+| Reviewer  | 0.2         | Allows slight natural variation for precise rewriting while maintaining fidelity. |
+
+See `docs/model_temperatures.md` for more details.
 
 ---
 For more details, see the implementation and tests under the `tradeshow/` directory. 
