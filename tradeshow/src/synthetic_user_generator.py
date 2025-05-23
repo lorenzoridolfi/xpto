@@ -8,6 +8,7 @@ from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 import logging
 import gc
 import openai
+import pydantic
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -133,8 +134,14 @@ class TracedGroupChat:
 
     def save(self):
         logger.info(f"Saving trace log to {self.log_path}")
+
+        def pydantic_encoder(obj):
+            if isinstance(obj, pydantic.BaseModel):
+                return obj.model_dump()
+            raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
         with open(self.log_path, "w") as f:
-            json.dump(self.trace, f, indent=2)
+            json.dump(self.trace, f, indent=2, default=pydantic_encoder)
 
 
 class UserGeneratorAgent:
@@ -211,9 +218,9 @@ class UserGeneratorAgent:
             )
             user_json = response.choices[0].message.content
             user = SyntheticUser.model_validate_json(user_json)
-            user.user_id = str(user_id)
+            user.id_usuario = str(user_id)
             logger.info(
-                f"Generated user_id {user.user_id} for segment {self.segment.get('nome')}"
+                f"Generated id_usuario {user.id_usuario} for segment {self.segment.get('nome')}"
             )
             logger.debug(f"LLM response: {user}")
         except PydanticValidationError as e:

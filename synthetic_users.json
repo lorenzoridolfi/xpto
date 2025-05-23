@@ -1,0 +1,704 @@
+[
+  {
+    "id_usuario": "20",
+    "segmento": {
+      "valor": "Planejadores"
+    },
+    "filosofia": {
+      "valor": "Multiplicar"
+    },
+    "renda_mensal": {
+      "valor": 12000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Consultor Financeiro"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": true
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "diversificado"
+    },
+    "score_risco_financeiro": 0.25,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "21",
+    "segmento": {
+      "valor": "Planejadores"
+    },
+    "filosofia": {
+      "valor": "Multiplicar"
+    },
+    "renda_mensal": {
+      "valor": 12000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Gerente de Projetos"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": true
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "diversificado"
+    },
+    "score_risco_financeiro": 0.2,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "22",
+    "segmento": {
+      "valor": "Planejadores"
+    },
+    "filosofia": {
+      "valor": "Multiplicar"
+    },
+    "renda_mensal": {
+      "valor": 12000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Consultor Financeiro"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": true
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 4.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "diversificado"
+    },
+    "score_risco_financeiro": 0.2,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "23",
+    "segmento": {
+      "valor": "Poupadores"
+    },
+    "filosofia": {
+      "valor": "Guardar"
+    },
+    "renda_mensal": {
+      "valor": 4000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Assistente Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 2.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "basico"
+    },
+    "score_risco_financeiro": 0.3,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "24",
+    "segmento": {
+      "valor": "Poupadores"
+    },
+    "filosofia": {
+      "valor": "Guardar"
+    },
+    "renda_mensal": {
+      "valor": 4000.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista de Recursos Humanos em uma empresa de grande porte"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 3.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "basico"
+    },
+    "score_risco_financeiro": 0.2,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "25",
+    "segmento": {
+      "valor": "Poupadores"
+    },
+    "filosofia": {
+      "valor": "Guardar"
+    },
+    "renda_mensal": {
+      "valor": 4500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 4.0
+    },
+    "comportamento_gastos": {
+      "valor": "cauteloso"
+    },
+    "comportamento_investimentos": {
+      "valor": "basico"
+    },
+    "score_risco_financeiro": 0.25,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "disciplinado"
+  },
+  {
+    "id_usuario": "26",
+    "segmento": {
+      "valor": "Materialistas"
+    },
+    "filosofia": {
+      "valor": "Gastar"
+    },
+    "renda_mensal": {
+      "valor": 3500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Designer Gr\u00e1fico"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.8,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "27",
+    "segmento": {
+      "valor": "Materialistas"
+    },
+    "filosofia": {
+      "valor": "Gastar"
+    },
+    "renda_mensal": {
+      "valor": 4500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista de Marketing"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.8,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "28",
+    "segmento": {
+      "valor": "Materialistas"
+    },
+    "filosofia": {
+      "valor": "Gastar"
+    },
+    "renda_mensal": {
+      "valor": 4500.0
+    },
+    "escolaridade": {
+      "valor": "Superior Completo"
+    },
+    "ocupacao": {
+      "valor": "Analista de Marketing"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.8,
+    "engajamento_digital": "alto",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "29",
+    "segmento": {
+      "valor": "Batalhadores"
+    },
+    "filosofia": {
+      "valor": "Ganhar"
+    },
+    "renda_mensal": {
+      "valor": 1800.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Operador de m\u00e1quinas em f\u00e1brica"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.7,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "30",
+    "segmento": {
+      "valor": "Batalhadores"
+    },
+    "filosofia": {
+      "valor": "Ganhar"
+    },
+    "renda_mensal": {
+      "valor": 2400.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Assistente Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.7,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "31",
+    "segmento": {
+      "valor": "Batalhadores"
+    },
+    "filosofia": {
+      "valor": "Ganhar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Operador de M\u00e1quinas"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 1.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.6,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ocasional"
+  },
+  {
+    "id_usuario": "32",
+    "segmento": {
+      "valor": "C\u00e9ticos"
+    },
+    "filosofia": {
+      "valor": "Evitar"
+    },
+    "renda_mensal": {
+      "valor": 2800.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Operador de m\u00e1quina"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.2,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "33",
+    "segmento": {
+      "valor": "C\u00e9ticos"
+    },
+    "filosofia": {
+      "valor": "Evitar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Operador de Produ\u00e7\u00e3o"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.8,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "34",
+    "segmento": {
+      "valor": "C\u00e9ticos"
+    },
+    "filosofia": {
+      "valor": "Evitar"
+    },
+    "renda_mensal": {
+      "valor": 2200.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Assistente Administrativo"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "necessidades_basicas"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.7,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "35",
+    "segmento": {
+      "valor": "Endividados"
+    },
+    "filosofia": {
+      "valor": "Pagar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Vendedor de Loja"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.9,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "36",
+    "segmento": {
+      "valor": "Endividados"
+    },
+    "filosofia": {
+      "valor": "Pagar"
+    },
+    "renda_mensal": {
+      "valor": 2500.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Vendedor de loja"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": true
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.85,
+    "engajamento_digital": "medio",
+    "comportamento_poupanca": "ausente"
+  },
+  {
+    "id_usuario": "37",
+    "segmento": {
+      "valor": "Endividados"
+    },
+    "filosofia": {
+      "valor": "Pagar"
+    },
+    "renda_mensal": {
+      "valor": 2000.0
+    },
+    "escolaridade": {
+      "valor": "Ensino M\u00e9dio"
+    },
+    "ocupacao": {
+      "valor": "Empacotador de Supermercado"
+    },
+    "usa_banco_tradicional": {
+      "valor": true
+    },
+    "usa_banco_digital": {
+      "valor": false
+    },
+    "usa_corretora": {
+      "valor": false
+    },
+    "frequencia_poupanca_mensal": {
+      "valor": 0.0
+    },
+    "comportamento_gastos": {
+      "valor": "consumo_imediato"
+    },
+    "comportamento_investimentos": {
+      "valor": "nenhum"
+    },
+    "score_risco_financeiro": 0.9,
+    "engajamento_digital": "baixo",
+    "comportamento_poupanca": "ausente"
+  }
+]

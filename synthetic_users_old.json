@@ -1,0 +1,902 @@
+[
+  {
+    "user_id": "1",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 11500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Gerente de Projetos",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": true,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "2",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 11000.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Gerente de Projetos",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": true,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "3",
+    "segment_label": {
+      "value": "Planejadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Multiplicar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 12000.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Gerente de Projetos",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": true,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "diversified",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "4",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Analista Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "5",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Analista Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": true,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 2.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.3,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "6",
+    "segment_label": {
+      "value": "Poupadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Guardar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Analista de Administra\u00e7\u00e3o P\u00fablica",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 4.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "basic",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.25,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "disciplined"
+  },
+  {
+    "user_id": "7",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4800.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Marketing Specialist",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "8",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Coordenador de Marketing",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.78,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "9",
+    "segment_label": {
+      "value": "Materialistas",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Gastar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 4500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Superior Completo",
+      "source": null
+    },
+    "occupation": {
+      "value": "Analista de Marketing",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.82,
+    "inferred_digital_engagement": "high",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "10",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Assistente de Vendas",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.7,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "11",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Assistente Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.65,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "occasional"
+  },
+  {
+    "user_id": "12",
+    "segment_label": {
+      "value": "Batalhadores",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Ganhar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 1700.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Operador de M\u00e1quina",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.8,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "13",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 3000.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Estofador",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 1.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.7,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "occasional"
+  },
+  {
+    "user_id": "14",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Assistente Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "basic_needs",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.7,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "15",
+    "segment_label": {
+      "value": "C\u00e9ticos",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Evitar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 2500.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Auxiliar Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "cautious",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.7,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "16",
+    "segment_label": {
+      "value": "Endividados",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 1800.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Operador de M\u00e1quinas",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.9,
+    "inferred_digital_engagement": "medium",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "17",
+    "segment_label": {
+      "value": "Endividados",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 1800.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Assistente Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  },
+  {
+    "user_id": "18",
+    "segment_label": {
+      "value": "Endividados",
+      "source": null
+    },
+    "philosophy": {
+      "value": "Pagar",
+      "source": null
+    },
+    "monthly_income": {
+      "value": 2000.0,
+      "source": null
+    },
+    "education_level": {
+      "value": "Ensino M\u00e9dio",
+      "source": null
+    },
+    "occupation": {
+      "value": "Assistente Administrativo",
+      "source": null
+    },
+    "uses_traditional_bank": {
+      "value": true,
+      "source": null
+    },
+    "uses_digital_bank": {
+      "value": false,
+      "source": null
+    },
+    "uses_broker": {
+      "value": false,
+      "source": null
+    },
+    "savings_frequency_per_month": {
+      "value": 0.0,
+      "source": null
+    },
+    "spending_behavior": {
+      "value": "immediate_consumption",
+      "source": null
+    },
+    "investment_behavior": {
+      "value": "none",
+      "source": null
+    },
+    "predicted_financial_risk_score": 0.85,
+    "inferred_digital_engagement": "low",
+    "inferred_savings_behavior": "absent"
+  }
+]
