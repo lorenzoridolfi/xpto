@@ -9,6 +9,17 @@ This document describes the architecture and workflow for generating synthetic u
 - **Iterative Improvement:** Errors or feedback can be addressed for each user individually, improving overall data quality.
 - **Resource Efficiency:** LLMs are more reliable when focused on a single, well-defined output.
 
+## Data Models: Draft and Reviewed
+
+The system uses two Pydantic models, both derived from the same JSON Schema (`synthetic_user_schema.json`):
+
+- **SyntheticUserDraft**: Used for user creation (before review). This model does **not** include the `avaliacao` field. It is used by the UserGeneratorAgent to represent a synthetic user profile before any evaluation or review.
+- **SyntheticUserReviewed**: Used after review. This model **requires** the `avaliacao` field, which contains two required strings: `critica` (the critic agent's evaluation) and `revisao` (the reviewer agent's comments). It is used by the ReviewerAgent to represent a fully validated and reviewed user profile.
+
+This separation ensures strict validation at each phase:
+- During creation, only the core user fields are required.
+- After review, the evaluation fields are mandatory, enforcing data completeness and traceability.
+
 ## Agent Roles
 
 ### 1. Input Loader Agent
@@ -24,7 +35,7 @@ This document describes the architecture and workflow for generating synthetic u
   - Explain motivations and attitudes toward money
   - All details must cohere with the chosen segment's known traits, be internally consistent, and grounded in a Brazilian context. Do not mention this is generated or describe your process—present it as a factual profile.
 - **Temperature:** 0.7 (see `docs/model_temperatures.md`)
-- **Output:** Returns a strictly-typed `SyntheticUser` Pydantic model.
+- **Output:** Returns a strictly-typed `SyntheticUserDraft` Pydantic model.
 
 ### 3. Validator Agent
 - **Description:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment.
@@ -36,7 +47,7 @@ This document describes the architecture and workflow for generating synthetic u
 - **Description:** The Reviewer Agent is responsible for quality-assuring synthetic user profiles in a multi-agent AutoGen workflow. It reviews each generated profile against the target segment's definition and the critic agent's feedback. The reviewer ensures the profile is realistic, internally consistent, and aligned with the segment's philosophy, demographics, and financial behaviors. Its ultimate goal is to refine or regenerate the profile (if needed) while preserving the original persona's intent, delivering a polished profile that appears correct from the start.
 - **System Message:** You are a Reviewer Agent in a Microsoft AutoGen multi-agent setup. Your role is to validate and improve synthetic user profiles generated for specific market segments. You will receive three inputs: (1) a synthetic user profile draft, (2) the assigned segment's definition, and (3) a structured critique from a critic agent (including a score from 0–1, a list of issues, and a recommendation of "accept" or "flag for review"). Follow the instructions to produce the final profile output, ensuring alignment, coherence, and realism, and output only the improved profile data.
 - **Temperature:** 0.2 (see `docs/model_temperatures.md`)
-- **Output:** Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model.
+- **Output:** Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUserReviewed` Pydantic model.
 
 ### 5. Trace Collector Agent
 - Collects and logs all actions, messages, and decisions from all agents.
@@ -49,9 +60,9 @@ This document describes the architecture and workflow for generating synthetic u
 
 ## Structured Outputs and Validation
 - All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.
-- The `UserGeneratorAgent` outputs a `SyntheticUser` model.
+- The `UserGeneratorAgent` outputs a `SyntheticUserDraft` model.
 - The `ValidatorAgent` outputs a `CriticOutput` model.
-- The `ReviewerAgent` returns an `update_synthetic_user` field using the `SyntheticUser` model.
+- The `ReviewerAgent` returns an `update_synthetic_user` field using the `SyntheticUserReviewed` model.
 - At runtime, the segments definition file (`input/segments.json`) is validated against the schema in `schema/segmets_schema.json` before any processing begins. If validation fails, the program halts with a clear error message.
 
 ## Tracing and the Trace Agent Chat

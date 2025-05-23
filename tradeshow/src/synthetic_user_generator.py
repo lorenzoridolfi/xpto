@@ -4,11 +4,18 @@ from typing import Any, Dict, List
 from jsonschema import validate, ValidationError
 from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
-from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
+from tradeshow.src.pydantic_schema import (
+    SyntheticUser,
+    SyntheticUserDraft,
+    SyntheticUserReviewed,
+    CriticOutput,
+    Avaliacao,
+)
 import logging
 import gc
 import openai
 import pydantic
+import time
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -116,6 +123,7 @@ class TracedGroupChat:
         tool_call: Any = None,
         llm_input: Any = None,
         llm_output: Any = None,
+        duration_seconds: float = None,
     ):
         logger.debug(f"Trace log: {message} | Activity: {activity} | Agent: {agent}")
         entry = {
@@ -132,6 +140,8 @@ class TracedGroupChat:
             entry["llm_input"] = llm_input
         if llm_output is not None:
             entry["llm_output"] = llm_output
+        if duration_seconds is not None:
+            entry["duration_seconds"] = duration_seconds
         self.trace.append(entry)
 
     def save(self):
@@ -150,10 +160,8 @@ class TracedGroupChat:
 
 class UserGeneratorAgent:
     """
-    {desc}
-    """.format(
-        desc=AGENTS_UPDATE["UserGeneratorAgent"]["description"]
-    )
+    Generates a SyntheticUserDraft (before review) for a given segment.
+    """
 
     def __init__(
         self,
@@ -192,7 +200,7 @@ class UserGeneratorAgent:
             "model": self.model,
         }
 
-    def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUser:
+    def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUserDraft:
         logger.debug(
             f"UserGeneratorAgent.generate_user called for segment: {self.segment.get('nome')}"
         )
@@ -214,19 +222,32 @@ class UserGeneratorAgent:
             {"role": "user", "content": prompt},
         ]
         logger.debug(f"Calling OpenAI API with messages: {messages}")
+        start_time = time.time()
         try:
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 response_format={"type": "json_object"},
             )
+            elapsed = time.time() - start_time
+            logger.info(f"OpenAI user generation call took {elapsed:.2f} seconds.")
             user_json = response.choices[0].message.content
-            user = SyntheticUser.model_validate_json(user_json)
+            user = SyntheticUserDraft.model_validate_json(user_json)
             user.id_usuario = str(user_id)
             logger.info(
                 f"Generated id_usuario {user.id_usuario} for segment {self.segment.get('nome')}"
             )
             logger.debug(f"LLM response: {user}")
+            if tracer:
+                tracer.log(
+                    message="OpenAI user generation call",
+                    agent=self.get_metadata(),
+                    activity="generate_user",
+                    data=user.model_dump(),
+                    llm_input=messages,
+                    llm_output=user_json,
+                    duration_seconds=elapsed,
+                )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in UserGeneratorAgent: {e}")
             if tracer:
@@ -254,10 +275,8 @@ class UserGeneratorAgent:
 
 class ValidatorAgent:
     """
-    {desc}
-    """.format(
-        desc=AGENTS_UPDATE["ValidatorAgent"]["description"]
-    )
+    Validates a SyntheticUserDraft and produces a CriticOutput. Optionally, can return a SyntheticUserReviewed with avaliacao.critica filled.
+    """
 
     def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any]):
         logger.debug(
@@ -284,7 +303,7 @@ class ValidatorAgent:
         }
 
     def validate_user(
-        self, user: SyntheticUser, tracer: TracedGroupChat = None
+        self, user: SyntheticUserDraft, tracer: TracedGroupChat = None
     ) -> CriticOutput:
         logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
         schema_json = json.dumps(self.schema, ensure_ascii=False, indent=2)
@@ -300,15 +319,28 @@ class ValidatorAgent:
             {"role": "user", "content": prompt},
         ]
         logger.debug(f"Calling OpenAI API with messages: {messages}")
+        start_time = time.time()
         try:
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 response_format={"type": "json_object"},
             )
+            elapsed = time.time() - start_time
+            logger.info(f"OpenAI validation call took {elapsed:.2f} seconds.")
             output_json = response.choices[0].message.content
             output = CriticOutput.model_validate_json(output_json)
             logger.info(f"Validation result: {output}")
+            if tracer:
+                tracer.log(
+                    message="OpenAI validation call",
+                    agent=self.get_metadata(),
+                    activity="validate_user",
+                    data={"user": user.model_dump(), "critic_output": output.model_dump()},
+                    llm_input=messages,
+                    llm_output=output_json,
+                    duration_seconds=elapsed,
+                )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in ValidatorAgent: {e}")
             if tracer:
@@ -336,10 +368,8 @@ class ValidatorAgent:
 
 class ReviewerAgent:
     """
-    {desc}
-    """.format(
-        desc=AGENTS_UPDATE["ReviewerAgent"]["description"]
-    )
+    Reviews a SyntheticUserDraft and CriticOutput, and returns a SyntheticUserReviewed with avaliacao.critica and avaliacao.revisao filled.
+    """
 
     def __init__(self, agent_config: Dict[str, Any], schema: Dict[str, Any]):
         logger.debug(
@@ -367,7 +397,7 @@ class ReviewerAgent:
 
     def review_user(
         self,
-        user: SyntheticUser,
+        user: SyntheticUserDraft,
         critic_output: CriticOutput,
         tracer: TracedGroupChat = None,
     ) -> dict:
@@ -388,15 +418,32 @@ class ReviewerAgent:
             {"role": "user", "content": prompt},
         ]
         logger.debug(f"Calling OpenAI API with messages: {messages}")
+        start_time = time.time()
         try:
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 response_format={"type": "json_object"},
             )
+            elapsed = time.time() - start_time
+            logger.info(f"OpenAI review call took {elapsed:.2f} seconds.")
             improved_user_json = response.choices[0].message.content
-            improved_user = SyntheticUser.model_validate_json(improved_user_json)
+            improved_user = SyntheticUserReviewed.model_validate_json(improved_user_json)
+            if not improved_user.avaliacao or not improved_user.avaliacao.critica:
+                improved_user.avaliacao.critica = str(critic_output)
+            if not improved_user.avaliacao.revisao:
+                improved_user.avaliacao.revisao = f"Reviewed after critic: {critic_output}"
             logger.info(f"Review result: {improved_user}")
+            if tracer:
+                tracer.log(
+                    message="OpenAI review call",
+                    agent=self.get_metadata(),
+                    activity="review_user",
+                    data=improved_user.model_dump(),
+                    llm_input=messages,
+                    llm_output=improved_user_json,
+                    duration_seconds=elapsed,
+                )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in ReviewerAgent: {e}")
             if tracer:

@@ -162,6 +162,16 @@
       "description": "Classificação inferida do comportamento de poupança pessoal (disciplinado, ocasional, ausente).",
       "enum": ["disciplinado", "ocasional", "ausente"],
       "example": "disciplinado"
+    },
+    "avaliacao": {
+      "type": "object",
+      "description": "Avaliação do perfil pelo agente crítico (critica) e comentários do revisor (revisao). Pode ser preenchido pelos agentes ou deixado vazio.",
+      "properties": {
+        "critica": { "type": "string", "description": "Avaliação do agente crítico.", "default": "" },
+        "revisao": { "type": "string", "description": "Comentários do agente revisor.", "default": "" }
+      },
+      "required": [],
+      "additionalProperties": false
     }
   },
   "required": [
