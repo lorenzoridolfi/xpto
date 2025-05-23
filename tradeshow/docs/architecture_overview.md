@@ -15,11 +15,18 @@ This system generates synthetic users for market segments using a multi-agent, t
 5. Log all actions and save outputs
 
 ## Agent Roles
-- **UserGeneratorAgent:** Creates a synthetic user for a segment, assigns a unique sequential user_id
-- **ValidatorAgent:** Validates user against the JSON schema
-- **ReviewerAgent:** Reviews and suggests corrections for invalid users
+- **UserGeneratorAgent:** Generates a realistic individual synthetic user profile for a randomly chosen Brazilian financial segment, ensuring internal consistency, plausibility, and clear segment alignment. Returns a strictly-typed `SyntheticUser` Pydantic model.
+- **ValidatorAgent:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment. Returns a strictly-typed `CriticOutput` Pydantic model.
+- **ReviewerAgent:** Reviews and quality-assures synthetic user profiles using the segment definition and critic feedback, ensuring realism, coherence, and alignment. Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model.
 - **TracedGroupChat:** Logs all actions/messages for auditability
 - **Orchestrator:** Coordinates the workflow
+
+## Structured Outputs and Validation
+- All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.
+- The `UserGeneratorAgent` outputs a `SyntheticUser` model.
+- The `ValidatorAgent` outputs a `CriticOutput` model.
+- The `ReviewerAgent` returns an `update_synthetic_user` field using the `SyntheticUser` model.
+- At runtime, the segments definition file (`input/segments.json`) is validated against the schema in `schema/segmets_schema.json` before any processing begins. If validation fails, the program halts with a clear error message.
 
 ## Configuration and State Management
 - **config.json:** Main workflow configuration (input/output paths, users per segment, etc.)

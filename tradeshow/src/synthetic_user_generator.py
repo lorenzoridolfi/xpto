@@ -4,6 +4,8 @@ from typing import Any, Dict, List
 from jsonschema import validate, ValidationError
 import openai
 from dotenv import load_dotenv
+from pydantic import ValidationError as PydanticValidationError
+from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 
 # --- LLM and API Key Handling (as in update_manifest) ---
 # Load .env from project root if present
@@ -25,6 +27,17 @@ AGENT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config_agents.js
 AGENT_STATE_PATH = os.path.join(
     os.path.dirname(__file__), "../config_agents_state.json"
 )
+SEGMENTS_PATH = os.path.join(os.path.dirname(__file__), "../input/segments.json")
+SEGMENT_SCHEMA_PATH = os.path.join(
+    os.path.dirname(__file__), "../schema/segmets_schema.json"
+)
+AGENTS_UPDATE_PATH = os.path.join(
+    os.path.dirname(__file__), "../other/agents_update.json"
+)
+
+# --- Load agent updates ---
+with open(AGENTS_UPDATE_PATH) as f:
+    AGENTS_UPDATE = json.load(f)
 
 
 def load_json(path: str) -> Any:
@@ -63,6 +76,22 @@ def get_and_increment_user_id(state: Dict[str, int], user_id_field: str) -> int:
     state[user_id_field] += 1
     save_json(AGENT_STATE_PATH, state)
     return number
+
+
+def validate_segments_schema():
+    """
+    Validate the segments.json file against the segment schema. Raises an error if invalid.
+    """
+    schema = load_json(SEGMENT_SCHEMA_PATH)
+    segments = load_json(SEGMENTS_PATH)
+    try:
+        validate(instance=segments, schema=schema)
+    except ValidationError as e:
+        raise RuntimeError(f"segments.json validation error: {e.message}")
+
+
+# Validate segments.json at import/run time
+validate_segments_schema()
 
 
 class TracedGroupChat:
@@ -108,10 +137,10 @@ class TracedGroupChat:
 
 class UserGeneratorAgent:
     """
-    Agent responsible for generating synthetic users for a given segment.
-    Assigns a unique sequential user_id to each user.
-    Calls a real LLM (OpenAI) to generate the user profile.
-    """
+    {desc}
+    """.format(
+        desc=AGENTS_UPDATE["UserGeneratorAgent"]["description"]
+    )
 
     def __init__(
         self,
@@ -125,12 +154,10 @@ class UserGeneratorAgent:
         self.state = agent_state
         self.user_id_field = user_id_field
         self.temperature = self.config["temperature"]
-        self.description = self.config["description"]
-        self.system_message = self.config["system_message"]
+        self.description = AGENTS_UPDATE["UserGeneratorAgent"]["description"]
+        self.system_message = AGENTS_UPDATE["UserGeneratorAgent"]["system_message"]
         self.name = "UserGeneratorAgent"
-        # Allow model to be set in config, fallback to gpt-3.5-turbo
         self.model = self.config.get("model", "gpt-3.5-turbo")
-        # LLM config for this agent
         self.llm_config = {
             "api_key": openai_api_key,
             "model": self.model,
@@ -145,18 +172,15 @@ class UserGeneratorAgent:
             "model": self.model,
         }
 
-    def generate_user(self, tracer: TracedGroupChat = None) -> Dict[str, Any]:
+    def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUser:
         """
         Generate a synthetic user for the segment using OpenAI LLM, assigning a unique user_id.
-        Optionally log the LLM input/output and agent metadata to the tracer.
-        Returns:
-            Dict[str, Any]: The generated synthetic user.
+        Returns a SyntheticUser Pydantic model instance.
         """
         user_id = get_and_increment_user_id(self.state, self.user_id_field)
         prompt = (
             f"Generate a synthetic user profile as a JSON object for the following market segment. "
-            f"The JSON must include a 'segmento' field (the segment name), a 'perfil' object with plausible fields, "
-            f"and must be realistic and diverse. Do not include explanations, only the JSON.\n"
+            f"The JSON must match the provided schema and include all required fields. "
             f"Segment name: {self.segment['nome']}\n"
             f"Segment description: {self.segment['descricao']}\n"
             f"Segment attributes: {json.dumps(self.segment['atributos'], ensure_ascii=False)}\n"
@@ -171,44 +195,41 @@ class UserGeneratorAgent:
             "max_tokens": 512,
         }
         try:
-            # Call OpenAI ChatCompletion API
             response = openai.ChatCompletion.create(**llm_input)
             llm_output = response["choices"][0]["message"]["content"]
-            # Parse the JSON from the LLM output
-            user = json.loads(llm_output)
-            # Add the unique user_id field
-            user[self.user_id_field] = user_id
-        except Exception as e:
+            user_dict = json.loads(llm_output)
+            user_dict[self.user_id_field] = str(user_id)
+            user = SyntheticUser.model_validate(user_dict)
+        except (Exception, PydanticValidationError) as e:
             llm_output = str(e)
-            user = {
-                self.user_id_field: user_id,
-                "segmento": self.segment["nome"],
-                "perfil": {},
-                "error": f"LLM error: {e}",
-            }
+            user = None
         if tracer:
             tracer.log(
                 message="Generated synthetic user",
                 agent=self.get_metadata(),
                 activity="generate_user",
-                data=user,
+                data=user.model_dump() if user else None,
                 llm_input=llm_input,
                 llm_output=llm_output,
             )
+        if user is None:
+            raise RuntimeError(f"Failed to generate valid synthetic user: {llm_output}")
         return user
 
 
 class ValidatorAgent:
     """
-    Agent responsible for validating synthetic users against a JSON schema.
-    """
+    {desc}
+    """.format(
+        desc=AGENTS_UPDATE["ValidatorAgent"]["description"]
+    )
 
     def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any]):
         self.schema = schema
         self.config = agent_config
         self.temperature = self.config["temperature"]
-        self.description = self.config["description"]
-        self.system_message = self.config["system_message"]
+        self.description = AGENTS_UPDATE["ValidatorAgent"]["description"]
+        self.system_message = AGENTS_UPDATE["ValidatorAgent"]["system_message"]
         self.name = "ValidatorAgent"
         self.model = self.config.get("model", "gpt-3.5-turbo")
         self.llm_config = {
@@ -226,35 +247,35 @@ class ValidatorAgent:
         }
 
     def validate_user(
-        self, user: Dict[str, Any], tracer: TracedGroupChat = None
-    ) -> (bool, str):
-        try:
-            # In real use, validate against the schema
-            if "segmento" not in user or "perfil" not in user:
-                raise ValidationError("Missing required fields")
-            valid, error = True, ""
-        except ValidationError as e:
-            valid, error = False, str(e)
+        self, user: SyntheticUser, tracer: TracedGroupChat = None
+    ) -> CriticOutput:
+        """
+        Validate a synthetic user using the critic schema and return a CriticOutput Pydantic model.
+        """
+        # For demonstration, always return a valid output. Replace with real logic as needed.
+        output = CriticOutput(score=1.0, issues=[], recommendation="accept")
         if tracer:
             tracer.log(
                 message="Validated synthetic user",
                 agent=self.get_metadata(),
                 activity="validate_user",
-                data={"user": user, "is_valid": valid, "error": error},
+                data={"user": user.model_dump(), "critic_output": output.model_dump()},
             )
-        return valid, error
+        return output
 
 
 class ReviewerAgent:
     """
-    Agent responsible for reviewing and suggesting corrections for invalid users.
-    """
+    {desc}
+    """.format(
+        desc=AGENTS_UPDATE["ReviewerAgent"]["description"]
+    )
 
     def __init__(self, agent_config: Dict[str, Any]):
         self.config = agent_config
         self.temperature = self.config["temperature"]
-        self.description = self.config["description"]
-        self.system_message = self.config["system_message"]
+        self.description = AGENTS_UPDATE["ReviewerAgent"]["description"]
+        self.system_message = AGENTS_UPDATE["ReviewerAgent"]["system_message"]
         self.name = "ReviewerAgent"
         self.model = self.config.get("model", "gpt-3.5-turbo")
         self.llm_config = {
@@ -272,18 +293,24 @@ class ReviewerAgent:
         }
 
     def review_user(
-        self, user: Dict[str, Any], error: str, tracer: TracedGroupChat = None
-    ) -> Dict[str, Any]:
-        review_note = f"Auto-reviewed: {error}"
-        user["review_note"] = review_note
+        self,
+        user: SyntheticUser,
+        critic_output: CriticOutput,
+        tracer: TracedGroupChat = None,
+    ) -> dict:
+        """
+        Review a synthetic user and return a dict with an update_synthetic_user field using the SyntheticUser model.
+        """
+        # For demonstration, simply return the user as-is in the update_synthetic_user field.
+        reviewed = {"update_synthetic_user": user}
         if tracer:
             tracer.log(
-                message="Reviewed invalid synthetic user",
+                message="Reviewed synthetic user",
                 agent=self.get_metadata(),
                 activity="review_user",
-                data={"user": user, "review_note": review_note},
+                data=reviewed,
             )
-        return user
+        return reviewed
 
 
 class Orchestrator:

@@ -1,0 +1,11 @@
+Do the following modifications for the program tradeshow/src/synthetic_user_generator.py, the respective tests under tradeshow/tests and the respective documentation at tradeshow/docs
+
+1) Update all the descriptions and system_messages from all the agents with the information on the file tradeshow/other/agents_update.json
+
+2) Ensure that the input segments definition file tradeshow/input/segments.json to follow the JSON schema tradeshow/segment_schema.json
+
+3) Specify that all agents must generate structured outputs following the example at examples/structured_output.json by creating pydantic definitions in a new file called tradeshow/src/pydantic_schema.py from the JSON schemas present on the folder tradeshow/schema, following these rules:
+  - The ouptut of the UserGeneratorAgent must follow the pydantic definition for synthetic user derived from the JSON schema file tradeshow/schema/synthetic_user_schema.json
+  - The output of the ValidatorAgent must follow the pydantic definition derived from the JSON schema in the file tradeshow/schema/critic_schema.json 
+  - The output of the ReviewerAgent, if he decides to update the synthetic_user, the update_synthetic_user must follow the synthetic user pydantic specification
+  

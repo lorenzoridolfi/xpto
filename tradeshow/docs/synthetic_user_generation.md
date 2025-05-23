@@ -13,18 +13,27 @@ This document describes the architecture and workflow for generating synthetic u
 
 ### 1. Input Loader Agent
 - Loads market segment descriptions and the current JSON Schema for synthetic users from the `tradeshow/input/` folder.
+- Validates the segments file (`segments.json`) against the schema (`segmets_schema.json`) at runtime before any processing. If validation fails, execution halts with a clear error message.
 
 ### 2. User Generator Agent
-- For each segment, generates **one synthetic user per call** using the segment's context and schema.
-- Receives instructions from the Orchestrator and outputs a candidate user.
+- **Description:** Generates a realistic individual synthetic user profile for a randomly chosen Brazilian financial segment, ensuring internal consistency, plausibility, and clear segment alignment.
+- **System Message:** You are the Synthetic User Generator. Each time, you must produce one coherent, believable profile of a Brazilian individual belonging to one of six financial segments (Planejadores, Poupadores, Materialistas, Batalhadores, Céticos, Endividados). Randomly select the segment (without mentioning your choice process) and then:
+  - Start with a line "Segment: <SegmentName>".
+  - Provide structured details (name, age, education, occupation, income, family status, etc.)
+  - Describe financial behaviors (saving, spending, investment, bank usage, credit/debt)
+  - Explain motivations and attitudes toward money
+  - All details must cohere with the chosen segment's known traits, be internally consistent, and grounded in a Brazilian context. Do not mention this is generated or describe your process—present it as a factual profile.
+- **Output:** Returns a strictly-typed `SyntheticUser` Pydantic model.
 
 ### 3. Validator Agent
-- Validates the generated user against the loaded JSON Schema.
-- Returns validation results and error details if the user does not conform.
+- **Description:** Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment.
+- **System Message:** You are the Synthetic User Critic. You receive one profile (including its "Segment: <SegmentName>" line and structured details) plus the segment definitions. Perform checks for segment alignment, internal consistency, realism, and outliers. Output a JSON object with `score`, `issues`, and `recommendation`.
+- **Output:** Returns a strictly-typed `CriticOutput` Pydantic model.
 
 ### 4. Reviewer Agent
-- Reviews users that fail validation, providing actionable feedback or corrections.
-- Can be rule-based or LLM-based, depending on requirements.
+- **Description:** The Reviewer Agent is responsible for quality-assuring synthetic user profiles in a multi-agent AutoGen workflow. It reviews each generated profile against the target segment's definition and the critic agent's feedback. The reviewer ensures the profile is realistic, internally consistent, and aligned with the segment's philosophy, demographics, and financial behaviors. Its ultimate goal is to refine or regenerate the profile (if needed) while preserving the original persona's intent, delivering a polished profile that appears correct from the start.
+- **System Message:** You are a Reviewer Agent in a Microsoft AutoGen multi-agent setup. Your role is to validate and improve synthetic user profiles generated for specific market segments. You will receive three inputs: (1) a synthetic user profile draft, (2) the assigned segment's definition, and (3) a structured critique from a critic agent (including a score from 0–1, a list of issues, and a recommendation of "accept" or "flag for review"). Follow the instructions to produce the final profile output, ensuring alignment, coherence, and realism, and output only the improved profile data.
+- **Output:** Returns a dict with an `update_synthetic_user` field containing a strictly-typed `SyntheticUser` Pydantic model.
 
 ### 5. Trace Collector Agent
 - Collects and logs all actions, messages, and decisions from all agents.
@@ -34,6 +43,13 @@ This document describes the architecture and workflow for generating synthetic u
 - Coordinates the workflow, ensuring each agent performs its role in sequence.
 - Loops the user generation process until the desired number of valid users per segment is reached.
 - All agent interactions are routed through the Traced Group Chat for consistent logging.
+
+## Structured Outputs and Validation
+- All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.
+- The `UserGeneratorAgent` outputs a `SyntheticUser` model.
+- The `ValidatorAgent` outputs a `CriticOutput` model.
+- The `ReviewerAgent` returns an `update_synthetic_user` field using the `SyntheticUser` model.
+- At runtime, the segments definition file (`input/segments.json`) is validated against the schema in `schema/segmets_schema.json` before any processing begins. If validation fails, the program halts with a clear error message.
 
 ## Tracing and the Trace Agent Chat
 - **All agent actions and messages are routed through the Traced Group Chat.**
