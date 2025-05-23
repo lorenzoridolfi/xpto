@@ -6,19 +6,37 @@ from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+import logging
 
-# --- LLM and API Key Handling (as in update_manifest) ---
-# Load .env from project root if present
+# --- Logging Configuration ---
+LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
+LOG_FILE = os.path.join(LOG_DIR, "synthetic_user_generator.log")
+os.makedirs(LOG_DIR, exist_ok=True)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger("synthetic_user_generator")
+
+# --- LLM and API Key Handling (PRODUCTION) ---
+# Load .env from project root if present and set OPENAI_API_KEY for all downstream libraries.
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 DOTENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 if os.path.exists(DOTENV_PATH):
+    logger.debug(f"Loading .env from {DOTENV_PATH}")
     load_dotenv(dotenv_path=DOTENV_PATH)
+else:
+    logger.warning(f".env file not found at {DOTENV_PATH}")
 
-# Read OPENAI_API_KEY from environment
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
+    logger.error("OPENAI_API_KEY not found in environment!")
     raise RuntimeError("OPENAI_API_KEY not found in environment!")
-# Set for downstream libraries
+logger.info("OPENAI_API_KEY loaded from environment.")
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config.json")
@@ -40,52 +58,35 @@ with open(AGENTS_UPDATE_PATH) as f:
 
 
 def load_json(path: str) -> Any:
-    """
-    Load a JSON file from the given path.
-    Args:
-        path (str): Path to the JSON file.
-    Returns:
-        Any: Parsed JSON data.
-    """
+    logger.debug(f"Loading JSON file: {path}")
     with open(path) as f:
         return json.load(f)
 
 
 def save_json(path: str, data: Any):
-    """
-    Save data as JSON to the given path.
-    Args:
-        path (str): Path to save the JSON file.
-        data (Any): Data to save.
-    """
+    logger.debug(f"Saving JSON to: {path}")
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 
 
 def get_and_increment_user_id(state: Dict[str, int], user_id_field: str) -> int:
-    """
-    Get the current user_id and increment it for the next user.
-    Args:
-        state (Dict[str, int]): State dictionary containing the user_id.
-        user_id_field (str): The field name for the user_id.
-    Returns:
-        int: The current user_id before incrementing.
-    """
     number = state[user_id_field]
+    logger.debug(f"Current user_id: {number} (field: {user_id_field})")
     state[user_id_field] += 1
     save_json(AGENT_STATE_PATH, state)
+    logger.info(f"Incremented user_id to {state[user_id_field]}")
     return number
 
 
 def validate_segments_schema():
-    """
-    Validate the segments.json file against the segment schema. Raises an error if invalid.
-    """
+    logger.info("Validating segments.json against schema...")
     schema = load_json(SEGMENT_SCHEMA_PATH)
     segments = load_json(SEGMENTS_PATH)
     try:
         validate(instance=segments, schema=schema)
+        logger.info("segments.json validation successful.")
     except ValidationError as e:
+        logger.error(f"segments.json validation error: {e.message}")
         raise RuntimeError(f"segments.json validation error: {e.message}")
 
 
@@ -102,6 +103,7 @@ class TracedGroupChat:
     def __init__(self, log_path: str):
         self.log_path = log_path
         self.trace = []
+        logger.info(f"Trace log initialized at {log_path}")
 
     def log(
         self,
@@ -113,6 +115,7 @@ class TracedGroupChat:
         llm_input: Any = None,
         llm_output: Any = None,
     ):
+        logger.debug(f"Trace log: {message} | Activity: {activity} | Agent: {agent}")
         entry = {
             "message": message,
             "activity": activity,
@@ -130,6 +133,7 @@ class TracedGroupChat:
         self.trace.append(entry)
 
     def save(self):
+        logger.info(f"Saving trace log to {self.log_path}")
         with open(self.log_path, "w") as f:
             json.dump(self.trace, f, indent=2)
 
@@ -148,6 +152,9 @@ class UserGeneratorAgent:
         agent_state: Dict[str, int],
         user_id_field: str,
     ):
+        logger.debug(
+            f"UserGeneratorAgent.__init__ called with segment={segment}, agent_config={agent_config}, agent_state={agent_state}, user_id_field={user_id_field}"
+        )
         self.segment = segment
         self.config = agent_config
         self.state = agent_state
@@ -157,15 +164,19 @@ class UserGeneratorAgent:
         self.system_message = AGENTS_UPDATE["UserGeneratorAgent"]["system_message"]
         self.name = "UserGeneratorAgent"
         self.model = self.config.get("model", "gpt-4o")
-        # Disable LLM cache for synthetic user generation
+        logger.info(
+            f"Initializing UserGeneratorAgent for segment: {segment.get('nome')}"
+        )
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=SyntheticUser,
             cache=False,
         )
+        logger.debug(f"UserGeneratorAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
+        logger.debug("UserGeneratorAgent.get_metadata called")
         return {
             "name": self.name,
             "description": self.description,
@@ -175,11 +186,13 @@ class UserGeneratorAgent:
         }
 
     async def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUser:
-        """
-        Generate a synthetic user for the segment using OpenAI LLM, assigning a unique user_id.
-        Returns a SyntheticUser Pydantic model instance.
-        """
+        logger.debug(
+            f"UserGeneratorAgent.generate_user called for segment: {self.segment.get('nome')}"
+        )
         user_id = get_and_increment_user_id(self.state, self.user_id_field)
+        logger.debug(
+            f"Generating user for segment: {self.segment.get('nome')} with user_id: {user_id}"
+        )
         prompt = (
             f"Generate a synthetic user profile as a JSON object for the following market segment. "
             f"The JSON must match the provided schema and include all required fields. "
@@ -191,13 +204,17 @@ class UserGeneratorAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
+        logger.debug(f"Calling LLM with messages: {messages}")
         try:
-            response = await self.llm_client.create(
-                messages=messages
-            )
+            response = await self.llm_client.create(messages=messages)
             user = response.content
             user.user_id = str(user_id)
+            logger.info(
+                f"Generated user_id {user.user_id} for segment {self.segment.get('nome')}"
+            )
+            logger.debug(f"LLM response: {user}")
         except PydanticValidationError as e:
+            logger.error(f"Pydantic validation error in UserGeneratorAgent: {e}")
             if tracer:
                 tracer.log(
                     message="Pydantic validation error in UserGeneratorAgent",
@@ -217,6 +234,7 @@ class UserGeneratorAgent:
                 llm_input=messages,
                 llm_output=user.model_dump(),
             )
+        logger.debug(f"UserGeneratorAgent.generate_user returning user: {user}")
         return user
 
 
@@ -228,6 +246,9 @@ class ValidatorAgent:
     )
 
     def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any]):
+        logger.debug(
+            f"ValidatorAgent.__init__ called with schema={schema}, agent_config={agent_config}"
+        )
         self.schema = schema
         self.config = agent_config
         self.temperature = self.config["temperature"]
@@ -235,15 +256,16 @@ class ValidatorAgent:
         self.system_message = AGENTS_UPDATE["ValidatorAgent"]["system_message"]
         self.name = "ValidatorAgent"
         self.model = self.config.get("model", "gpt-4o")
-        # Disable LLM cache for synthetic user validation
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=CriticOutput,
             cache=False,
         )
+        logger.debug(f"ValidatorAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
+        logger.debug("ValidatorAgent.get_metadata called")
         return {
             "name": self.name,
             "description": self.description,
@@ -255,9 +277,7 @@ class ValidatorAgent:
     async def validate_user(
         self, user: SyntheticUser, tracer: TracedGroupChat = None
     ) -> CriticOutput:
-        """
-        Validate a synthetic user using the critic schema and return a CriticOutput Pydantic model.
-        """
+        logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
         prompt = (
             f"Validate the following synthetic user profile for realism, internal consistency, and segment alignment. "
             f"User: {user.model_dump_json()}"
@@ -266,12 +286,13 @@ class ValidatorAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
+        logger.debug(f"Calling LLM for validation with messages: {messages}")
         try:
-            response = await self.llm_client.create(
-                messages=messages
-            )
+            response = await self.llm_client.create(messages=messages)
             output = response.content
+            logger.info(f"Validation result: {output}")
         except PydanticValidationError as e:
+            logger.error(f"Pydantic validation error in ValidatorAgent: {e}")
             if tracer:
                 tracer.log(
                     message="Pydantic validation error in ValidatorAgent",
@@ -291,6 +312,7 @@ class ValidatorAgent:
                 llm_input=messages,
                 llm_output=output.model_dump(),
             )
+        logger.debug(f"ValidatorAgent.validate_user returning output: {output}")
         return output
 
 
@@ -302,21 +324,23 @@ class ReviewerAgent:
     )
 
     def __init__(self, agent_config: Dict[str, Any]):
+        logger.debug(f"ReviewerAgent.__init__ called with agent_config={agent_config}")
         self.config = agent_config
         self.temperature = self.config["temperature"]
         self.description = AGENTS_UPDATE["ReviewerAgent"]["description"]
         self.system_message = AGENTS_UPDATE["ReviewerAgent"]["system_message"]
         self.name = "ReviewerAgent"
         self.model = self.config.get("model", "gpt-4o")
-        # Disable LLM cache for synthetic user review
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=SyntheticUser,
             cache=False,
         )
+        logger.debug(f"ReviewerAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
+        logger.debug("ReviewerAgent.get_metadata called")
         return {
             "name": self.name,
             "description": self.description,
@@ -331,9 +355,9 @@ class ReviewerAgent:
         critic_output: CriticOutput,
         tracer: TracedGroupChat = None,
     ) -> dict:
-        """
-        Review a synthetic user and return a dict with an update_synthetic_user field using the SyntheticUser model.
-        """
+        logger.debug(
+            f"ReviewerAgent.review_user called for user: {user}, critic_output: {critic_output}"
+        )
         prompt = (
             f"Review and improve the following synthetic user profile based on the critic output. "
             f"User: {user.model_dump_json()}\nCritic: {critic_output.model_dump_json()}"
@@ -342,12 +366,13 @@ class ReviewerAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
+        logger.debug(f"Calling LLM for review with messages: {messages}")
         try:
-            response = await self.llm_client.create(
-                messages=messages
-            )
+            response = await self.llm_client.create(messages=messages)
             improved_user = response.content
+            logger.info(f"Review result: {improved_user}")
         except PydanticValidationError as e:
+            logger.error(f"Pydantic validation error in ReviewerAgent: {e}")
             if tracer:
                 tracer.log(
                     message="Pydantic validation error in ReviewerAgent",
@@ -368,6 +393,7 @@ class ReviewerAgent:
                 llm_input=messages,
                 llm_output=improved_user.model_dump(),
             )
+        logger.debug(f"ReviewerAgent.review_user returning reviewed: {reviewed}")
         return reviewed
 
 
@@ -381,52 +407,62 @@ class Orchestrator:
     """
 
     def __init__(self, config_path: str, agent_config_path: str, agent_state_path: str):
+        logger.debug(
+            f"Orchestrator.__init__ called with config_path={config_path}, agent_config_path={agent_config_path}, agent_state_path={agent_state_path}"
+        )
         self.config = load_json(config_path)
         self.agent_config = load_json(agent_config_path)
         self.agent_state = load_json(agent_state_path)
-        # Use 'user_id' as default if not defined in config
         self.user_id_field = self.agent_config.get("user_id_field", "user_id")
-        # Load segments and schema
+        logger.info(f"Orchestrator initialized with user_id_field={self.user_id_field}")
         with open(
             os.path.join(
                 os.path.dirname(__file__), "../" + self.config["input_segment_file"]
             )
         ) as f:
             self.segments = json.load(f)["segmentos"]
-        # Robust schema path handling
+        logger.debug(f"Loaded segments: {self.segments}")
         schema_path = self.config["synthetic_user_schema_file"]
         if not os.path.isabs(schema_path):
-            # Resolve relative to project root
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            project_root = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "../..")
+            )
             schema_path = os.path.join(project_root, schema_path)
         with open(schema_path) as f:
             self.schema = json.load(f)
-        # Use resolve_path for output and log files
+        logger.debug(f"Loaded schema from {schema_path}")
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
         self.output_file = resolve_path(project_root, self.config["output_file"])
         self.tracer = TracedGroupChat(
             resolve_path(project_root, self.config["log_file"])
         )
+        logger.info(f"Orchestrator output_file set to {self.output_file}")
 
     async def run(self):
-        all_users = []  # List to collect all generated users
+        logger.info("Orchestrator.run started")
+        all_users = []
         for segment in self.segments:
-            # Save current segment to a temporary file for agent use/debugging
+            logger.info(f"Processing segment: {segment['nome']}")
             with open("current_segment.json", "w", encoding="utf-8") as f:
                 json.dump(segment, f, ensure_ascii=False, indent=2)
+            logger.debug(f"Wrote current_segment.json for segment: {segment['nome']}")
             self.tracer.log(
                 message=f"Processing segment: {segment['nome']}",
                 agent=None,
                 activity="process_segment",
                 data={"segment": segment},
             )
-            # Validate num_usuarios field
             num_usuarios = segment.get("num_usuarios")
             if not isinstance(num_usuarios, int) or num_usuarios < 1:
+                logger.error(
+                    f"Invalid num_usuarios for segment {segment.get('nome', '<unknown>')}: {num_usuarios}"
+                )
                 raise ValueError(
                     f"Segment '{segment.get('nome', '<unknown>')}' is missing a valid 'num_usuarios' field."
                 )
-            # Instantiate agents for this segment (only pass the current segment)
+            logger.info(
+                f"Generating {num_usuarios} users for segment {segment['nome']}"
+            )
             generator = UserGeneratorAgent(
                 segment,
                 self.agent_config["UserGeneratorAgent"],
@@ -435,13 +471,20 @@ class Orchestrator:
             )
             validator = ValidatorAgent(self.schema, self.agent_config["ValidatorAgent"])
             reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"])
-            segment_users = []  # Users for this segment
+            segment_users = []
             for i in range(num_usuarios):
-                # Generate a user and log all agent context and LLM input/output
+                logger.debug(
+                    f"Generating user {i+1}/{num_usuarios} for segment {segment['nome']}"
+                )
                 user = await generator.generate_user(tracer=self.tracer)
-                # Validate the user and log all agent context
+                logger.debug(
+                    f"Validating user {i+1}/{num_usuarios} for segment {segment['nome']}"
+                )
                 critic_output = await validator.validate_user(user, tracer=self.tracer)
                 if critic_output.recommendation != "accept":
+                    logger.warning(
+                        f"Validation failed for user {i+1} in segment {segment['nome']}"
+                    )
                     self.tracer.log(
                         message=f"Validation failed for user {i+1}",
                         agent=validator.get_metadata(),
@@ -451,12 +494,17 @@ class Orchestrator:
                             "critic_output": critic_output.model_dump(),
                         },
                     )
-                    # Review and correct the user, log all agent context
+                    logger.debug(
+                        f"Reviewing user {i+1}/{num_usuarios} for segment {segment['nome']}"
+                    )
                     reviewed = await reviewer.review_user(
                         user, critic_output, tracer=self.tracer
                     )
                     user = reviewed["update_synthetic_user"]
                 else:
+                    logger.info(
+                        f"User {i+1} validated successfully for segment {segment['nome']}"
+                    )
                     self.tracer.log(
                         message=f"User {i+1} validated successfully",
                         agent=validator.get_metadata(),
@@ -465,16 +513,16 @@ class Orchestrator:
                     )
                 segment_users.append(user.model_dump())
             all_users.extend(segment_users)
-        # Save all users to the output file
+        logger.info(f"Saving all users to {self.output_file}")
         with open(self.output_file, "w") as f:
             json.dump(all_users, f, indent=2)
-        # Save the trace log
+        logger.info("Saving trace log")
         self.tracer.save()
-        # Save updated user_id state
+        logger.info("Saving updated agent state")
         save_json(AGENT_STATE_PATH, self.agent_state)
+        logger.info("Orchestrator.run completed")
 
 
 if __name__ == "__main__":
-    # Entry point for running the orchestrator
     orchestrator = Orchestrator(CONFIG_PATH, AGENT_CONFIG_PATH, AGENT_STATE_PATH)
     orchestrator.run()
