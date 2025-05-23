@@ -47,6 +47,40 @@ def test_user_generator_agent():
     assert user["perfil"]["descricao"] == "Test description"
 
 
+def test_user_id_sequential():
+    """
+    Test that the user_id (or configured sequential field) is assigned sequentially for each generated user.
+    """
+    segment = {
+        "nome": "TestSegment",
+        "descricao": "Test description",
+        "atributos": [
+            {
+                "categoria": "Demografia",
+                "atributo": "Idade Média",
+                "valor": "40",
+                "fonte": "Test",
+            },
+            {
+                "categoria": "Comportamento",
+                "atributo": "Poupança",
+                "valor": "Alta",
+                "fonte": "Test",
+            },
+        ],
+    }
+    agent_config = {"temperature": 0.7, "description": "desc", "system_message": "msg"}
+    # Start at 5 for this test
+    agent_state = {"user_id": 5}
+    user_id_field = "user_id"
+    agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
+    users = [agent.generate_user() for _ in range(3)]
+    # The user_id should be 5, 6, 7
+    assert [u[user_id_field] for u in users] == [5, 6, 7]
+    # The agent_state should now be incremented to 8
+    assert agent_state["user_id"] == 8
+
+
 def test_validator_agent_valid():
     """
     Test that the ValidatorAgent returns valid for a user with required fields.
