@@ -193,7 +193,7 @@ class UserGeneratorAgent:
         ]
         try:
             response = await self.llm_client.create(
-                messages=messages, temperature=self.temperature, max_tokens=512
+                messages=messages
             )
             user = response.content
             user.user_id = str(user_id)
@@ -268,7 +268,7 @@ class ValidatorAgent:
         ]
         try:
             response = await self.llm_client.create(
-                messages=messages, temperature=self.temperature, max_tokens=512
+                messages=messages
             )
             output = response.content
         except PydanticValidationError as e:
@@ -344,7 +344,7 @@ class ReviewerAgent:
         ]
         try:
             response = await self.llm_client.create(
-                messages=messages, temperature=self.temperature, max_tokens=512
+                messages=messages
             )
             improved_user = response.content
         except PydanticValidationError as e:
