@@ -1,48 +1,160 @@
-# Agent Configuration for Synthetic User Generation
+# Agent Configuration Guide
 
-## Purpose
-Agent configuration allows you to control the behavior, parameters, and metadata for each agent in the synthetic user generation workflow. This enables easy tuning, documentation, and extension of agent logic.
+This document describes the configuration and behavior of the agents in the synthetic user generation system.
 
-## Structure of `config_agents.json`
-- `user_id_field`: The field name in the synthetic user JSON that holds the unique sequential user ID
-- `UserGeneratorAgent`, `ValidatorAgent`, `ReviewerAgent`: Each has
-  - `temperature`: LLM temperature (see `docs/model_temperatures.md` for rationale)
-  - `description`: Human-readable description of the agent's role
-  - `system_message`: System prompt/message for the agent (for LLM or documentation)
+## Agent Overview
 
-## Example
+The system uses three specialized agents, each with specific roles and structured outputs:
+
+### UserGeneratorAgent
+
+- **Description**: Generates synthetic user profiles based on segment data, ensuring adherence to the user schema and segment characteristics.
+- **Output**: Returns a `SyntheticUser` Pydantic model
+- **Configuration**:
+  ```json
+  {
+    "temperature": 0.7,
+    "model": "gpt-4o",
+    "description": "Agent responsible for generating synthetic user profiles that match segment characteristics and schema requirements",
+    "system_message": "You are an expert in creating realistic synthetic user profiles..."
+  }
+  ```
+
+### ValidatorAgent
+
+- **Description**: Validates synthetic users for realism, internal consistency, and alignment with their intended segment.
+- **Output**: Returns a `CriticOutput` Pydantic model
+- **Configuration**:
+  ```json
+  {
+    "temperature": 0.2,
+    "model": "gpt-4o",
+    "description": "Agent responsible for validating synthetic users for realism and consistency",
+    "system_message": "You are an expert validator analyzing synthetic user profiles..."
+  }
+  ```
+
+### ReviewerAgent
+
+- **Description**: Reviews and improves synthetic users that fail validation, incorporating validator feedback.
+- **Output**: Returns a dict with `update_synthetic_user` field containing a `SyntheticUser` model
+- **Configuration**:
+  ```json
+  {
+    "temperature": 0.3,
+    "model": "gpt-4o",
+    "description": "Agent responsible for reviewing and improving synthetic users based on validation feedback",
+    "system_message": "You are an expert reviewer improving synthetic user profiles..."
+  }
+  ```
+
+## Configuration Files
+
+### config_agents.json
+
+Contains the configuration for all agents:
 ```json
 {
-  "user_id_field": "user_id",
   "UserGeneratorAgent": {
-    "temperature": 0.7,
-    "description": "Generates a realistic individual synthetic user profile for a randomly chosen Brazilian financial segment, ensuring internal consistency, plausibility, and clear segment alignment.",
-    "system_message": "You are the Synthetic User Generator. Each time, you must produce one coherent, believable profile of a Brazilian individual belonging to one of six financial segments (Planejadores, Poupadores, Materialistas, Batalhadores, Céticos, Endividados). Randomly select the segment (without mentioning your choice process) and then:\n\n• Start with a line \"Segment: <SegmentName>\".\n• Provide structured details:\n  – Name (Brazilian first name)\n  – Age (plausible for the segment)\n  – Education level\n  – Occupation\n  – Monthly income (in R$)\n  – Family status if relevant\n• Describe financial behaviors:\n  – Saving habits (frequency, method)\n  – Spending patterns (style, examples)\n  – Investment activity or lack thereof\n  – Bank usage (traditional vs. digital vs. cash)\n  – Credit/debt behavior\n• Explain motivations and attitudes toward money in a short narrative or bullet.\n\nAll details must cohere with the chosen segment's known traits (use the segment definitions for reference), be internally consistent, and grounded in a Brazilian context (e.g., using R$, local scenarios). Do not mention this is generated or describe your process—present it as a factual profile."
+    // Agent-specific configuration
   },
   "ValidatorAgent": {
-    "temperature": 0.0,
-    "description": "Evaluates a single synthetic user profile for realism, internal consistency, and fidelity to its stated Brazilian financial segment.",
-    "system_message": "You are the Synthetic User Critic. You receive one profile (including its \"Segment: <SegmentName>\" line and structured details) plus the segment definitions. Perform the following checks:\n\n1. Segment Alignment – Does every attribute and behavior match the segment's known characteristics? List any deviations.\n2. Internal Consistency – Are all details plausible together? Flag contradictions (e.g., high income but extreme debt with no explanation).\n3. Realism – Would this person exist in Brazil? Note any implausible extremes (e.g., unrealistic age vs. career).\n4. Outliers/Red Flags – Highlight rare or questionable details.\n\nThen output exactly this JSON object (no extra text):\n\n{\n  \"score\": <number 0.0–1.0>,\n  \"issues\": [\"…\"],\n  \"recommendation\": \"accept\" | \"flag for review\"\n}\n\n• Score 1.0 = perfectly realistic; 0.0 = completely implausible.\n• Use intermediate values and list specific issue statements.\n• Recommend \"accept\" if only minor or no issues; \"flag for review\" if any serious problems.\n\nEnsure valid JSON syntax with those three keys only."
+    // Agent-specific configuration
   },
   "ReviewerAgent": {
-    "temperature": 0.2,
-    "description": "The Reviewer Agent is responsible for quality-assuring synthetic user profiles in a multi-agent AutoGen workflow. It reviews each generated profile against the target segment's definition and the critic agent's feedback. The reviewer ensures the profile is realistic, internally consistent, and aligned with the segment's philosophy, demographics, and financial behaviors. Its ultimate goal is to refine or regenerate the profile (if needed) while preserving the original persona's intent, delivering a polished profile that appears correct from the start.",
-    "system_message": "You are a Reviewer Agent in a Microsoft AutoGen multi-agent setup. Your role is to validate and improve synthetic user profiles generated for specific market segments. You will receive three inputs: (1) a synthetic user profile draft, (2) the assigned segment's definition, and (3) a structured critique from a critic agent (including a score from 0–1, a list of issues, and a recommendation of \"accept\" or \"flag for review\"). Follow these instructions to produce the final profile output:\n\n- Evaluate Critic Feedback: Always start by checking the critic agent's evaluation. If the critic's recommendation is \"flag for review\" or the score indicates notable flaws, revise the profile. If the recommendation is \"accept\", perform a light consistency check and minor polishing while preserving the content.\n- Align with Segment Traits: Ensure the profile aligns with the assigned segment's core philosophy and typical behaviors, including money mindset, demographic tendencies, and financial habits. Use the segment definition as your guide for plausibility.\n- Maintain Internal Coherence: Review for inconsistencies or implausible details. Ensure age, occupation, income, education, and financial behaviors make sense together in a realistic Brazilian context. Fix contradictions and ensure a logical narrative timeline.\n- Preserve Original Intent: Keep the user's core personality, goals, and narrative intact. Only adjust or remove elements necessary to resolve issues. Refine the profile without introducing arbitrary changes.\n- No Correction Mentions: Do not mention that you are reviewing or editing the profile. The output should appear as a seamless, original profile.\n- Output Formatting: Present the final improved profile using the same structure and format as the generator agent. Preserve all expected fields and formatting. Output only the profile data, without extra commentary."
+    // Agent-specific configuration
+  },
+  "user_id_field": "user_id"
+}
+```
+
+### agents_update.json
+
+Contains updated agent descriptions and system messages:
+```json
+{
+  "UserGeneratorAgent": {
+    "description": "...",
+    "system_message": "..."
+  },
+  "ValidatorAgent": {
+    "description": "...",
+    "system_message": "..."
+  },
+  "ReviewerAgent": {
+    "description": "...",
+    "system_message": "..."
   }
 }
 ```
 
-## Structured Outputs and Validation
-- All agent outputs are now structured using Pydantic models that exactly match the JSON schemas in `tradeshow/schema/`.
-- The `UserGeneratorAgent` outputs a `SyntheticUser` model.
-- The `ValidatorAgent` outputs a `CriticOutput` model.
-- The `ReviewerAgent` returns an `update_synthetic_user` field using the `SyntheticUser` model.
-- At runtime, the segments definition file (`input/segments.json`) is validated against the schema in `schema/segmets_schema.json` before any processing begins. If validation fails, the program halts with a clear error message.
+## Structured Outputs
 
-## Updating and Using the Configuration
-- Edit `config_agents.json` to change agent parameters, descriptions, or system messages
-- The field specified by `user_id_field` will be used for sequential user IDs
-- The current value of the user ID is tracked in `config_agents_state.json` and updated automatically
+### SyntheticUser Model
+
+```python
+class SyntheticUser(BaseModel):
+    user_id: str
+    segment_label: Dict[str, str]
+    philosophy: Dict[str, str]
+    monthly_income: Dict[str, float]
+    education_level: Dict[str, str]
+    occupation: Dict[str, str]
+    uses_traditional_bank: Dict[str, bool]
+    uses_digital_bank: Dict[str, bool]
+    uses_broker: Dict[str, bool]
+    savings_frequency_per_month: Dict[str, float]
+    spending_behavior: Dict[str, str]
+    investment_behavior: Dict[str, str]
+```
+
+### CriticOutput Model
+
+```python
+class CriticOutput(BaseModel):
+    score: float
+    issues: List[str]
+    recommendation: str
+```
+
+## Agent Interaction Flow
+
+1. **UserGeneratorAgent**:
+   - Receives segment data
+   - Generates `SyntheticUser` instance
+   - Ensures all required fields are present
+
+2. **ValidatorAgent**:
+   - Receives `SyntheticUser` instance
+   - Returns `CriticOutput` with validation results
+   - Recommendation can be "accept" or "reject"
+
+3. **ReviewerAgent**:
+   - Receives `SyntheticUser` and `CriticOutput`
+   - Returns improved `SyntheticUser` instance
+   - Addresses issues identified in validation
+
+## Configuration Best Practices
+
+1. **Temperature Settings**:
+   - UserGeneratorAgent: 0.7 (balance creativity and consistency)
+   - ValidatorAgent: 0.2 (consistent validation)
+   - ReviewerAgent: 0.3 (focused improvements)
+
+2. **Model Selection**:
+   - Use GPT-4 for all agents
+   - Enable response format validation
+   - Disable caching for synthetic user generation
+
+3. **System Messages**:
+   - Keep focused on specific agent role
+   - Include validation criteria
+   - Specify output requirements
+
+4. **Error Handling**:
+   - Use Pydantic validation
+   - Provide clear error messages
+   - Log validation failures
 
 ---
 See `architecture_overview.md` for how this fits into the overall system. 

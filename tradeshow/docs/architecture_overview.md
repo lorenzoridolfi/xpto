@@ -7,6 +7,90 @@ This system generates synthetic users for market segments using a multi-agent, t
 - Easy extensibility and testability
 - Robust configuration and state management
 
+## Architecture Overview
+
+The synthetic user generation system follows a modular, agent-based architecture with strict type validation and structured outputs. The system consists of the following key components:
+
+### Core Components
+
+1. **Orchestrator**
+   - Coordinates the entire synthetic user generation workflow
+   - Manages agent interactions and data flow
+   - Handles input/output file operations
+   - Validates segment schema at runtime
+   - Maintains tracing and logging
+
+2. **Pydantic Models**
+   - `SyntheticUser`: Strict type validation for user data
+   - `CriticOutput`: Structured validation results
+   - Located in `tradeshow/src/pydantic_schema.py`
+
+3. **Schema Validation**
+   - Runtime validation of segments.json against segments_schema.json
+   - Pre-execution validation to ensure data integrity
+   - Halts execution with clear error messages if validation fails
+
+### Agents
+
+1. **UserGeneratorAgent**
+   - Generates synthetic users based on segment data
+   - Returns structured `SyntheticUser` Pydantic model
+   - Uses OpenAI GPT-4 with response format validation
+   - Maintains sequential user ID generation
+
+2. **ValidatorAgent**
+   - Validates synthetic users for realism and consistency
+   - Returns structured `CriticOutput` Pydantic model
+   - Provides detailed validation metrics and recommendations
+
+3. **ReviewerAgent**
+   - Reviews and improves rejected synthetic users
+   - Returns updated `SyntheticUser` model
+   - Incorporates validator feedback for improvements
+
+### Data Flow
+
+```mermaid
+graph TD
+    A[Segments JSON] -->|Schema Validation| B[Orchestrator]
+    B --> C[UserGeneratorAgent]
+    C -->|SyntheticUser| D[ValidatorAgent]
+    D -->|CriticOutput| E{Validation Check}
+    E -->|Accept| F[Output Collection]
+    E -->|Reject| G[ReviewerAgent]
+    G -->|Updated SyntheticUser| F
+    F --> H[Final Output JSON]
+```
+
+### Tracing and Logging
+
+- Comprehensive tracing through `TracedGroupChat`
+- Logs all agent activities, LLM interactions, and data transformations
+- Maintains context for debugging and analysis
+
+### Configuration
+
+- Agent configurations in `config_agents.json`
+- System configurations in `config.json`
+- Agent state management in `config_agents_state.json`
+- Updated agent descriptions and system messages in `agents_update.json`
+
+### Input/Output
+
+- Input: Segments data with schema validation
+- Output: Collection of validated synthetic users
+- Intermediate: Validation reports and improvement suggestions
+- Tracing: Detailed logs of the entire generation process
+
+### Error Handling
+
+- Schema validation errors halt execution
+- Pydantic validation ensures type safety
+- Clear error messages for debugging
+- Graceful handling of LLM failures
+
+This architecture ensures type safety, data validation, and maintainable code while providing comprehensive tracing for debugging and analysis.
+
 ## High-Level Workflow
 1. Load configuration, agent settings, and state
 2. For each segment, generate the configured number of users (one per call)
