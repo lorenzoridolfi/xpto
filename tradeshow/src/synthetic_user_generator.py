@@ -7,6 +7,7 @@ from pydantic import ValidationError as PydanticValidationError
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 import logging
+import gc
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -478,6 +479,9 @@ class Orchestrator:
             reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"])
             segment_users = []
             for i in range(num_usuarios):
+                logger.debug("Running garbage collection before user generation...")
+                gc.collect()
+                logger.debug("Garbage collection complete.")
                 logger.debug(
                     f"Generating user {i+1}/{num_usuarios} for segment {segment['nome']}"
                 )
