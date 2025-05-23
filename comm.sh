@@ -12,7 +12,8 @@ fi
 source git_add_filtered.sh
 
 # List modified files
+echo "Modified files list"
 git --no-pager diff --cached --name-only
 
 # Commit with the provided message
-git commit -a -m "$1"
+git commit -v  -a -m "$1"
