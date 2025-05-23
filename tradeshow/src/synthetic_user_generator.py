@@ -156,11 +156,13 @@ class UserGeneratorAgent:
         self.description = AGENTS_UPDATE["UserGeneratorAgent"]["description"]
         self.system_message = AGENTS_UPDATE["UserGeneratorAgent"]["system_message"]
         self.name = "UserGeneratorAgent"
-        self.model = self.config.get("model", "gpt-3.5-turbo")
+        self.model = self.config.get("model", "gpt-4o")
+        # Disable LLM cache for synthetic user generation
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=SyntheticUser,
+            cache=False,
         )
 
     def get_metadata(self) -> dict:
@@ -232,11 +234,13 @@ class ValidatorAgent:
         self.description = AGENTS_UPDATE["ValidatorAgent"]["description"]
         self.system_message = AGENTS_UPDATE["ValidatorAgent"]["system_message"]
         self.name = "ValidatorAgent"
-        self.model = self.config.get("model", "gpt-3.5-turbo")
+        self.model = self.config.get("model", "gpt-4o")
+        # Disable LLM cache for synthetic user validation
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=CriticOutput,
+            cache=False,
         )
 
     def get_metadata(self) -> dict:
@@ -303,11 +307,13 @@ class ReviewerAgent:
         self.description = AGENTS_UPDATE["ReviewerAgent"]["description"]
         self.system_message = AGENTS_UPDATE["ReviewerAgent"]["system_message"]
         self.name = "ReviewerAgent"
-        self.model = self.config.get("model", "gpt-3.5-turbo")
+        self.model = self.config.get("model", "gpt-4o")
+        # Disable LLM cache for synthetic user review
         self.llm_client = OpenAIChatCompletionClient(
             model=self.model,
             api_key=openai_api_key,
             response_format=SyntheticUser,
+            cache=False,
         )
 
     def get_metadata(self) -> dict:
