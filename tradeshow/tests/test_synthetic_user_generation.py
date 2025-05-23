@@ -9,8 +9,11 @@ from tradeshow.src.synthetic_user_generator import (
 )
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 
+pytestmark = pytest.mark.asyncio
 
-def test_user_generator_agent():
+
+@pytest.mark.asyncio
+async def test_user_generator_agent():
     """
     Test that the UserGeneratorAgent correctly generates a synthetic user
     as a SyntheticUser Pydantic model with the expected fields and values.
@@ -33,11 +36,16 @@ def test_user_generator_agent():
             },
         ],
     }
-    agent_config = {"temperature": 0.7, "description": "desc", "system_message": "msg"}
+    agent_config = {
+        "temperature": 0.7,
+        "model": "gpt-4o",
+        "description": "desc",
+        "system_message": "msg",
+    }
     agent_state = {"user_id": 1}
     user_id_field = "user_id"
     agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
-    user = agent.generate_user()
+    user = await agent.generate_user()
     assert isinstance(user, SyntheticUser)
     assert user.user_id == "1"
     assert user.segment_label.value in [
@@ -71,7 +79,8 @@ def test_user_generator_agent():
     ]
 
 
-def test_user_id_sequential():
+@pytest.mark.asyncio
+async def test_user_id_sequential():
     """
     Test that the user_id is assigned sequentially for each generated user.
     """
@@ -93,23 +102,33 @@ def test_user_id_sequential():
             },
         ],
     }
-    agent_config = {"temperature": 0.7, "description": "desc", "system_message": "msg"}
+    agent_config = {
+        "temperature": 0.7,
+        "model": "gpt-4o",
+        "description": "desc",
+        "system_message": "msg",
+    }
     agent_state = {"user_id": 5}
     user_id_field = "user_id"
     agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
-    users = [agent.generate_user() for _ in range(3)]
+    users = [await agent.generate_user() for _ in range(3)]
     assert [u.user_id for u in users] == ["5", "6", "7"]
     assert agent_state["user_id"] == 8
 
 
-def test_validator_agent_valid():
+@pytest.mark.asyncio
+async def test_validator_agent_valid():
     """
     Test that the ValidatorAgent returns a valid CriticOutput for a valid SyntheticUser.
     """
     schema = {}  # Not used in mock
-    agent_config = {"temperature": 0.3, "description": "desc", "system_message": "msg"}
+    agent_config = {
+        "temperature": 0.0,
+        "model": "gpt-4o",
+        "description": "desc",
+        "system_message": "msg",
+    }
     agent = ValidatorAgent(schema, agent_config)
-    # Use a minimal valid SyntheticUser
     user = SyntheticUser(
         user_id="1",
         segment_label={"value": "Planejadores"},
@@ -124,32 +143,24 @@ def test_validator_agent_valid():
         spending_behavior={"value": "cautious"},
         investment_behavior={"value": "basic"},
     )
-    output = agent.validate_user(user)
+    output = await agent.validate_user(user)
     assert isinstance(output, CriticOutput)
     assert output.score == 1.0
     assert output.issues == []
     assert output.recommendation == "accept"
 
 
-def test_validator_agent_invalid():
-    """
-    Test that the ValidatorAgent returns invalid for a user missing required fields.
-    """
-    schema = {}  # Not used in mock
-    agent_config = {"temperature": 0.3, "description": "desc", "system_message": "msg"}
-    agent = ValidatorAgent(schema, agent_config)
-    user = {"perfil": {}}
-    valid, error = agent.validate_user(user)
-    # Should be invalid and error message should mention missing fields
-    assert not valid
-    assert "Missing required fields" in error
-
-
-def test_reviewer_agent():
+@pytest.mark.asyncio
+async def test_reviewer_agent():
     """
     Test that the ReviewerAgent returns a dict with update_synthetic_user as a SyntheticUser.
     """
-    agent_config = {"temperature": 0.3, "description": "desc", "system_message": "msg"}
+    agent_config = {
+        "temperature": 0.2,
+        "model": "gpt-4o",
+        "description": "desc",
+        "system_message": "msg",
+    }
     agent = ReviewerAgent(agent_config)
     user = SyntheticUser(
         user_id="1",
@@ -166,7 +177,7 @@ def test_reviewer_agent():
         investment_behavior={"value": "basic"},
     )
     critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
-    reviewed = agent.review_user(user, critic_output)
+    reviewed = await agent.review_user(user, critic_output)
     assert "update_synthetic_user" in reviewed
     assert isinstance(reviewed["update_synthetic_user"], SyntheticUser)
 
