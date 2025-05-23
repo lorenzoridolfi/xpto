@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Segmento Enhanced Schema",
+  "type": "object",
+  "properties": {
+    "segmentos": {
+      "type": "array",
+      "description": "Lista de segmentos financeiros com suas descrições e atributos.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "description": "Nome do segmento."
+          },
+          "descricao": {
+            "type": "string",
+            "description": "Descrição detalhada do segmento."
+          },
+          "atributos": {
+            "type": "array",
+            "description": "Lista de atributos específicos deste segmento.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoria": {
+                  "type": "string",
+                  "description": "Categoria à qual o atributo pertence."
+                },
+                "atributo": {
+                  "type": "string",
+                  "description": "Nome do atributo dentro da categoria."
+                },
+                "valor": {
+                  "type": "string",
+                  "description": "Valor do atributo conforme fonte original."
+                },
+                "fonte": {
+                  "type": "string",
+                  "description": "Origem dos dados para este atributo."
+                }
+              },
+              "required": [
+                "categoria",
+                "atributo",
+                "valor",
+                "fonte"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "nome",
+          "descricao",
+          "atributos"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "segmentos"
+  ],
+  "additionalProperties": false
+}
