@@ -371,6 +371,10 @@ class ReviewerAgent:
         return reviewed
 
 
+def resolve_path(base_dir, path):
+    return path if os.path.isabs(path) else os.path.join(base_dir, path)
+
+
 class Orchestrator:
     """
     Orchestrates the synthetic user generation workflow, coordinating all agents.
@@ -389,18 +393,19 @@ class Orchestrator:
             )
         ) as f:
             self.segments = json.load(f)["segmentos"]
-        with open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../" + self.config["synthetic_user_schema_file"],
-            )
-        ) as f:
+        # Robust schema path handling
+        schema_path = self.config["synthetic_user_schema_file"]
+        if not os.path.isabs(schema_path):
+            # Resolve relative to project root
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+            schema_path = os.path.join(project_root, schema_path)
+        with open(schema_path) as f:
             self.schema = json.load(f)
-        self.output_file = os.path.join(
-            os.path.dirname(__file__), "../" + self.config["output_file"]
-        )
+        # Use resolve_path for output and log files
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+        self.output_file = resolve_path(project_root, self.config["output_file"])
         self.tracer = TracedGroupChat(
-            os.path.join(os.path.dirname(__file__), "../" + self.config["log_file"])
+            resolve_path(project_root, self.config["log_file"])
         )
 
     async def run(self):

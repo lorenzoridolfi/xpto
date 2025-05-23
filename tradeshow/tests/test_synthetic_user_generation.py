@@ -10,9 +10,77 @@ from tradeshow.src.synthetic_user_generator import (
 )
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
 from jsonschema import validate, ValidationError
+from unittest.mock import patch, AsyncMock
+from types import SimpleNamespace
+import inspect
 
-pytestmark = pytest.mark.asyncio
+# Define absolute paths for schemas (correct folder: tradeshow/schema)
+ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+SCHEMA_PATH = os.path.join(ROOT_PATH, 'tradeshow', 'schema')
+SEGMENTS_SCHEMA_PATH = os.path.join(SCHEMA_PATH, 'segments_schema.json')
+SYNTHETIC_USER_SCHEMA_PATH = os.path.join(SCHEMA_PATH, 'synthetic_user_schema.json')
 
+# WARNING: Do NOT overwrite or create any files in tradeshow/schema in tests!
+
+# WARNING: Do NOT overwrite real schema files in tests!
+# The following fixture is commented out to prevent accidental overwrites.
+# @pytest.fixture(scope='session', autouse=True)
+# def ensure_schema_files():
+#     os.makedirs(SCHEMA_PATH, exist_ok=True)
+#     for path in [SEGMENTS_SCHEMA_PATH, SYNTHETIC_USER_SCHEMA_PATH]:
+#         if not os.path.exists(path):
+#             with open(path, 'w') as f:
+#                 json.dump({"dummy": True}, f)
+
+@pytest.fixture(autouse=True)
+def patch_llm_client():
+    with patch("tradeshow.src.synthetic_user_generator.OpenAIChatCompletionClient") as MockClient:
+        instance = MockClient.return_value
+
+        def create_side_effect(*args, **kwargs):
+            # Inspect the call stack to determine which agent method is calling
+            frame = inspect.currentframe()
+            while frame:
+                if frame.f_code.co_name == "generate_user":
+                    agent_self = frame.f_locals.get("self")
+                    user_id = agent_self.state[agent_self.user_id_field] - 1 if agent_self else "1"
+                    return SimpleNamespace(content=SyntheticUser(
+                        user_id=str(user_id),
+                        segment_label={"value": "Planejadores"},
+                        philosophy={"value": "Multiplicar"},
+                        monthly_income={"value": 1000.0},
+                        education_level={"value": "Ensino Médio"},
+                        occupation={"value": "Analista"},
+                        uses_traditional_bank={"value": True},
+                        uses_digital_bank={"value": False},
+                        uses_broker={"value": False},
+                        savings_frequency_per_month={"value": 2.0},
+                        spending_behavior={"value": "cautious"},
+                        investment_behavior={"value": "basic"},
+                    ))
+                if frame.f_code.co_name == "validate_user":
+                    return SimpleNamespace(content=CriticOutput(score=1.0, issues=[], recommendation="accept"))
+                if frame.f_code.co_name == "review_user":
+                    return SimpleNamespace(content=SyntheticUser(
+                        user_id="1",
+                        segment_label={"value": "Planejadores"},
+                        philosophy={"value": "Multiplicar"},
+                        monthly_income={"value": 1000.0},
+                        education_level={"value": "Ensino Médio"},
+                        occupation={"value": "Analista"},
+                        uses_traditional_bank={"value": True},
+                        uses_digital_bank={"value": False},
+                        uses_broker={"value": False},
+                        savings_frequency_per_month={"value": 2.0},
+                        spending_behavior={"value": "cautious"},
+                        investment_behavior={"value": "basic"},
+                    ))
+                frame = frame.f_back
+            # Fallback
+            return SimpleNamespace(content=None)
+
+        instance.create = AsyncMock(side_effect=create_side_effect)
+        yield
 
 @pytest.mark.asyncio
 async def test_user_generator_agent():
@@ -80,7 +148,6 @@ async def test_user_generator_agent():
         "none",
     ]
 
-
 @pytest.mark.asyncio
 async def test_user_id_sequential():
     """
@@ -117,7 +184,6 @@ async def test_user_id_sequential():
     assert [u.user_id for u in users] == ["5", "6", "7"]
     assert agent_state["user_id"] == 8
 
-
 @pytest.mark.asyncio
 async def test_validator_agent_valid():
     """
@@ -151,7 +217,6 @@ async def test_validator_agent_valid():
     assert output.issues == []
     assert output.recommendation == "accept"
 
-
 @pytest.mark.asyncio
 async def test_reviewer_agent():
     """
@@ -183,7 +248,6 @@ async def test_reviewer_agent():
     assert "update_synthetic_user" in reviewed
     assert isinstance(reviewed["update_synthetic_user"], SyntheticUser)
 
-
 def test_traced_group_chat(tmp_path):
     """
     Test that the TracedGroupChat logs messages and data and saves them to a file.
@@ -198,7 +262,6 @@ def test_traced_group_chat(tmp_path):
     # Only check 'data' if present
     if "data" in trace[0]:
         assert trace[0]["data"]["foo"] == "bar"
-
 
 def test_segments_json_nickname_and_usercount():
     """
@@ -217,20 +280,18 @@ def test_segments_json_nickname_and_usercount():
         assert isinstance(segment["num_usuarios"], int)
         assert segment["num_usuarios"] == 3
 
-
 def test_segments_schema_validation():
     """
     Test that segments.json validates against the updated segments_schema.json.
     """
     with open("tradeshow/input/segments.json") as f:
         data = json.load(f)
-    with open("tradeshow/schema/segments_schema.json") as f:
+    with open(SEGMENTS_SCHEMA_PATH) as f:
         schema = json.load(f)
     try:
         validate(instance=data, schema=schema)
     except ValidationError as e:
         pytest.fail(f"segments.json does not validate against schema: {e}")
-
 
 @pytest.mark.asyncio
 async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
@@ -248,6 +309,8 @@ async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
     log_file = tmp_path / "trace.json"
     config["output_file"] = str(output_file)
     config["log_file"] = str(log_file)
+    # Patch schema file path with absolute path
+    config["synthetic_user_schema_file"] = SYNTHETIC_USER_SCHEMA_PATH
     # Write patched config
     patched_config_path = tmp_path / "config.json"
     with open(patched_config_path, "w") as f:
@@ -265,7 +328,6 @@ async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
     expected_count = sum(seg["num_usuarios"] for seg in segments)
     assert len(users) == expected_count
 
-
 def test_current_segment_file_updates(tmp_path):
     """
     Test that 'current_segment.json' is updated for each segment processed by the orchestrator.
@@ -280,6 +342,8 @@ def test_current_segment_file_updates(tmp_path):
     log_file = tmp_path / "trace.json"
     config["output_file"] = str(output_file)
     config["log_file"] = str(log_file)
+    # Patch schema file path with absolute path
+    config["synthetic_user_schema_file"] = SYNTHETIC_USER_SCHEMA_PATH
     patched_config_path = tmp_path / "config.json"
     with open(patched_config_path, "w") as f:
         json.dump(config, f)
@@ -297,7 +361,6 @@ def test_current_segment_file_updates(tmp_path):
         assert loaded["nome"] == segment["nome"]
         assert loaded["apelido"] == segment["apelido"]
         assert loaded["num_usuarios"] == 3
-
 
 def test_agent_llm_config_and_model_parameters():
     """
@@ -319,14 +382,15 @@ def test_agent_llm_config_and_model_parameters():
     user_id_field = "user_id"
     schema = {}
 
-    user_agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
-    validator_agent = ValidatorAgent(schema, agent_config)
-    reviewer_agent = ReviewerAgent(agent_config)
+    with patch("tradeshow.src.synthetic_user_generator.OpenAIChatCompletionClient"):
+        user_agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
+        validator_agent = ValidatorAgent(schema, agent_config)
+        reviewer_agent = ReviewerAgent(agent_config)
 
-    # Check config values
-    for agent in [user_agent, validator_agent, reviewer_agent]:
-        assert agent.model == "mock-llm"
-        assert agent.temperature == 0.5
-        assert agent.config["max_tokens"] == 30000
-        assert agent.config["description"] == "desc"
-        assert agent.config["system_message"] == "msg"
+        # Check config values
+        for agent in [user_agent, validator_agent, reviewer_agent]:
+            assert agent.model == "mock-llm"
+            assert agent.temperature == 0.5
+            assert agent.config["max_tokens"] == 30000
+            assert agent.config["description"] == "desc"
+            assert agent.config["system_message"] == "msg"

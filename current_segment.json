@@ -1,0 +1,80 @@
+{
+  "nome": "Endividados",
+  "apelido": "endividados",
+  "num_usuarios": 3,
+  "descricao": "Os Endividados representam cerca de 26,3% da população brasileira, aproximadamente 41 milhões de indivíduos que se veem em um ciclo incessante de dívidas e cobranças. Para esse segmento, o dinheiro existe prioritariamente para pagar faturas, parcelas de cartão de crédito e empréstimos emergenciais. Qualquer sobra de renda é rapidamente absorvida por juros e multas decorrentes do uso de cheque especial e crédito rotativo. Há um sentimento constante de urgência financeira e ansiedade perante cada novo vencimento de conta. Apesar de reconhecerem a necessidade de poupar ou renegociar dívidas, muitos se sentem perdidos diante da complexidade de contratos e propostas de refinanciamento, sem saber por onde começar a retomar o controle. Em relações com bancos, dependem deles para obter crédito, mas evitam o contato por temer abordagens de cobrança agressivas; preferem renegociar pessoalmente ou em feirões de limpeza de nome, buscando taxas mais baixas e prazos estendidos. Utilizam internet banking e aplicativos de forma restrita, apenas para pagamentos urgentes, e abandonam plataformas que consideram pouco intuitivas ou recheadas de jargões técnicos. Demograficamente, estão concentrados em adultos de 30 a 55 anos, casados, chefes de família, com escolaridade média ou inferior e renda baixa que mal cobre as despesas mensais. Culturalmente, compartilham histórias em grupos de apoio e redes sociais sobre tentativas frustradas de sair do vermelho, trocam dicas de renegociação e alertas sobre empresas que oferecem condições mínimas de alívio. Aspiram a quitar o nome, recuperar crédito e, a longo prazo, voltar a planejar o futuro, mas enfrentam barreiras emocionais de vergonha e medo de novas dívidas. Comunicam-se bem com mensagens empáticas, instruções passo a passo por SMS ou WhatsApp e casos de sucesso reais que demonstrem caminhos concretos de recuperação. Muitos adotam planilhas ou aplicativos de controle financeiro como último recurso, mas abandonam ao sentirem-se pressionados pelos números. Em resumo, os Endividados vivem uma relação angustiante com o dinheiro, marcada pelo ciclo vicioso de dívidas, e buscam urgentemente soluções que lhes permitam respirar financeiramente, renegociar compromissos e reconstruir gradualmente a capacidade de poupar e investir em um futuro com menos incertezas.\\`\\`\\`",
+  "atributos": [
+    {
+      "categoria": "Identidade do Segmento",
+      "atributo": "% da População",
+      "valor": "20,1%",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Identidade do Segmento",
+      "atributo": "Milhões Estimados",
+      "valor": "31,5M",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Filosofia Central sobre Dinheiro",
+      "atributo": "Pagar",
+      "valor": "Pagar",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Demografia",
+      "atributo": "Renda Média",
+      "valor": "Média-Baixa",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Demografia",
+      "atributo": "Idade Média",
+      "valor": "39,5 anos",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Demografia",
+      "atributo": "Estado Civil",
+      "valor": "Misto",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Demografia",
+      "atributo": "Escolaridade",
+      "valor": "12% Superior Completo",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Atitudes & Comportamentos Financeiros",
+      "atributo": "Poupança",
+      "valor": "Difícil devido às dívidas",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Atitudes & Comportamentos Financeiros",
+      "atributo": "Gastos",
+      "valor": "Uso frequente de crédito",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Bancos & Produtos Financeiros",
+      "atributo": "Uso de bancos tradicionais",
+      "valor": "58%",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Bancos & Produtos Financeiros",
+      "atributo": "Uso de bancos digitais",
+      "valor": "25%",
+      "fonte": "1"
+    },
+    {
+      "categoria": "Bancos & Produtos Financeiros",
+      "atributo": "Uso de corretoras",
+      "valor": "3%",
+      "fonte": "1"
+    }
+  ]
+}
