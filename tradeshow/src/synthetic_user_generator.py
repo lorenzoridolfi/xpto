@@ -28,7 +28,7 @@ AGENT_STATE_PATH = os.path.join(
 )
 SEGMENTS_PATH = os.path.join(os.path.dirname(__file__), "../input/segments.json")
 SEGMENT_SCHEMA_PATH = os.path.join(
-    os.path.dirname(__file__), "../schema/segmets_schema.json"
+    os.path.dirname(__file__), "../schema/segments_schema.json"
 )
 AGENTS_UPDATE_PATH = os.path.join(
     os.path.dirname(__file__), "../other/agents_update.json"
@@ -396,7 +396,6 @@ class Orchestrator:
             )
         ) as f:
             self.schema = json.load(f)
-        self.users_per_segment = self.config["users_per_segment"]
         self.output_file = os.path.join(
             os.path.dirname(__file__), "../" + self.config["output_file"]
         )
@@ -404,7 +403,7 @@ class Orchestrator:
             os.path.join(os.path.dirname(__file__), "../" + self.config["log_file"])
         )
 
-    def run(self):
+    async def run(self):
         all_users = []  # List to collect all generated users
         for segment in self.segments:
             self.tracer.log(
@@ -413,6 +412,12 @@ class Orchestrator:
                 activity="process_segment",
                 data={"segment": segment},
             )
+            # Validate num_usuarios field
+            num_usuarios = segment.get("num_usuarios")
+            if not isinstance(num_usuarios, int) or num_usuarios < 1:
+                raise ValueError(
+                    f"Segment '{segment.get('nome', '<unknown>')}' is missing a valid 'num_usuarios' field."
+                )
             # Instantiate agents for this segment
             generator = UserGeneratorAgent(
                 segment,
@@ -423,28 +428,34 @@ class Orchestrator:
             validator = ValidatorAgent(self.schema, self.agent_config["ValidatorAgent"])
             reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"])
             segment_users = []  # Users for this segment
-            for i in range(self.users_per_segment):
+            for i in range(num_usuarios):
                 # Generate a user and log all agent context and LLM input/output
-                user = generator.generate_user(tracer=self.tracer)
+                user = await generator.generate_user(tracer=self.tracer)
                 # Validate the user and log all agent context
-                valid, error = validator.validate_user(user, tracer=self.tracer)
-                if not valid:
+                critic_output = await validator.validate_user(user, tracer=self.tracer)
+                if critic_output.recommendation != "accept":
                     self.tracer.log(
                         message=f"Validation failed for user {i+1}",
                         agent=validator.get_metadata(),
                         activity="validation_failed",
-                        data={"user": user, "error": error},
+                        data={
+                            "user": user.model_dump(),
+                            "critic_output": critic_output.model_dump(),
+                        },
                     )
                     # Review and correct the user, log all agent context
-                    user = reviewer.review_user(user, error, tracer=self.tracer)
+                    reviewed = await reviewer.review_user(
+                        user, critic_output, tracer=self.tracer
+                    )
+                    user = reviewed["update_synthetic_user"]
                 else:
                     self.tracer.log(
                         message=f"User {i+1} validated successfully",
                         agent=validator.get_metadata(),
                         activity="validation_success",
-                        data={"user": user},
+                        data={"user": user.model_dump()},
                     )
-                segment_users.append(user)
+                segment_users.append(user.model_dump())
             all_users.extend(segment_users)
         # Save all users to the output file
         with open(self.output_file, "w") as f:

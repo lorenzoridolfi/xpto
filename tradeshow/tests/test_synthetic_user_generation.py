@@ -6,8 +6,10 @@ from tradeshow.src.synthetic_user_generator import (
     ValidatorAgent,
     ReviewerAgent,
     TracedGroupChat,
+    Orchestrator,
 )
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
+from jsonschema import validate, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -194,3 +196,69 @@ def test_traced_group_chat(tmp_path):
         trace = json.load(f)
     assert trace[0]["message"] == "Test message"
     assert trace[0]["data"]["foo"] == "bar"
+
+
+def test_segments_json_nickname_and_usercount():
+    """
+    Test that each segment in segments.json has a valid 'apelido' and 'num_usuarios' field.
+    """
+    with open("tradeshow/input/segments.json") as f:
+        data = json.load(f)
+    for segment in data["segmentos"]:
+        assert "apelido" in segment
+        assert isinstance(segment["apelido"], str)
+        assert segment["apelido"] == segment["apelido"].lower()
+        assert segment["apelido"].count("_") <= 1
+        assert len(segment["apelido"].split("_")) <= 2
+        assert len(segment["apelido"]) <= 32
+        assert "num_usuarios" in segment
+        assert isinstance(segment["num_usuarios"], int)
+        assert segment["num_usuarios"] == 1
+
+
+def test_segments_schema_validation():
+    """
+    Test that segments.json validates against the updated segments_schema.json.
+    """
+    with open("tradeshow/input/segments.json") as f:
+        data = json.load(f)
+    with open("tradeshow/schema/segments_schema.json") as f:
+        schema = json.load(f)
+    try:
+        validate(instance=data, schema=schema)
+    except ValidationError as e:
+        pytest.fail(f"segments.json does not validate against schema: {e}")
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
+    """
+    Test that the orchestrator generates the correct number of users per segment as specified by 'num_usuarios'.
+    """
+    # Patch config to use a temp output file
+    config_path = "tradeshow/config.json"
+    agent_config_path = "tradeshow/config_agents.json"
+    agent_state_path = "tradeshow/config_agents_state.json"
+    # Patch output file to a temp file
+    with open(config_path) as f:
+        config = json.load(f)
+    output_file = tmp_path / "synthetic_users.json"
+    log_file = tmp_path / "trace.json"
+    config["output_file"] = str(output_file)
+    config["log_file"] = str(log_file)
+    # Write patched config
+    patched_config_path = tmp_path / "config.json"
+    with open(patched_config_path, "w") as f:
+        json.dump(config, f)
+    orchestrator = Orchestrator(
+        str(patched_config_path), agent_config_path, agent_state_path
+    )
+    await orchestrator.run()
+    # Check output file
+    with open(output_file) as f:
+        users = json.load(f)
+    # Load segments to check expected count
+    with open("tradeshow/input/segments.json") as f:
+        segments = json.load(f)["segmentos"]
+    expected_count = sum(seg["num_usuarios"] for seg in segments)
+    assert len(users) == expected_count

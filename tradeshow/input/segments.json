@@ -2,6 +2,8 @@
   "segmentos": [
     {
       "nome": "Planejadores",
+      "apelido": "planejadores",
+      "num_usuarios": 1,
       "descricao": "Segmento focado em planejamento financeiro e investimentos.",
       "atributos": [
         {"categoria": "Demografia", "atributo": "Idade Média", "valor": "35", "fonte": "IBGE"},
@@ -10,6 +12,8 @@
     },
     {
       "nome": "Consumistas",
+      "apelido": "consumistas",
+      "num_usuarios": 1,
       "descricao": "Segmento focado em consumo imediato e gratificação.",
       "atributos": [
         {"categoria": "Demografia", "atributo": "Idade Média", "valor": "28", "fonte": "IBGE"},

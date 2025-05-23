@@ -13,6 +13,17 @@
             "type": "string",
             "description": "Nome do segmento."
           },
+          "apelido": {
+            "type": "string",
+            "description": "Apelido (nickname) do segmento, max 2 words, lowercase, underscore, no spaces.",
+            "pattern": "^[a-z]+(_[a-z]+)?$",
+            "maxLength": 32
+          },
+          "num_usuarios": {
+            "type": "integer",
+            "description": "Número de usuários sintéticos a serem gerados para este segmento.",
+            "minimum": 1
+          },
           "descricao": {
             "type": "string",
             "description": "Descrição detalhada do segmento."
@@ -52,6 +63,8 @@
         },
         "required": [
           "nome",
+          "apelido",
+          "num_usuarios",
           "descricao",
           "atributos"
         ],
