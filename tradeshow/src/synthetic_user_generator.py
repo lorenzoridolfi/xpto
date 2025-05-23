@@ -2,10 +2,10 @@ import json
 import os
 from typing import Any, Dict, List
 from jsonschema import validate, ValidationError
-import openai
 from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
 from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
+from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 # --- LLM and API Key Handling (as in update_manifest) ---
 # Load .env from project root if present
@@ -20,7 +20,6 @@ if not openai_api_key:
     raise RuntimeError("OPENAI_API_KEY not found in environment!")
 # Set for downstream libraries
 os.environ["OPENAI_API_KEY"] = openai_api_key
-openai.api_key = openai_api_key
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config.json")
 AGENT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config_agents.json")
@@ -158,10 +157,11 @@ class UserGeneratorAgent:
         self.system_message = AGENTS_UPDATE["UserGeneratorAgent"]["system_message"]
         self.name = "UserGeneratorAgent"
         self.model = self.config.get("model", "gpt-3.5-turbo")
-        self.llm_config = {
-            "api_key": openai_api_key,
-            "model": self.model,
-        }
+        self.llm_client = OpenAIChatCompletionClient(
+            model=self.model,
+            api_key=openai_api_key,
+            response_format=SyntheticUser,
+        )
 
     def get_metadata(self) -> dict:
         return {
@@ -172,7 +172,7 @@ class UserGeneratorAgent:
             "model": self.model,
         }
 
-    def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUser:
+    async def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUser:
         """
         Generate a synthetic user for the segment using OpenAI LLM, assigning a unique user_id.
         Returns a SyntheticUser Pydantic model instance.
@@ -185,35 +185,36 @@ class UserGeneratorAgent:
             f"Segment description: {self.segment['descricao']}\n"
             f"Segment attributes: {json.dumps(self.segment['atributos'], ensure_ascii=False)}\n"
         )
-        llm_input = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": self.system_message},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": self.temperature,
-            "max_tokens": 512,
-        }
+        messages = [
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": prompt},
+        ]
         try:
-            response = openai.ChatCompletion.create(**llm_input)
-            llm_output = response["choices"][0]["message"]["content"]
-            user_dict = json.loads(llm_output)
-            user_dict[self.user_id_field] = str(user_id)
-            user = SyntheticUser.model_validate(user_dict)
-        except (Exception, PydanticValidationError) as e:
-            llm_output = str(e)
-            user = None
+            response = await self.llm_client.create(
+                messages=messages, temperature=self.temperature, max_tokens=512
+            )
+            user = response.content
+            user.user_id = str(user_id)
+        except PydanticValidationError as e:
+            if tracer:
+                tracer.log(
+                    message="Pydantic validation error in UserGeneratorAgent",
+                    agent=self.get_metadata(),
+                    activity="generate_user",
+                    data=None,
+                    llm_input=messages,
+                    llm_output=str(e),
+                )
+            raise RuntimeError(f"Failed to generate valid synthetic user: {e}")
         if tracer:
             tracer.log(
                 message="Generated synthetic user",
                 agent=self.get_metadata(),
                 activity="generate_user",
-                data=user.model_dump() if user else None,
-                llm_input=llm_input,
-                llm_output=llm_output,
+                data=user.model_dump(),
+                llm_input=messages,
+                llm_output=user.model_dump(),
             )
-        if user is None:
-            raise RuntimeError(f"Failed to generate valid synthetic user: {llm_output}")
         return user
 
 
@@ -232,10 +233,11 @@ class ValidatorAgent:
         self.system_message = AGENTS_UPDATE["ValidatorAgent"]["system_message"]
         self.name = "ValidatorAgent"
         self.model = self.config.get("model", "gpt-3.5-turbo")
-        self.llm_config = {
-            "api_key": openai_api_key,
-            "model": self.model,
-        }
+        self.llm_client = OpenAIChatCompletionClient(
+            model=self.model,
+            api_key=openai_api_key,
+            response_format=CriticOutput,
+        )
 
     def get_metadata(self) -> dict:
         return {
@@ -246,20 +248,44 @@ class ValidatorAgent:
             "model": self.model,
         }
 
-    def validate_user(
+    async def validate_user(
         self, user: SyntheticUser, tracer: TracedGroupChat = None
     ) -> CriticOutput:
         """
         Validate a synthetic user using the critic schema and return a CriticOutput Pydantic model.
         """
-        # For demonstration, always return a valid output. Replace with real logic as needed.
-        output = CriticOutput(score=1.0, issues=[], recommendation="accept")
+        prompt = (
+            f"Validate the following synthetic user profile for realism, internal consistency, and segment alignment. "
+            f"User: {user.model_dump_json()}"
+        )
+        messages = [
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": prompt},
+        ]
+        try:
+            response = await self.llm_client.create(
+                messages=messages, temperature=self.temperature, max_tokens=512
+            )
+            output = response.content
+        except PydanticValidationError as e:
+            if tracer:
+                tracer.log(
+                    message="Pydantic validation error in ValidatorAgent",
+                    agent=self.get_metadata(),
+                    activity="validate_user",
+                    data=None,
+                    llm_input=messages,
+                    llm_output=str(e),
+                )
+            raise RuntimeError(f"Failed to validate synthetic user: {e}")
         if tracer:
             tracer.log(
                 message="Validated synthetic user",
                 agent=self.get_metadata(),
                 activity="validate_user",
                 data={"user": user.model_dump(), "critic_output": output.model_dump()},
+                llm_input=messages,
+                llm_output=output.model_dump(),
             )
         return output
 
@@ -278,10 +304,11 @@ class ReviewerAgent:
         self.system_message = AGENTS_UPDATE["ReviewerAgent"]["system_message"]
         self.name = "ReviewerAgent"
         self.model = self.config.get("model", "gpt-3.5-turbo")
-        self.llm_config = {
-            "api_key": openai_api_key,
-            "model": self.model,
-        }
+        self.llm_client = OpenAIChatCompletionClient(
+            model=self.model,
+            api_key=openai_api_key,
+            response_format=SyntheticUser,
+        )
 
     def get_metadata(self) -> dict:
         return {
@@ -292,7 +319,7 @@ class ReviewerAgent:
             "model": self.model,
         }
 
-    def review_user(
+    async def review_user(
         self,
         user: SyntheticUser,
         critic_output: CriticOutput,
@@ -301,14 +328,39 @@ class ReviewerAgent:
         """
         Review a synthetic user and return a dict with an update_synthetic_user field using the SyntheticUser model.
         """
-        # For demonstration, simply return the user as-is in the update_synthetic_user field.
-        reviewed = {"update_synthetic_user": user}
+        prompt = (
+            f"Review and improve the following synthetic user profile based on the critic output. "
+            f"User: {user.model_dump_json()}\nCritic: {critic_output.model_dump_json()}"
+        )
+        messages = [
+            {"role": "system", "content": self.system_message},
+            {"role": "user", "content": prompt},
+        ]
+        try:
+            response = await self.llm_client.create(
+                messages=messages, temperature=self.temperature, max_tokens=512
+            )
+            improved_user = response.content
+        except PydanticValidationError as e:
+            if tracer:
+                tracer.log(
+                    message="Pydantic validation error in ReviewerAgent",
+                    agent=self.get_metadata(),
+                    activity="review_user",
+                    data=None,
+                    llm_input=messages,
+                    llm_output=str(e),
+                )
+            raise RuntimeError(f"Failed to review synthetic user: {e}")
+        reviewed = {"update_synthetic_user": improved_user}
         if tracer:
             tracer.log(
                 message="Reviewed synthetic user",
                 agent=self.get_metadata(),
                 activity="review_user",
                 data=reviewed,
+                llm_input=messages,
+                llm_output=improved_user.model_dump(),
             )
         return reviewed
 
