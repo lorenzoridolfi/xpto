@@ -192,6 +192,99 @@ llm_cache.invalidate_on_config_change(new_fixed_parts)
 
 ---
 
+## Dependency Injection and Usage Patterns in Brainstorm Systems
+
+### Why Use Dependency Injection for the LLM Cache?
+- **Modularity:** Classes do not depend on a specific cache implementation.
+- **Testability:** Easily swap in a mock or dummy cache for unit tests.
+- **Reusability:** Share a single cache instance across agents, summarizers, and orchestrators.
+- **Flexibility:** Switch cache backends or configurations without changing business logic.
+
+### How to Inject the LLM Cache
+
+#### 1. Pass the Cache to Agents and Summarizers
+```python
+class UserQuestionSummarizer:
+    def __init__(self, agent, summarizer_agent=None, llm_cache=None):
+        self.agent = agent
+        self.summarizer_agent = summarizer_agent
+        self.llm_cache = llm_cache
+
+    def ask_and_summarize(self, users, question):
+        # Use self.llm_cache in agent calls if available
+        pass
+```
+
+#### 2. Inject the Cache into Orchestrator Classes
+```python
+class BatchQuestionOrchestrator:
+    def __init__(self, users, summarizer, llm_cache=None):
+        self.users = users
+        self.summarizer = summarizer
+        self.llm_cache = llm_cache
+
+    def run(self, ...):
+        # Pass self.llm_cache to summarizer or agent calls as needed
+        pass
+```
+
+#### 3. Inject at the Top Level
+```python
+llm_cache = AutogenLLMCache(...)
+summarizer = UserQuestionSummarizer(agent, summarizer_agent, llm_cache=llm_cache)
+orchestrator = BatchQuestionOrchestrator(users, summarizer, llm_cache=llm_cache)
+brainstormer = IdeaBrainstormer(question_agent, summarizer, overall_summarizer_agent, llm_cache=llm_cache)
+```
+
+#### 4. Example: Using the Cache in an Agent Call
+```python
+class Agent:
+    def __init__(self, llm_cache=None):
+        self.llm_cache = llm_cache
+
+    def llm_call(self, prompt, ...):
+        if self.llm_cache:
+            cached = self.llm_cache.lookup(prompt)
+            if cached:
+                return cached
+        # ...call LLM, then store in cache if available
+```
+
+### Diagram: Dependency Injection Flow in the Brainstorm System
+```
++-------------------+
+|   LLM Cache       |
++-------------------+
+         |
+         v
++---------------------------+
+|  UserQuestionSummarizer   |
++---------------------------+
+         |
+         v
++---------------------------+
+| BatchQuestionOrchestrator |
++---------------------------+
+         |
+         v
++---------------------------+
+|    IdeaBrainstormer       |
++---------------------------+
+```
+
+### Benefits Recap
+- **Single Source of Truth:** One cache instance, consistent across all components.
+- **Easy Testing:** Swap in a mock cache for any class.
+- **Loose Coupling:** Classes are not tied to a specific cache implementation.
+
+---
+
+## Reference: Incremental Brainstorm Plan
+
+See `tradeshow/docs/incremental_brainstorm_plan.md` for scaffolds and diagrams of the brainstorm system. The LLM cache can be injected into all classes as shown above, ensuring efficient, modular, and testable use of cached LLM responses throughout the workflow.
+
+---
+
 ## Conclusion
 
 This architecture provides a robust, precise, and efficient LLM cache for Autogen agents, leveraging ChromaDB's vector search and strict configuration keying. It is extensible to other agent frameworks and can be tuned for different workloads and embedding models. 
