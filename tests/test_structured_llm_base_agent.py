@@ -106,11 +106,14 @@ async def test_structured_llm_output_model_via_constructor(valid_llm_call):
 
 @pytest.mark.asyncio
 async def test_structured_llm_output_schema(valid_llm_call):
-    # Use importlib to check for pydantic v2+ create_model_from_schema
-    if importlib.util.find_spec("pydantic") is None or not hasattr(
-        __import__("pydantic"), "create_model_from_schema"
-    ):
-        pytest.skip("Pydantic v2+ required for schema-based model creation")
+    # Use try/except to check for pydantic v2+ create_model_from_schema
+    try:
+        from pydantic import create_model_from_schema
+    except ImportError:
+        try:
+            from pydantic.main import create_model_from_schema
+        except ImportError:
+            pytest.skip("Pydantic v2+ required for schema-based model creation")
     schema = {
         "title": "TestSchema",
         "type": "object",
@@ -121,5 +124,4 @@ async def test_structured_llm_output_schema(valid_llm_call):
     result = await agent.call_structured_llm(prompt="Give me foo and bar")
     assert result.foo == 42
     assert result.bar == "baz"
-    # The returned object is a Pydantic model, but not TestModel
     assert hasattr(result, "foo") and hasattr(result, "bar")
