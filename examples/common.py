@@ -187,10 +187,12 @@ def summarize_file_with_llm(file_path: str) -> str:
         "Summarize the following file content in less than 200 words for a technical manifest:\n\n"
         f"{content}\n\nSummary:"
     )
-    response = client.chat.completions.create(model="gpt-4",
-    messages=[{"role": "user", "content": prompt}],
-    max_tokens=300,
-    temperature=0.3)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=300,
+        temperature=0.3,
+    )
     return response.choices[0].message.content.strip()
 
 

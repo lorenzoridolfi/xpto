@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 
+
 class AbstractLLMCache(ABC):
     """
     Abstract base class for LLM cache systems. Can be used in any LLM-driven application.
     """
+
     @abstractmethod
     def lookup(self, variable_prompt: str) -> Optional[Any]:
         """
@@ -20,10 +22,12 @@ class AbstractLLMCache(ABC):
         """
         pass
 
+
 class MockLLMCache(AbstractLLMCache):
     """
     Mock cache for testing. Returns pre-defined responses or simulates cache behavior.
     """
+
     def __init__(self, response_map=None):
         self.response_map = response_map or {}
         self.stored = {}
@@ -34,12 +38,14 @@ class MockLLMCache(AbstractLLMCache):
     def store(self, variable_prompt: str, response: Any):
         self.stored[variable_prompt] = response
 
+
 class NoCacheLLMCache(AbstractLLMCache):
     """
     No-cache implementation: always misses the cache.
     """
+
     def lookup(self, variable_prompt: str) -> Optional[Any]:
         return None
 
     def store(self, variable_prompt: str, response: Any):
-        pass 
+        pass

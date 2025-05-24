@@ -16,6 +16,7 @@ import gc
 import openai
 import pydantic
 import time
+import argparse
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -486,9 +487,16 @@ class Orchestrator:
     Orchestrates the synthetic user generation workflow, coordinating all agents.
     """
 
-    def __init__(self, config_path: str, agent_config_path: str, agent_state_path: str):
+    def __init__(
+        self,
+        config_path: str,
+        agent_config_path: str,
+        agent_state_path: str,
+        output_file: str,
+        append: bool,
+    ):
         logger.debug(
-            f"Orchestrator.__init__ called with config_path={config_path}, agent_config_path={agent_config_path}, agent_state_path={agent_state_path}"
+            f"Orchestrator.__init__ called with config_path={config_path}, agent_config_path={agent_config_path}, agent_state_path={agent_state_path}, output_file={output_file}, append={append}"
         )
         self.config = load_json(config_path)
         self.agent_config = load_json(agent_config_path)
@@ -504,8 +512,10 @@ class Orchestrator:
         with open(schema_path) as f:
             self.schema = json.load(f)
         logger.debug(f"Loaded schema from {schema_path}")
-        # Always use PROJECT_ROOT/synthetic_users.json for output
-        self.output_file = os.path.join(PROJECT_ROOT, "synthetic_users.json")
+        self.output_file = output_file
+        self.append = append
+        output_dir = os.path.dirname(self.output_file)
+        os.makedirs(output_dir, exist_ok=True)
         self.tracer = TracedGroupChat(
             os.path.join(PROJECT_ROOT, self.config["log_file"])
         )
@@ -514,13 +524,25 @@ class Orchestrator:
     def run(self):
         logger.info("Orchestrator.run started")
         all_users = []
-        # Reset user_id to 1 at the start of each run
-        self.agent_state[self.user_id_field] = 1
+        # Handle append logic
+        if self.append and os.path.exists(self.output_file):
+            logger.info(f"Appending to existing output file: {self.output_file}")
+            with open(self.output_file, "r", encoding="utf-8") as f:
+                all_users = json.load(f)
+            # Continue user_id numbering from last user
+            if all_users:
+                last_user_id = max(u.get(self.user_id_field, 0) for u in all_users)
+                self.agent_state[self.user_id_field] = last_user_id + 1
+                logger.info(f"Continuing user_id from {last_user_id + 1}")
+            else:
+                self.agent_state[self.user_id_field] = 1
+        else:
+            # Reset user_id to 1 at the start of each run
+            self.agent_state[self.user_id_field] = 1
         save_json(AGENT_STATE_PATH, self.agent_state)
-        overall_user_count = 0
+        overall_user_count = len(all_users)
         for seg_idx, segment in enumerate(self.segments, start=1):
             logger.info(f"Processing segment: {segment['nome']}")
-            # Removed writing current_segment.json
             self.tracer.log(
                 message=f"Processing segment: {segment['nome']}",
                 agent=None,
@@ -603,8 +625,8 @@ class Orchestrator:
                 segment_users.append(user.model_dump())
             all_users.extend(segment_users)
         logger.info(f"Saving all users to {self.output_file}")
-        with open(self.output_file, "w") as f:
-            json.dump(all_users, f, indent=2)
+        with open(self.output_file, "w", encoding="utf-8") as f:
+            json.dump(all_users, f, indent=2, ensure_ascii=False)
         logger.info("Saving trace log")
         self.tracer.save()
         logger.info("Saving updated agent state")
@@ -613,5 +635,25 @@ class Orchestrator:
 
 
 if __name__ == "__main__":
-    orchestrator = Orchestrator(CONFIG_PATH, AGENT_CONFIG_PATH, AGENT_STATE_PATH)
+    parser = argparse.ArgumentParser()
+    data_dir = os.path.join(PROJECT_ROOT, "tradeshow/data")
+    default_output = os.path.join(data_dir, "synthetic_users.json")
+    parser.add_argument(
+        "-o", "--output", default=default_output, help="Output file path"
+    )
+    parser.add_argument(
+        "-a", "--append", action="store_true", help="Append to existing file"
+    )
+    args = parser.parse_args()
+
+    os.makedirs(data_dir, exist_ok=True)
+    if os.path.exists(args.output) and not args.append:
+        print(
+            f"System: Output file '{args.output}' already exists. Use -a or --append to add users."
+        )
+        exit(1)
+
+    orchestrator = Orchestrator(
+        CONFIG_PATH, AGENT_CONFIG_PATH, AGENT_STATE_PATH, args.output, args.append
+    )
     orchestrator.run()

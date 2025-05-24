@@ -11,11 +11,14 @@ def test_llm_cache_hit_and_miss(tmp_path):
     other_messages = [{"role": "user", "content": "other"}]
     assert cache.get(other_messages) is None
 
+
 class DummyLLMCache(AbstractLLMCache):
     def lookup(self, variable_prompt: str):
         return "dummy"
+
     def store(self, variable_prompt: str, response):
         pass
+
 
 def test_abstract_llm_cache_cannot_instantiate():
     with pytest.raises(TypeError):
@@ -24,6 +27,7 @@ def test_abstract_llm_cache_cannot_instantiate():
     cache = DummyLLMCache()
     assert cache.lookup("foo") == "dummy"
 
+
 def test_mock_llm_cache_lookup_and_store():
     cache = MockLLMCache({"q1": "a1", "q2": "a2"})
     assert cache.lookup("q1") == "a1"
@@ -31,6 +35,7 @@ def test_mock_llm_cache_lookup_and_store():
     assert cache.lookup("q3") is None
     cache.store("q3", "a3")
     assert cache.stored["q3"] == "a3"
+
 
 def test_no_cache_llm_cache_always_miss():
     cache = NoCacheLLMCache()

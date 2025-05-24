@@ -155,7 +155,9 @@ class BaseAgentEvent(BaseMessage, ABC):
     """Additional metadata about the message."""
 
 
-StructuredContentType = TypeVar("StructuredContentType", bound=BaseModel, covariant=True)
+StructuredContentType = TypeVar(
+    "StructuredContentType", bound=BaseModel, covariant=True
+)
 """Type variable for structured content types."""
 
 
@@ -249,7 +251,9 @@ class StructureMessageConfig(BaseModel):
     content_model_name: str
 
 
-class StructuredMessageFactory(ComponentBase[StructureMessageConfig], Component[StructureMessageConfig]):
+class StructuredMessageFactory(
+    ComponentBase[StructureMessageConfig], Component[StructureMessageConfig]
+):
     """:meta private:
 
     A component that creates structured chat messages from Pydantic models or JSON schemas.
@@ -574,13 +578,17 @@ class MessageFactory:
         self._message_types[ToolCallExecutionEvent.__name__] = ToolCallExecutionEvent
         self._message_types[MemoryQueryEvent.__name__] = MemoryQueryEvent
         self._message_types[UserInputRequestedEvent.__name__] = UserInputRequestedEvent
-        self._message_types[ModelClientStreamingChunkEvent.__name__] = ModelClientStreamingChunkEvent
+        self._message_types[ModelClientStreamingChunkEvent.__name__] = (
+            ModelClientStreamingChunkEvent
+        )
         self._message_types[ThoughtEvent.__name__] = ThoughtEvent
         self._message_types[SelectSpeakerEvent.__name__] = SelectSpeakerEvent
         self._message_types[CodeGenerationEvent.__name__] = CodeGenerationEvent
         self._message_types[CodeExecutionEvent.__name__] = CodeExecutionEvent
 
-    def is_registered(self, message_type: type[BaseAgentEvent | BaseChatMessage]) -> bool:
+    def is_registered(
+        self, message_type: type[BaseAgentEvent | BaseChatMessage]
+    ) -> bool:
         """Check if a message type is registered with the factory."""
         # Get the class name of the message type.
         class_name = message_type.__name__
@@ -591,8 +599,12 @@ class MessageFactory:
         """Register a new message type with the factory."""
         if self.is_registered(message_type):
             raise ValueError(f"Message type {message_type} is already registered.")
-        if not issubclass(message_type, BaseChatMessage) and not issubclass(message_type, BaseAgentEvent):
-            raise ValueError(f"Message type {message_type} must be a subclass of BaseChatMessage or BaseAgentEvent.")
+        if not issubclass(message_type, BaseChatMessage) and not issubclass(
+            message_type, BaseAgentEvent
+        ):
+            raise ValueError(
+                f"Message type {message_type} must be a subclass of BaseChatMessage or BaseAgentEvent."
+            )
         # Get the class name of the
         class_name = message_type.__name__
         # Check if the class name is already registered.
@@ -604,7 +616,9 @@ class MessageFactory:
         # Get the type of the message from the dictionary.
         message_type = data.get("type")
         if message_type is None:
-            raise ValueError("Field 'type' is required in the message data to recover the message type.")
+            raise ValueError(
+                "Field 'type' is required in the message data to recover the message type."
+            )
         if message_type not in self._message_types:
             raise ValueError(f"Unknown message type: {message_type}")
         if not isinstance(message_type, str):
@@ -614,12 +628,18 @@ class MessageFactory:
         message_class = self._message_types[message_type]
 
         # Create an instance of the message class.
-        assert issubclass(message_class, BaseChatMessage) or issubclass(message_class, BaseAgentEvent)
+        assert issubclass(message_class, BaseChatMessage) or issubclass(
+            message_class, BaseAgentEvent
+        )
         return message_class.load(data)
 
 
 ChatMessage = Annotated[
-    TextMessage | MultiModalMessage | StopMessage | ToolCallSummaryMessage | HandoffMessage,
+    TextMessage
+    | MultiModalMessage
+    | StopMessage
+    | ToolCallSummaryMessage
+    | HandoffMessage,
     Field(discriminator="type"),
 ]
 """The union type of all built-in concrete subclasses of :class:`BaseChatMessage`.
