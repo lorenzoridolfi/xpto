@@ -21,8 +21,6 @@ from pydantic import BaseModel, Field, computed_field
 from typing_extensions import Annotated, Self
 
 
-
-[docs]
 class BaseMessage(BaseModel, ABC):
     """Abstract base class for all message types in AgentChat.
 
@@ -34,8 +32,6 @@ class BaseMessage(BaseModel, ABC):
 
     """
 
-
-[docs]
     @abstractmethod
     def to_text(self) -> str:
         """Convert the message content to a string-only representation
@@ -44,9 +40,6 @@ class BaseMessage(BaseModel, ABC):
         For :class:`BaseChatMessage` types, use :meth:`to_model_text` instead."""
         ...
 
-
-
-[docs]
     def dump(self) -> Mapping[str, Any]:
         """Convert the message to a JSON-serializable dictionary.
 
@@ -57,9 +50,6 @@ class BaseMessage(BaseModel, ABC):
         """
         return self.model_dump()
 
-
-
-[docs]
     @classmethod
     def load(cls, data: Mapping[str, Any]) -> Self:
         """Create a message from a dictionary of JSON-serializable data.
@@ -71,10 +61,6 @@ class BaseMessage(BaseModel, ABC):
         return cls.model_validate(data)
 
 
-
-
-
-[docs]
 class BaseChatMessage(BaseMessage, ABC):
     """Abstract base class for chat messages.
 
@@ -99,8 +85,6 @@ class BaseChatMessage(BaseMessage, ABC):
     metadata: Dict[str, str] = {}
     """Additional metadata about the message."""
 
-
-[docs]
     @abstractmethod
     def to_model_text(self) -> str:
         """Convert the content of the message to text-only representation.
@@ -116,9 +100,6 @@ class BaseChatMessage(BaseMessage, ABC):
         """
         ...
 
-
-
-[docs]
     @abstractmethod
     def to_model_message(self) -> UserMessage:
         """Convert the message content to a :class:`~autogen_core.models.UserMessage`
@@ -127,10 +108,6 @@ class BaseChatMessage(BaseMessage, ABC):
         ...
 
 
-
-
-
-[docs]
 class BaseTextChatMessage(BaseChatMessage, ABC):
     """Base class for all text-only :class:`BaseChatMessage` types.
     It has implementations for :meth:`to_text`, :meth:`to_model_text`,
@@ -142,28 +119,16 @@ class BaseTextChatMessage(BaseChatMessage, ABC):
     content: str
     """The content of the message."""
 
-
-[docs]
     def to_text(self) -> str:
         return self.content
 
-
-
-[docs]
     def to_model_text(self) -> str:
         return self.content
 
-
-
-[docs]
     def to_model_message(self) -> UserMessage:
         return UserMessage(content=self.content, source=self.source)
 
 
-
-
-
-[docs]
 class BaseAgentEvent(BaseMessage, ABC):
     """Base class for agent events.
 
@@ -190,13 +155,10 @@ class BaseAgentEvent(BaseMessage, ABC):
     """Additional metadata about the message."""
 
 
-
 StructuredContentType = TypeVar("StructuredContentType", bound=BaseModel, covariant=True)
 """Type variable for structured content types."""
 
 
-
-[docs]
 class StructuredMessage(BaseChatMessage, Generic[StructuredContentType]):
     """A :class:`BaseChatMessage` type with an unspecified content type.
 
@@ -260,33 +222,23 @@ class StructuredMessage(BaseChatMessage, Generic[StructuredContentType]):
     def type(self) -> str:
         return self.__class__.__name__
 
-
-[docs]
     def to_text(self) -> str:
         if self.format_string is not None:
             return self.format_string.format(**self.content.model_dump())
         else:
             return self.content.model_dump_json()
 
-
-
-[docs]
     def to_model_text(self) -> str:
         if self.format_string is not None:
             return self.format_string.format(**self.content.model_dump())
         else:
             return self.content.model_dump_json()
 
-
-
-[docs]
     def to_model_message(self) -> UserMessage:
         return UserMessage(
             content=self.content.model_dump_json(),
             source=self.source,
         )
-
-
 
 
 class StructureMessageConfig(BaseModel):
@@ -396,17 +348,12 @@ class StructuredMessageFactory(ComponentBase[StructureMessageConfig], Component[
         )
 
 
-
-[docs]
 class TextMessage(BaseTextChatMessage):
     """A text message with string-only content."""
 
     type: Literal["TextMessage"] = "TextMessage"
 
 
-
-
-[docs]
 class MultiModalMessage(BaseChatMessage):
     """A multimodal message."""
 
@@ -415,8 +362,6 @@ class MultiModalMessage(BaseChatMessage):
 
     type: Literal["MultiModalMessage"] = "MultiModalMessage"
 
-
-[docs]
     def to_model_text(self, image_placeholder: str | None = "[image]") -> str:
         """Convert the content of the message to a string-only representation.
         If an image is present, it will be replaced with the image placeholder
@@ -433,9 +378,6 @@ class MultiModalMessage(BaseChatMessage):
                     text += f" {c.to_base64()}"
         return text
 
-
-
-[docs]
     def to_text(self, iterm: bool = False) -> str:
         result: List[str] = []
         for c in self.content:
@@ -450,26 +392,16 @@ class MultiModalMessage(BaseChatMessage):
                     result.append("<image>")
         return "\n".join(result)
 
-
-
-[docs]
     def to_model_message(self) -> UserMessage:
         return UserMessage(content=self.content, source=self.source)
 
 
-
-
-
-[docs]
 class StopMessage(BaseTextChatMessage):
     """A message requesting stop of a conversation."""
 
     type: Literal["StopMessage"] = "StopMessage"
 
 
-
-
-[docs]
 class HandoffMessage(BaseTextChatMessage):
     """A message requesting handoff of a conversation to another agent."""
 
@@ -482,18 +414,12 @@ class HandoffMessage(BaseTextChatMessage):
     type: Literal["HandoffMessage"] = "HandoffMessage"
 
 
-
-
-[docs]
 class ToolCallSummaryMessage(BaseTextChatMessage):
     """A message signaling the summary of tool call results."""
 
     type: Literal["ToolCallSummaryMessage"] = "ToolCallSummaryMessage"
 
 
-
-
-[docs]
 class ToolCallRequestEvent(BaseAgentEvent):
     """An event signaling a request to use tools."""
 
@@ -502,16 +428,10 @@ class ToolCallRequestEvent(BaseAgentEvent):
 
     type: Literal["ToolCallRequestEvent"] = "ToolCallRequestEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return str(self.content)
 
 
-
-
-
-[docs]
 class CodeGenerationEvent(BaseAgentEvent):
     """An event signaling code generation event."""
 
@@ -526,16 +446,10 @@ class CodeGenerationEvent(BaseAgentEvent):
 
     type: Literal["CodeGenerationEvent"] = "CodeGenerationEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return self.content
 
 
-
-
-
-[docs]
 class CodeExecutionEvent(BaseAgentEvent):
     """An event signaling code execution event."""
 
@@ -547,16 +461,10 @@ class CodeExecutionEvent(BaseAgentEvent):
 
     type: Literal["CodeExecutionEvent"] = "CodeExecutionEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return self.result.output
 
 
-
-
-
-[docs]
 class ToolCallExecutionEvent(BaseAgentEvent):
     """An event signaling the execution of tool calls."""
 
@@ -565,16 +473,10 @@ class ToolCallExecutionEvent(BaseAgentEvent):
 
     type: Literal["ToolCallExecutionEvent"] = "ToolCallExecutionEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return str(self.content)
 
 
-
-
-
-[docs]
 class UserInputRequestedEvent(BaseAgentEvent):
     """An event signaling a that the user proxy has requested user input. Published prior to invoking the input callback."""
 
@@ -586,16 +488,10 @@ class UserInputRequestedEvent(BaseAgentEvent):
 
     type: Literal["UserInputRequestedEvent"] = "UserInputRequestedEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return str(self.content)
 
 
-
-
-
-[docs]
 class MemoryQueryEvent(BaseAgentEvent):
     """An event signaling the results of memory queries."""
 
@@ -604,16 +500,10 @@ class MemoryQueryEvent(BaseAgentEvent):
 
     type: Literal["MemoryQueryEvent"] = "MemoryQueryEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return str(self.content)
 
 
-
-
-
-[docs]
 class ModelClientStreamingChunkEvent(BaseAgentEvent):
     """An event signaling a text output chunk from a model client in streaming mode."""
 
@@ -622,16 +512,10 @@ class ModelClientStreamingChunkEvent(BaseAgentEvent):
 
     type: Literal["ModelClientStreamingChunkEvent"] = "ModelClientStreamingChunkEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return self.content
 
 
-
-
-
-[docs]
 class ThoughtEvent(BaseAgentEvent):
     """An event signaling the thought process of a model.
     It is used to communicate the reasoning tokens generated by a reasoning model,
@@ -642,16 +526,10 @@ class ThoughtEvent(BaseAgentEvent):
 
     type: Literal["ThoughtEvent"] = "ThoughtEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return self.content
 
 
-
-
-
-[docs]
 class SelectSpeakerEvent(BaseAgentEvent):
     """An event signaling the selection of speakers for a conversation."""
 
@@ -660,12 +538,8 @@ class SelectSpeakerEvent(BaseAgentEvent):
 
     type: Literal["SelectSpeakerEvent"] = "SelectSpeakerEvent"
 
-
-[docs]
     def to_text(self) -> str:
         return str(self.content)
-
-
 
 
 class SelectorEvent(BaseAgentEvent):

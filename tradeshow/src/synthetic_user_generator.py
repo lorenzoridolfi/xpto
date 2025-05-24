@@ -336,7 +336,10 @@ class ValidatorAgent:
                     message="OpenAI validation call",
                     agent=self.get_metadata(),
                     activity="validate_user",
-                    data={"user": user.model_dump(), "critic_output": output.model_dump()},
+                    data={
+                        "user": user.model_dump(),
+                        "critic_output": output.model_dump(),
+                    },
                     llm_input=messages,
                     llm_output=output_json,
                     duration_seconds=elapsed,
@@ -428,11 +431,15 @@ class ReviewerAgent:
             elapsed = time.time() - start_time
             logger.info(f"OpenAI review call took {elapsed:.2f} seconds.")
             improved_user_json = response.choices[0].message.content
-            improved_user = SyntheticUserReviewed.model_validate_json(improved_user_json)
+            improved_user = SyntheticUserReviewed.model_validate_json(
+                improved_user_json
+            )
             if not improved_user.avaliacao or not improved_user.avaliacao.critica:
                 improved_user.avaliacao.critica = str(critic_output)
             if not improved_user.avaliacao.revisao:
-                improved_user.avaliacao.revisao = f"Reviewed after critic: {critic_output}"
+                improved_user.avaliacao.revisao = (
+                    f"Reviewed after critic: {critic_output}"
+                )
             logger.info(f"Review result: {improved_user}")
             if tracer:
                 tracer.log(
