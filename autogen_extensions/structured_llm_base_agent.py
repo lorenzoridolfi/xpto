@@ -10,12 +10,14 @@ except ImportError:
 
 logger = logging.getLogger("structured_llm_base_agent")
 
+
 class StructuredLLMBaseAgent(LLMBaseAgent):
     """
     Base agent for LLMs that return structured (Pydantic) output.
     Handles LLM call and output validation. If output_model is not provided, but output_schema is,
     a Pydantic model will be generated from the schema (Pydantic v2+).
     """
+
     output_model: Optional[Type[BaseModel]] = None  # Subclasses can set this
     output_schema: Optional[Dict[str, Any]] = None  # Subclasses can set this
 
@@ -30,13 +32,21 @@ class StructuredLLMBaseAgent(LLMBaseAgent):
         super().__init__(llm_call=llm_call, *args, **kwargs)
         if output_model is not None:
             self.output_model = output_model
-        if self.output_model is None and (output_schema is not None or self.output_schema is not None):
+        if self.output_model is None and (
+            output_schema is not None or self.output_schema is not None
+        ):
             schema = output_schema or self.output_schema
             if create_model_from_schema is None:
-                raise ImportError("pydantic.create_model_from_schema is required (Pydantic v2+)")
-            self.output_model = create_model_from_schema(schema, model_name="DynamicModel")
+                raise ImportError(
+                    "pydantic.create_model_from_schema is required (Pydantic v2+)"
+                )
+            self.output_model = create_model_from_schema(
+                schema, model_name="DynamicModel"
+            )
         if self.output_model is None:
-            raise ValueError("output_model or output_schema must be provided for StructuredLLMBaseAgent")
+            raise ValueError(
+                "output_model or output_schema must be provided for StructuredLLMBaseAgent"
+            )
 
     async def call_structured_llm(
         self,
@@ -74,4 +84,4 @@ class StructuredLLMBaseAgent(LLMBaseAgent):
             raise RuntimeError(f"Failed to validate structured LLM output: {e}")
         except Exception as e:
             logger.error(f"LLM call or parsing error: {e}")
-            raise 
+            raise
