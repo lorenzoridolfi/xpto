@@ -1,20 +1,17 @@
 import json
 import os
-from typing import Any, Dict, List, Optional
-from jsonschema import validate, ValidationError
+from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
+from autogen_extensions.log_utils import get_logger
+from autogen_extensions.json_validation import validate_json
 from tradeshow.src.pydantic_schema import (
-    SyntheticUser,
     SyntheticUserDraft,
     SyntheticUserReviewed,
     CriticOutput,
-    Avaliacao,
 )
-import logging
 import gc
 import openai
-import pydantic
 import time
 import argparse
 from autogen_extensions.tracing import TracingMixin
@@ -23,15 +20,7 @@ from autogen_extensions.tracing import TracingMixin
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
 LOG_FILE = os.path.join(LOG_DIR, "synthetic_user_generator.log")
 os.makedirs(LOG_DIR, exist_ok=True)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8"),
-        logging.StreamHandler(),
-    ],
-)
-logger = logging.getLogger("synthetic_user_generator")
+logger = get_logger("synthetic_user_generator")
 
 # --- LLM and API Key Handling (PRODUCTION) ---
 # Load .env from project root if present and set OPENAI_API_KEY for all downstream libraries.
@@ -94,11 +83,11 @@ def validate_segments_schema():
     schema = load_json(SEGMENT_SCHEMA_PATH)
     segments = load_json(SEGMENTS_PATH)
     try:
-        validate(instance=segments, schema=schema)
+        validate_json(segments, schema)
         logger.info("segments.json validation successful.")
-    except ValidationError as e:
-        logger.error(f"segments.json validation error: {e.message}")
-        raise RuntimeError(f"segments.json validation error: {e.message}")
+    except Exception as e:
+        logger.error(f"segments.json validation error: {e}")
+        raise RuntimeError(f"segments.json validation error: {e}")
 
 
 # Validate segments.json at import/run time
@@ -110,6 +99,7 @@ class TracedGroupChat(TracingMixin):
     Class responsible for logging all actions and messages for traceability.
     Each log entry includes agent metadata and activity context.
     """
+
     def __init__(self, log_path: str):
         super().__init__(trace_path=log_path)
         logger.info(f"Trace log initialized at {log_path}")
@@ -270,7 +260,12 @@ class ValidatorAgent:
     Validates a SyntheticUserDraft and produces a CriticOutput. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any], tracer: Optional[Any] = None):
+    def __init__(
+        self,
+        schema: Dict[str, Any],
+        agent_config: Dict[str, Any],
+        tracer: Optional[Any] = None,
+    ):
         logger.debug(
             f"ValidatorAgent.__init__ called with schema=..., agent_config={agent_config}"
         )
@@ -365,7 +360,12 @@ class ReviewerAgent:
     Reviews a SyntheticUserDraft and CriticOutput, and returns a SyntheticUserReviewed. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(self, agent_config: Dict[str, Any], schema: Dict[str, Any], tracer: Optional[Any] = None):
+    def __init__(
+        self,
+        agent_config: Dict[str, Any],
+        schema: Dict[str, Any],
+        tracer: Optional[Any] = None,
+    ):
         logger.debug(
             f"ReviewerAgent.__init__ called with agent_config={agent_config}, schema=..."
         )
@@ -390,7 +390,9 @@ class ReviewerAgent:
             "model": self.model,
         }
 
-    def review_user(self, user: SyntheticUserDraft, critic_output: CriticOutput) -> dict:
+    def review_user(
+        self, user: SyntheticUserDraft, critic_output: CriticOutput
+    ) -> dict:
         logger.debug(
             f"ReviewerAgent.review_user called for user: {user}, critic_output: {critic_output}"
         )
@@ -555,8 +557,12 @@ class Orchestrator:
                 self.schema,
                 tracer=self.tracer,
             )
-            validator = ValidatorAgent(self.schema, self.agent_config["ValidatorAgent"], tracer=self.tracer)
-            reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"], self.schema, tracer=self.tracer)
+            validator = ValidatorAgent(
+                self.schema, self.agent_config["ValidatorAgent"], tracer=self.tracer
+            )
+            reviewer = ReviewerAgent(
+                self.agent_config["ReviewerAgent"], self.schema, tracer=self.tracer
+            )
             segment_users = []
             for i in range(num_usuarios):
                 overall_user_count += 1
@@ -596,9 +602,7 @@ class Orchestrator:
                     logger.debug(
                         f"Reviewing user {i+1}/{num_usuarios} for segment {segment['nome']}"
                     )
-                    reviewed = reviewer.review_user(
-                        user, critic_output
-                    )
+                    reviewed = reviewer.review_user(user, critic_output)
                     user = reviewed["update_synthetic_user"]
                 else:
                     logger.info(

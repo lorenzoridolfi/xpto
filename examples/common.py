@@ -5,9 +5,10 @@ import hashlib
 from typing import Any, Dict, Tuple, List
 import datetime
 from openai import OpenAI
+from pydantic import BaseModel
+from autogen_extensions.json_validation import validate_json
 
 client = OpenAI()
-from pydantic import BaseModel
 
 
 class JsonSchemaValidationError(Exception):
@@ -39,42 +40,11 @@ def save_json_file(data: Any, path: str) -> None:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def validate_json_file_with_schema(
-    data_path: str,
-    schema_path: str,
-) -> Dict[str, Any]:
-    """
-    Load and validate a JSON file against a JSON schema.
-
-    Args:
-        data_path (str): Path to the JSON data file.
-        schema_path (str): Path to the JSON schema file.
-
-    Returns:
-        dict: Loaded and validated JSON data.
-
-    Raises:
-        FileNotFoundError: If the data or schema file does not exist.
-        json.JSONDecodeError: If the data or schema is not valid JSON.
-        JsonSchemaValidationError: If the data does not conform to the schema.
-    """
-    print(
-        f"DEBUG: validate_json_file_with_schema called with data_path={data_path}, schema_path={schema_path}"
-    )
-    if not os.path.exists(data_path):
-        raise FileNotFoundError(f"Data file not found: {data_path}")
-    if not os.path.exists(schema_path):
-        raise FileNotFoundError(f"Schema file not found: {schema_path}")
-
-    with open(data_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    with open(schema_path, "r", encoding="utf-8") as f:
-        schema = json.load(f)
-    try:
-        jsonschema.validate(instance=data, schema=schema)
-    except jsonschema.ValidationError as e:
-        raise JsonSchemaValidationError(f"JSON schema validation failed: {e.message}")
-    return data
+def validate_json_file_with_schema(json_file: str, schema_file: str) -> bool:
+    with open(json_file) as jf, open(schema_file) as sf:
+        data = json.load(jf)
+        schema = json.load(sf)
+        return validate_json(data, schema)
 
 
 def compute_sha256(file_path: str) -> str:

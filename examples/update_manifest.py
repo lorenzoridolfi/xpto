@@ -11,15 +11,14 @@ Uses autogen's GroupChat for orchestration and real agent implementations.
 """
 
 import os
-import logging
 import hashlib
 import datetime
 from dotenv import load_dotenv
 from typing import Dict, Any
 import openai
 from autogen import AssistantAgent
-from openai import OpenAI
 from autogen_extensions.auto_tracing_group_chat import AutoTracingGroupChat
+from autogen_extensions.log_utils import get_logger
 
 from examples.common import (
     load_json_file,
@@ -30,14 +29,11 @@ from examples.common import (
 )
 
 # Set up logging before any logger.info calls
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+get_logger(__name__).info("Starting logging setup")
 
 # Project root directory
 PROJECT_ROOT = "/Users/lorenzo/Sync/Source/AI/autogen"
-logger.info(f"Project root: {PROJECT_ROOT}")
+get_logger(__name__).info(f"Project root: {PROJECT_ROOT}")
 
 # Load .env from the project root
 load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
@@ -58,10 +54,10 @@ DEFAULT_SCHEMA_PATH = os.path.join(
 DEFAULT_MANIFEST_PATH = os.path.join(PROJECT_ROOT, "manifest.json")  # Shared manifest
 TRACE_PATH = os.path.join(PROJECT_ROOT, "update_manifest_trace.json")
 
-logger.info(f"Config path: {DEFAULT_CONFIG_PATH}")
-logger.info(f"Schema path: {DEFAULT_SCHEMA_PATH}")
-logger.info(f"Manifest path: {DEFAULT_MANIFEST_PATH}")
-logger.info(f"Trace path: {TRACE_PATH}")
+get_logger(__name__).info(f"Config path: {DEFAULT_CONFIG_PATH}")
+get_logger(__name__).info(f"Schema path: {DEFAULT_SCHEMA_PATH}")
+get_logger(__name__).info(f"Manifest path: {DEFAULT_MANIFEST_PATH}")
+get_logger(__name__).info(f"Trace path: {TRACE_PATH}")
 
 # Create directories if they don't exist
 os.makedirs(os.path.dirname(DEFAULT_CONFIG_PATH), exist_ok=True)
@@ -175,7 +171,9 @@ class SummarizerAgent(AssistantAgent):
         """
         Summarize the content of a file using OpenAI's API and log the action.
         """
-        logger.debug(f"SummarizerAgent: Preparing to summarize file: {file_path}")
+        get_logger(__name__).debug(
+            f"SummarizerAgent: Preparing to summarize file: {file_path}"
+        )
         # Estimate token count (1 token ≈ 4 chars for rough estimate)
         max_tokens = 8192 - 1000  # leave room for completion
 
@@ -183,7 +181,7 @@ class SummarizerAgent(AssistantAgent):
             return len(text) // 4
 
         if num_tokens(content) > max_tokens:
-            logger.warning(
+            get_logger(__name__).warning(
                 f"File {file_path} is too large for LLM context window, skipping."
             )
             return {
@@ -199,14 +197,18 @@ class SummarizerAgent(AssistantAgent):
             f"DESCRIÇÃO: (descrição em uma linha)\n"
             f"RESUMO: (resumo detalhado)"
         )
-        logger.debug(f"SummarizerAgent: Starting OpenAI API call for file: {file_path}")
+        get_logger(__name__).debug(
+            f"SummarizerAgent: Starting OpenAI API call for file: {file_path}"
+        )
         response = openai.chat.completions.create(
             model=llm_config["model"],
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000,
             temperature=0.3,
         )
-        logger.debug(f"SummarizerAgent: Finished OpenAI API call for file: {file_path}")
+        get_logger(__name__).debug(
+            f"SummarizerAgent: Finished OpenAI API call for file: {file_path}"
+        )
         response_text = response.choices[0].message.content.strip()
         description = ""
         summary = ""
@@ -218,7 +220,9 @@ class SummarizerAgent(AssistantAgent):
         if not description or not summary:
             description = f"Arquivo de texto: {os.path.basename(file_path)}"
             summary = "Falha ao gerar resumo. Conteúdo original preservado."
-        logger.debug(f"SummarizerAgent: Completed summarization for file: {file_path}")
+        get_logger(__name__).debug(
+            f"SummarizerAgent: Completed summarization for file: {file_path}"
+        )
         return {"description": description, "summary": summary}
 
 
@@ -239,7 +243,9 @@ class ValidatorAgent(AssistantAgent):
         """
         Validate the manifest using the provided schema and log the result.
         """
-        print(f"[DEBUG] ValidatorAgent self.name: {self.name}")  # Debug print
+        get_logger(__name__).debug(
+            f"ValidatorAgent self.name: {self.name}"
+        )  # Debug print
         try:
             validate_manifest(manifest, schema)
             return True
@@ -254,7 +260,7 @@ def compute_sha256(file_path: str) -> str:
     """
     Compute the SHA256 hash of a file.
     """
-    logger.info(f"Computing SHA256 for file: {file_path}")
+    get_logger(__name__).info(f"Computing SHA256 for file: {file_path}")
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
         for byte_block in iter(lambda: f.read(4096), b""):
@@ -263,9 +269,9 @@ def compute_sha256(file_path: str) -> str:
 
 
 def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str, Any]:
-    logger.info(f"Starting manifest build for directory: {text_dir}")
+    get_logger(__name__).info(f"Starting manifest build for directory: {text_dir}")
     if not os.path.exists(text_dir):
-        logger.error(f"Directory does not exist: {text_dir}")
+        get_logger(__name__).error(f"Directory does not exist: {text_dir}")
         raise FileNotFoundError(f"Directory not found: {text_dir}")
     files = [
         os.path.join(text_dir, f)
@@ -273,7 +279,7 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         if os.path.isfile(os.path.join(text_dir, f))
     ]
     files = [f for f in files if not os.path.basename(f).startswith(".")]
-    logger.info(f"Found {len(files)} files to process")
+    get_logger(__name__).info(f"Found {len(files)} files to process")
     manifest = {
         "version": "1.0.0",
         "files": [],
@@ -289,7 +295,6 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
             "entities": {},
         },
     }
-    openai_client = OpenAI(api_key=openai_api_key)
     file_reader = FileReaderAgent(
         name="FileReaderAgent",
         llm_config=llm_config,
@@ -318,7 +323,7 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
         agents=agents, trace_file=TRACE_PATH, description=group_description
     ) as group:
         for file_path in files:
-            logger.info(f"Processing file: {file_path}")
+            get_logger(__name__).info(f"Processing file: {file_path}")
             # FileReaderAgent reads the file
             content = file_reader.read(file_path)
             group.agent_action("file_read", {"file": file_path}, file_reader.name)
@@ -354,11 +359,11 @@ def build_manifest_with_agents(text_dir: str, model: str = "gpt-4") -> Dict[str,
             }
             manifest["files"].append(file_entry)
             group.agent_action("file_added_to_manifest", {"file": file_path}, "System")
-            logger.info(f"Added {file_path} to manifest")
+            get_logger(__name__).info(f"Added {file_path} to manifest")
         # Validate manifest at the end
         valid = validator.validate(manifest, MINIMAL_MANIFEST_SCHEMA)
         group.agent_action("manifest_validated", {"result": valid}, validator.name)
-        logger.info(
+        get_logger(__name__).info(
             f"Manifest build completed. Total files processed: {len(manifest['files'])}"
         )
     return manifest
@@ -369,40 +374,44 @@ async def main(max_round: int = 10) -> None:
     Main entry point for the manifest update workflow.
     Orchestrates the multi-agent process: build, save, and validate the manifest.
     """
-    logger.info("Starting manifest update workflow (multi-agent mode)")
+    get_logger(__name__).info("Starting manifest update workflow (multi-agent mode)")
     text_dir = os.path.join(PROJECT_ROOT, "text")
-    logger.info(f"Text directory: {text_dir}")
+    get_logger(__name__).info(f"Text directory: {text_dir}")
     if not os.path.exists(text_dir):
-        logger.error(f"Text directory does not exist: {text_dir}")
+        get_logger(__name__).error(f"Text directory does not exist: {text_dir}")
         os.makedirs(text_dir, exist_ok=True)
-        logger.info(f"Created text directory: {text_dir}")
-    logger.info("Building manifest with agents")
+        get_logger(__name__).info(f"Created text directory: {text_dir}")
+    get_logger(__name__).info("Building manifest with agents")
     try:
         manifest = build_manifest_with_agents(text_dir)
-        logger.info("Successfully built manifest")
-        logger.info(f"Manifest contains {len(manifest['files'])} files")
+        get_logger(__name__).info("Successfully built manifest")
+        get_logger(__name__).info(f"Manifest contains {len(manifest['files'])} files")
     except Exception as e:
-        logger.error(f"Failed to build manifest: {e}")
+        get_logger(__name__).error(f"Failed to build manifest: {e}")
         raise
-    logger.info(f"Saving manifest to {DEFAULT_MANIFEST_PATH}")
+    get_logger(__name__).info(f"Saving manifest to {DEFAULT_MANIFEST_PATH}")
     try:
         save_json_file(manifest, DEFAULT_MANIFEST_PATH)
-        logger.info(f"Successfully saved manifest to {DEFAULT_MANIFEST_PATH}")
+        get_logger(__name__).info(
+            f"Successfully saved manifest to {DEFAULT_MANIFEST_PATH}"
+        )
     except Exception as e:
-        logger.error(f"Failed to save manifest: {e}")
+        get_logger(__name__).error(f"Failed to save manifest: {e}")
         raise
-    logger.info("Starting manifest validation")
+    get_logger(__name__).info("Starting manifest validation")
     try:
-        logger.info(f"Loading schema from {DEFAULT_SCHEMA_PATH}")
+        get_logger(__name__).info(f"Loading schema from {DEFAULT_SCHEMA_PATH}")
         if not os.path.exists(DEFAULT_SCHEMA_PATH):
-            logger.warning(
+            get_logger(__name__).warning(
                 f"Schema file {DEFAULT_SCHEMA_PATH} does not exist. Creating minimal schema."
             )
             save_json_file(MINIMAL_MANIFEST_SCHEMA, DEFAULT_SCHEMA_PATH)
-            logger.info(f"Created minimal schema at {DEFAULT_SCHEMA_PATH}")
+            get_logger(__name__).info(
+                f"Created minimal schema at {DEFAULT_SCHEMA_PATH}"
+            )
         schema = load_json_file(DEFAULT_SCHEMA_PATH)
-        logger.info("Successfully loaded schema")
-        logger.info("Validating manifest against schema")
+        get_logger(__name__).info("Successfully loaded schema")
+        get_logger(__name__).info("Validating manifest against schema")
         validator = ValidatorAgent(
             "ValidatorAgent",
             llm_config,
@@ -411,11 +420,15 @@ async def main(max_round: int = 10) -> None:
         )
         valid = validator.validate(manifest, schema)
         if valid:
-            logger.info(f"Manifest validation successful: {DEFAULT_MANIFEST_PATH}")
+            get_logger(__name__).info(
+                f"Manifest validation successful: {DEFAULT_MANIFEST_PATH}"
+            )
         else:
-            logger.error(f"Manifest validation failed: {DEFAULT_MANIFEST_PATH}")
+            get_logger(__name__).error(
+                f"Manifest validation failed: {DEFAULT_MANIFEST_PATH}"
+            )
     except Exception as e:
-        logger.error(f"Unexpected error during validation: {e}")
+        get_logger(__name__).error(f"Unexpected error during validation: {e}")
         raise
 
 

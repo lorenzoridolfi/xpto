@@ -1,5 +1,5 @@
 from typing import Optional, List, Literal
-from pydantic import BaseModel, Field, constr, conlist, conint, confloat
+from pydantic import BaseModel, Field, confloat
 
 
 class Segmento(BaseModel):

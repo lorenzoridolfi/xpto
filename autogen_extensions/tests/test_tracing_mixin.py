@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from autogen_extensions.tracing import TracingMixin
 
+
 class DummyTracer(TracingMixin):
     def __init__(self, trace_path=None):
         super().__init__(trace_path=trace_path)
@@ -30,4 +31,4 @@ def test_save_trace_without_path_raises():
     tracer = DummyTracer(trace_path=None)
     tracer.log_event("event", {})
     with pytest.raises(ValueError):
-        tracer.save_trace() 
+        tracer.save_trace()

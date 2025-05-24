@@ -1,5 +1,6 @@
 import pytest
 import time
+import asyncio
 from autogen_extensions.execution_strategies_concrete import (
     SequentialStrategy,
     ThreadPoolStrategy,
@@ -28,7 +29,6 @@ def task_error():
 
 
 # Async tasks
-import asyncio
 
 
 async def async_task_a():

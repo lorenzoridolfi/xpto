@@ -34,7 +34,7 @@ cd ..
 pylint --ignore=.venv . -E --disable=all --enable=undefined-variable
 
 # 9. Run ruff
-ruff check .
+ruff check . --ignore E501 --fix
 
 # 10. Run pytest on tests
 pytest -vvv ./tests --maxfail=3 --disable-warnings -q

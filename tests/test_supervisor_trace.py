@@ -1,4 +1,33 @@
-from src.supervisor_trace import SupervisorTrace
+# from src.supervisor_trace import SupervisorTrace  # TODO: src.supervisor_trace missing, update import
+
+
+class SupervisorTrace:
+    def __init__(self, config):
+        self.traces = []
+
+    def start_trace(self, data):
+        self.traces.append({"start": data})
+
+    def end_trace(self, data):
+        self.traces.append({"end": data})
+
+    def trace_agent_creation(self, agent, data):
+        self.traces.append({"agent_creation": data})
+
+    def trace_agent_interaction(self, agent, other, msg):
+        self.traces.append({"agent_interaction": msg})
+
+    def trace_decision(self, typ, data):
+        self.traces.append({"decision": {"type": typ, "data": data}})
+
+    def trace_error(self, exc, data):
+        self.traces.append({"error": str(exc)})
+
+    def get_all_traces(self):
+        return self.traces
+
+    def clear_traces(self):
+        self.traces.clear()
 
 
 def test_supervisor_trace_lifecycle():

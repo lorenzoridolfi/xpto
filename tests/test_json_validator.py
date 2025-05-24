@@ -1,5 +1,5 @@
 import pytest
-from src.json_validator import validate_json
+from autogen_extensions.json_validation import validate_json
 
 
 def test_validate_json_valid():

@@ -17,11 +17,12 @@ import uuid
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from autogen_extensions.log_utils import get_logger
 
-from src.analytics_assistant_agent import AnalyticsAssistantAgent
-from src.tool_analytics import ToolAnalytics
-from src.llm_cache import LLMCache
-from src.config import DEFAULT_CONFIG
+# from src.analytics_assistant_agent import AnalyticsAssistantAgent
+# from src.tool_analytics import ToolAnalytics
+# from src.llm_cache import LLMCache
+# from src.config import DEFAULT_CONFIG
 
 # Load environment variables from parent directory
 env_path = Path(__file__).parent.parent / ".env"
@@ -49,21 +50,24 @@ ADMIN_USERNAME = os.getenv("FASTAPI_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("FASTAPI_PASSWORD", "admin123")
 
 # Initialize agents and analytics
-tool_analytics = ToolAnalytics()
-llm_cache = LLMCache()
-agent = AnalyticsAssistantAgent(
-    name="analytics_assistant",
-    description="Analytics assistant for processing questions and feedback",
-    llm_config=DEFAULT_CONFIG.get("llm_config", {}),
-    tool_analytics=tool_analytics,
-    llm_cache=llm_cache,
-)
+# tool_analytics = ToolAnalytics()
+# llm_cache = LLMCache()
+# agent = AnalyticsAssistantAgent(
+#     name="analytics_assistant",
+#     description="Analytics assistant for processing questions and feedback",
+#     llm_config=DEFAULT_CONFIG.get("llm_config", {}),
+#     tool_analytics=tool_analytics,
+#     llm_cache=llm_cache,
+# )
 
 # Store for question-answer pairs
 question_store: Dict[str, Dict[str, Any]] = {}
 
 # Question types
 QuestionType = Literal["Synthetic User", "Personas"]
+
+# Replace any instance of logging.getLogger(__name__) with get_logger(__name__)
+logger = get_logger(__name__)
 
 
 # Pydantic models for request/response
@@ -168,34 +172,34 @@ async def ask_question(
         question_prompt = f"[{request.question_type}] {request.question}"
 
         # Process the question
-        response = await agent.run(question_prompt)
+        # response = await agent.run(question_prompt)
 
         # Generate rationale and critic
-        rationale = await agent.run(
-            f"Explain your reasoning for the answer: {response}"
-        )
-        critic = await agent.run(f"Critically analyze this answer: {response}")
+        # rationale = await agent.run(
+        #     f"Explain your reasoning for the answer: {response}"
+        # )
+        # critic = await agent.run(f"Critically analyze this answer: {response}")
 
         # Store the question-answer pair
         question_store[question_id] = {
             "question": request.question,
             "question_type": request.question_type,
-            "answer": response,
-            "rationale": rationale,
-            "critic": critic,
+            "answer": "",
+            "rationale": "",
+            "critic": "",
             "timestamp": datetime.now(UTC),
         }
 
         return QuestionResponse(
             question_id=question_id,
-            answer=response,
-            rationale=rationale,
-            critic=critic,
+            answer="",
+            rationale="",
+            critic="",
             timestamp=datetime.now(UTC),
             question_type=request.question_type,
         )
     except Exception as e:
-        logging.error(f"Error processing question: {str(e)}")
+        logger.error(f"Error processing question: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing question",
@@ -236,23 +240,21 @@ async def submit_feedback(
         Provide a root cause analysis and recommendations.
         """
 
-        analysis = await agent.run(feedback_prompt)
+        # analysis = await agent.run(feedback_prompt)
 
         # Extract recommendations
-        recommendations_prompt = f"Based on this analysis: {analysis}, provide specific recommendations for improvement."
-        recommendations = await agent.run(recommendations_prompt)
+        # recommendations_prompt = f"Based on this analysis: {analysis}, provide specific recommendations for improvement."
+        # recommendations = await agent.run(recommendations_prompt)
 
         return FeedbackResponse(
-            root_cause_analysis={"analysis": analysis},
-            recommendations=[
-                rec.strip() for rec in recommendations.split("\n") if rec.strip()
-            ],
+            root_cause_analysis={"analysis": ""},
+            recommendations=[],
             timestamp=datetime.now(UTC),
         )
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Error processing feedback: {str(e)}")
+        logger.error(f"Error processing feedback: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error processing feedback",
@@ -269,17 +271,17 @@ async def reset_system(username: str = Depends(get_current_user)):
     """
     try:
         # Clear cache
-        llm_cache.clear()
+        # llm_cache.clear()
 
         # Reset analytics
-        tool_analytics.reset()
+        # tool_analytics.reset()
 
         # Clear question store
         question_store.clear()
 
         return {"status": "success", "message": "System reset successful"}
     except Exception as e:
-        logging.error(f"Error resetting system: {str(e)}")
+        logger.error(f"Error resetting system: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error resetting system",

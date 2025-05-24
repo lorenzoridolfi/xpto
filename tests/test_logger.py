@@ -1,4 +1,4 @@
-from src.logger import get_logger, LoggerMixin
+from autogen_extensions.log_utils import get_logger, LoggerMixin
 
 
 def test_get_logger_returns_logger():

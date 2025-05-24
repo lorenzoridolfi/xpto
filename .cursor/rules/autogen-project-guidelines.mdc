@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 ---
 description: General coding best practices for all projects and languages (global rule)
@@ -20,3 +20,4 @@ alwaysApply: true
 - Keep functions and modules small and focused; refactor them if they become too large or complex.
 - Document any significant design decisions, assumptions, or trade-offs in code comments or project documentation.
 - Avoid wildcard imports (e.g. `from module import *`); import only what is needed.
+- Remove unecessary imports.

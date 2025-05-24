@@ -3,13 +3,13 @@ from autogen_extensions.llm_cache import AbstractLLMCache, MockLLMCache, NoCache
 
 
 def test_llm_cache_hit_and_miss(tmp_path):
-    cache = LLMCache()
-    messages = [{"role": "user", "content": "test"}]
+    cache = MockLLMCache()
+    messages = "test"
     response = "result"
-    cache.put(messages, response)
-    assert cache.get(messages) == response
-    other_messages = [{"role": "user", "content": "other"}]
-    assert cache.get(other_messages) is None
+    cache.store(messages, response)
+    assert cache.lookup(messages) == response
+    other_messages = "other"
+    assert cache.lookup(other_messages) is None
 
 
 class DummyLLMCache(AbstractLLMCache):

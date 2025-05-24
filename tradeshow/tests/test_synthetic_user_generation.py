@@ -8,8 +8,12 @@ from tradeshow.src.synthetic_user_generator import (
     TracedGroupChat,
     Orchestrator,
 )
-from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput, SyntheticUserDraft
-from jsonschema import validate, ValidationError
+from tradeshow.src.pydantic_schema import (
+    SyntheticUserDraft,
+    SyntheticUserReviewed,
+    CriticOutput,
+)
+from autogen_extensions.json_validation import validate_json
 from unittest.mock import patch, AsyncMock
 from types import SimpleNamespace
 import inspect
@@ -35,6 +39,27 @@ SYNTHETIC_USER_SCHEMA_PATH = os.path.join(SCHEMA_PATH, "synthetic_user_schema.js
 #                 json.dump({"dummy": True}, f)
 
 
+def make_synthetic_user_draft(user_id="1"):
+    return SyntheticUserDraft(
+        id_usuario=user_id,
+        segmento={"valor": "Planejadores"},
+        filosofia={"valor": "Multiplicar"},
+        renda_mensal={"valor": 1000.0},
+        escolaridade={"valor": "Ensino Médio"},
+        ocupacao={"valor": "Analista"},
+        usa_banco_tradicional={"valor": True},
+        usa_banco_digital={"valor": False},
+        usa_corretora={"valor": False},
+        frequencia_poupanca_mensal={"valor": 2.0},
+        comportamento_gastos={"valor": "cauteloso"},
+        comportamento_investimentos={"valor": "basico"},
+    )
+
+
+def make_critic_output():
+    return CriticOutput(score=1.0, issues=[], recommendation="accept")
+
+
 @pytest.fixture(autouse=True)
 def patch_llm_client():
     with patch(
@@ -54,44 +79,12 @@ def patch_llm_client():
                         else "1"
                     )
                     return SimpleNamespace(
-                        content=SyntheticUser(
-                            user_id=str(user_id),
-                            segment_label={"value": "Planejadores"},
-                            philosophy={"value": "Multiplicar"},
-                            monthly_income={"value": 1000.0},
-                            education_level={"value": "Ensino Médio"},
-                            occupation={"value": "Analista"},
-                            uses_traditional_bank={"value": True},
-                            uses_digital_bank={"value": False},
-                            uses_broker={"value": False},
-                            savings_frequency_per_month={"value": 2.0},
-                            spending_behavior={"value": "cautious"},
-                            investment_behavior={"value": "basic"},
-                        )
+                        content=make_synthetic_user_draft(str(user_id))
                     )
                 if frame.f_code.co_name == "validate_user":
-                    return SimpleNamespace(
-                        content=CriticOutput(
-                            score=1.0, issues=[], recommendation="accept"
-                        )
-                    )
+                    return SimpleNamespace(content=make_critic_output())
                 if frame.f_code.co_name == "review_user":
-                    return SimpleNamespace(
-                        content=SyntheticUser(
-                            user_id="1",
-                            segment_label={"value": "Planejadores"},
-                            philosophy={"value": "Multiplicar"},
-                            monthly_income={"value": 1000.0},
-                            education_level={"value": "Ensino Médio"},
-                            occupation={"value": "Analista"},
-                            uses_traditional_bank={"value": True},
-                            uses_digital_bank={"value": False},
-                            uses_broker={"value": False},
-                            savings_frequency_per_month={"value": 2.0},
-                            spending_behavior={"value": "cautious"},
-                            investment_behavior={"value": "basic"},
-                        )
-                    )
+                    return SimpleNamespace(content=make_synthetic_user_draft("1"))
                 frame = frame.f_back
             # Fallback
             return SimpleNamespace(content=None)
@@ -104,7 +97,7 @@ def patch_llm_client():
 async def test_user_generator_agent():
     """
     Test that the UserGeneratorAgent correctly generates a synthetic user
-    as a SyntheticUser Pydantic model with the expected fields and values.
+    as a SyntheticUserDraft Pydantic model with the expected fields and values.
     """
     segment = {
         "nome": "Planejadores",
@@ -132,11 +125,14 @@ async def test_user_generator_agent():
     }
     agent_state = {"user_id": 1}
     user_id_field = "user_id"
-    agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
+    schema = {}  # Use a dummy schema for the mock
+    agent = UserGeneratorAgent(
+        segment, agent_config, agent_state, user_id_field, schema
+    )
     user = await agent.generate_user()
-    assert isinstance(user, SyntheticUser)
-    assert user.user_id == "1"
-    assert user.segment_label.value in [
+    assert isinstance(user, SyntheticUserDraft)
+    assert user.id_usuario == "1"
+    assert user.segmento.valor in [
         "Planejadores",
         "Poupadores",
         "Materialistas",
@@ -144,26 +140,26 @@ async def test_user_generator_agent():
         "Céticos",
         "Endividados",
     ]
-    assert user.monthly_income.value >= 0
-    assert user.education_level.value in [
+    assert user.renda_mensal.valor >= 0
+    assert user.escolaridade.valor in [
         "Ensino Fundamental",
         "Ensino Médio",
         "Superior Completo",
     ]
-    assert isinstance(user.occupation.value, str)
-    assert isinstance(user.uses_traditional_bank.value, bool)
-    assert isinstance(user.uses_digital_bank.value, bool)
-    assert isinstance(user.uses_broker.value, bool)
-    assert user.savings_frequency_per_month.value >= 0
-    assert user.spending_behavior.value in [
-        "cautious",
-        "immediate_consumption",
-        "basic_needs",
+    assert isinstance(user.ocupacao.valor, str)
+    assert isinstance(user.usa_banco_tradicional.valor, bool)
+    assert isinstance(user.usa_banco_digital.valor, bool)
+    assert isinstance(user.usa_corretora.valor, bool)
+    assert user.frequencia_poupanca_mensal.valor >= 0
+    assert user.comportamento_gastos.valor in [
+        "cauteloso",
+        "consumo_imediato",
+        "necessidades_basicas",
     ]
-    assert user.investment_behavior.value in [
-        "diversified",
-        "basic",
-        "none",
+    assert user.comportamento_investimentos.valor in [
+        "diversificado",
+        "basico",
+        "nenhum",
     ]
 
 
@@ -217,19 +213,19 @@ async def test_validator_agent_valid():
         "system_message": "msg",
     }
     agent = ValidatorAgent(schema, agent_config)
-    user = SyntheticUser(
-        user_id="1",
-        segment_label={"value": "Planejadores"},
-        philosophy={"value": "Multiplicar"},
-        monthly_income={"value": 1000.0},
-        education_level={"value": "Ensino Médio"},
-        occupation={"value": "Analista"},
-        uses_traditional_bank={"value": True},
-        uses_digital_bank={"value": False},
-        uses_broker={"value": False},
-        savings_frequency_per_month={"value": 2.0},
-        spending_behavior={"value": "cautious"},
-        investment_behavior={"value": "basic"},
+    user = SyntheticUserDraft(
+        id_usuario="1",
+        segmento={"valor": "Planejadores"},
+        filosofia={"valor": "Multiplicar"},
+        renda_mensal={"valor": 1000.0},
+        escolaridade={"valor": "Ensino Médio"},
+        ocupacao={"valor": "Analista"},
+        usa_banco_tradicional={"valor": True},
+        usa_banco_digital={"valor": False},
+        usa_corretora={"valor": False},
+        frequencia_poupanca_mensal={"valor": 2.0},
+        comportamento_gastos={"valor": "cauteloso"},
+        comportamento_investimentos={"valor": "basico"},
     )
     output = await agent.validate_user(user)
     assert isinstance(output, CriticOutput)
@@ -250,24 +246,24 @@ async def test_reviewer_agent():
         "system_message": "msg",
     }
     agent = ReviewerAgent(agent_config)
-    user = SyntheticUser(
-        user_id="1",
-        segment_label={"value": "Planejadores"},
-        philosophy={"value": "Multiplicar"},
-        monthly_income={"value": 1000.0},
-        education_level={"value": "Ensino Médio"},
-        occupation={"value": "Analista"},
-        uses_traditional_bank={"value": True},
-        uses_digital_bank={"value": False},
-        uses_broker={"value": False},
-        savings_frequency_per_month={"value": 2.0},
-        spending_behavior={"value": "cautious"},
-        investment_behavior={"value": "basic"},
+    user = SyntheticUserDraft(
+        id_usuario="1",
+        segmento={"valor": "Planejadores"},
+        filosofia={"valor": "Multiplicar"},
+        renda_mensal={"valor": 1000.0},
+        escolaridade={"valor": "Ensino Médio"},
+        ocupacao={"valor": "Analista"},
+        usa_banco_tradicional={"valor": True},
+        usa_banco_digital={"valor": False},
+        usa_corretora={"valor": False},
+        frequencia_poupanca_mensal={"valor": 2.0},
+        comportamento_gastos={"valor": "cauteloso"},
+        comportamento_investimentos={"valor": "basico"},
     )
     critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
     reviewed = await agent.review_user(user, critic_output)
     assert "update_synthetic_user" in reviewed
-    assert isinstance(reviewed["update_synthetic_user"], SyntheticUser)
+    assert isinstance(reviewed["update_synthetic_user"], SyntheticUserDraft)
 
 
 def test_traced_group_chat(tmp_path):
@@ -313,8 +309,8 @@ def test_segments_schema_validation():
     with open(SEGMENTS_SCHEMA_PATH) as f:
         schema = json.load(f)
     try:
-        validate(instance=data, schema=schema)
-    except ValidationError as e:
+        validate_json(instance=data, schema=schema)
+    except ValueError as e:
         pytest.fail(f"segments.json does not validate against schema: {e}")
 
 
@@ -475,6 +471,7 @@ def minimal_segment():
         "atributos": [],
     }
 
+
 def minimal_agent_config():
     return {
         "temperature": 0.1,
@@ -483,8 +480,10 @@ def minimal_agent_config():
         "system_message": "msg",
     }
 
+
 def minimal_schema():
     return {}
+
 
 def test_user_generator_agent_logs_to_tracer():
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
@@ -499,7 +498,9 @@ def test_user_generator_agent_logs_to_tracer():
         tracer=tracer,
     )
     with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        mock_llm.create.return_value.choices = [
+            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
+        ]
         agent.generate_user()
     tracer.save()
     with open(trace_path) as f:
@@ -518,7 +519,9 @@ def test_validator_agent_logs_to_tracer():
     )
     user = SyntheticUserDraft.model_validate_json("{}")
     with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        mock_llm.create.return_value.choices = [
+            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
+        ]
         agent.validate_user(user)
     tracer.save()
     with open(trace_path) as f:
@@ -538,7 +541,9 @@ def test_reviewer_agent_logs_to_tracer():
     user = SyntheticUserDraft.model_validate_json("{}")
     critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
     with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        mock_llm.create.return_value.choices = [
+            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
+        ]
         agent.review_user(user, critic_output)
     tracer.save()
     with open(trace_path) as f:
