@@ -1,7 +1,6 @@
 import json
 import os
 from typing import Any, Dict, Optional
-from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
 from autogen_extensions.log_utils import get_logger
 from autogen_extensions.json_validation import validate_json
@@ -11,10 +10,12 @@ from tradeshow.src.pydantic_schema import (
     CriticOutput,
 )
 import gc
-import openai
 import time
 import argparse
 from autogen_extensions.tracing import TracingMixin
+from autogen_extensions.config_utils import ROOT_FOLDER
+from autogen_extensions.llm_base_agent import LLMBaseAgent
+import asyncio
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -22,22 +23,12 @@ LOG_FILE = os.path.join(LOG_DIR, "synthetic_user_generator.log")
 os.makedirs(LOG_DIR, exist_ok=True)
 logger = get_logger("synthetic_user_generator")
 
-# --- LLM and API Key Handling (PRODUCTION) ---
-# Load .env from project root if present and set OPENAI_API_KEY for all downstream libraries.
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-DOTENV_PATH = os.path.join(PROJECT_ROOT, ".env")
-if os.path.exists(DOTENV_PATH):
-    logger.debug(f"Loading .env from {DOTENV_PATH}")
-    load_dotenv(dotenv_path=DOTENV_PATH)
-else:
-    logger.warning(f".env file not found at {DOTENV_PATH}")
+# --- OpenAI Client Setup ---
+# Remove: openai_client = get_openai_client()
 
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-if not openai_api_key:
-    logger.error("OPENAI_API_KEY not found in environment!")
-    raise RuntimeError("OPENAI_API_KEY not found in environment!")
-logger.info("OPENAI_API_KEY loaded from environment.")
-os.environ["OPENAI_API_KEY"] = openai_api_key
+PROJECT_ROOT = os.environ.get(
+    "AUTOGEN_ROOT_FOLDER", "/Users/lorenzo/Sync/Source/AI/autogen"
+)
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config.json")
 AGENT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config_agents.json")
@@ -46,7 +37,7 @@ AGENT_STATE_PATH = os.path.join(
 )
 SEGMENTS_PATH = os.path.join(os.path.dirname(__file__), "../input/segments.json")
 SEGMENT_SCHEMA_PATH = os.path.join(
-    PROJECT_ROOT, "tradeshow/schema/segments_schema.json"
+    ROOT_FOLDER, "tradeshow", "schema", "segments_schema.json"
 )
 AGENTS_UPDATE_PATH = os.path.join(
     os.path.dirname(__file__), "../other/agents_update.json"
@@ -137,7 +128,7 @@ class TracedGroupChat(TracingMixin):
         self.save_trace()
 
 
-class UserGeneratorAgent:
+class UserGeneratorAgent(LLMBaseAgent):
     """
     Generates a SyntheticUserDraft (before review) for a given segment.
     Optionally logs events using a tracer (any object with a .log method).
@@ -145,16 +136,15 @@ class UserGeneratorAgent:
 
     def __init__(
         self,
-        segment: Dict[str, Any],
-        agent_config: Dict[str, Any],
-        agent_state: Dict[str, int],
-        user_id_field: str,
-        schema: Dict[str, Any],
-        tracer: Optional[Any] = None,
+        segment,
+        agent_config,
+        agent_state,
+        user_id_field,
+        schema,
+        tracer=None,
+        llm_call=None,
     ):
-        logger.debug(
-            f"UserGeneratorAgent.__init__ called with segment={segment}, agent_config={agent_config}, agent_state={agent_state}, user_id_field={user_id_field}, schema=..."
-        )
+        super().__init__(llm_call=llm_call)
         self.segment = segment
         self.config = agent_config
         self.state = agent_state
@@ -168,7 +158,6 @@ class UserGeneratorAgent:
         logger.info(
             f"Initializing UserGeneratorAgent for segment: {segment.get('nome')}"
         )
-        self.llm_client = openai.ChatCompletion
         self.tracer = tracer
         logger.debug(f"UserGeneratorAgent initialized: {self.get_metadata()}")
 
@@ -182,7 +171,7 @@ class UserGeneratorAgent:
             "model": self.model,
         }
 
-    def generate_user(self) -> SyntheticUserDraft:
+    async def generate_user(self) -> SyntheticUserDraft:
         logger.debug(
             f"UserGeneratorAgent.generate_user called for segment: {self.segment.get('nome')}"
         )
@@ -203,16 +192,16 @@ class UserGeneratorAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
-        logger.debug(f"Calling OpenAI API with messages: {messages}")
+        logger.debug(f"Calling LLM with messages: {messages}")
         start_time = time.time()
         try:
-            response = openai.chat.completions.create(
-                model=self.model,
+            response = await self._call_llm(
                 messages=messages,
+                model=self.model,
                 response_format={"type": "json_object"},
             )
             elapsed = time.time() - start_time
-            logger.info(f"OpenAI user generation call took {elapsed:.2f} seconds.")
+            logger.info(f"LLM user generation call took {elapsed:.2f} seconds.")
             user_json = response.choices[0].message.content
             user = SyntheticUserDraft.model_validate_json(user_json)
             user.id_usuario = str(user_id)
@@ -222,7 +211,7 @@ class UserGeneratorAgent:
             logger.debug(f"LLM response: {user}")
             if self.tracer:
                 self.tracer.log(
-                    message="OpenAI user generation call",
+                    message="LLM user generation call",
                     agent=self.get_metadata(),
                     activity="generate_user",
                     data=user.model_dump(),
@@ -255,20 +244,13 @@ class UserGeneratorAgent:
         return user
 
 
-class ValidatorAgent:
+class ValidatorAgent(LLMBaseAgent):
     """
     Validates a SyntheticUserDraft and produces a CriticOutput. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(
-        self,
-        schema: Dict[str, Any],
-        agent_config: Dict[str, Any],
-        tracer: Optional[Any] = None,
-    ):
-        logger.debug(
-            f"ValidatorAgent.__init__ called with schema=..., agent_config={agent_config}"
-        )
+    def __init__(self, schema, agent_config, tracer=None, llm_call=None):
+        super().__init__(llm_call=llm_call)
         self.schema = schema
         self.config = agent_config
         self.temperature = self.config["temperature"]
@@ -276,7 +258,6 @@ class ValidatorAgent:
         self.system_message = AGENTS_UPDATE["ValidatorAgent"]["system_message"]
         self.name = "ValidatorAgent"
         self.model = self.config.get("model", "gpt-4o")
-        self.llm_client = openai.ChatCompletion
         self.tracer = tracer
         logger.debug(f"ValidatorAgent initialized: {self.get_metadata()}")
 
@@ -290,7 +271,7 @@ class ValidatorAgent:
             "model": self.model,
         }
 
-    def validate_user(self, user: SyntheticUserDraft) -> CriticOutput:
+    async def validate_user(self, user: SyntheticUserDraft) -> CriticOutput:
         logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
         schema_json = json.dumps(self.schema, ensure_ascii=False, indent=2)
         prompt = (
@@ -304,22 +285,22 @@ class ValidatorAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
-        logger.debug(f"Calling OpenAI API with messages: {messages}")
+        logger.debug(f"Calling LLM with messages: {messages}")
         start_time = time.time()
         try:
-            response = openai.chat.completions.create(
-                model=self.model,
+            response = await self._call_llm(
                 messages=messages,
+                model=self.model,
                 response_format={"type": "json_object"},
             )
             elapsed = time.time() - start_time
-            logger.info(f"OpenAI validation call took {elapsed:.2f} seconds.")
+            logger.info(f"LLM validation call took {elapsed:.2f} seconds.")
             output_json = response.choices[0].message.content
             output = CriticOutput.model_validate_json(output_json)
             logger.info(f"Validation result: {output}")
             if self.tracer:
                 self.tracer.log(
-                    message="OpenAI validation call",
+                    message="LLM validation call",
                     agent=self.get_metadata(),
                     activity="validate_user",
                     data={
@@ -355,20 +336,13 @@ class ValidatorAgent:
         return output
 
 
-class ReviewerAgent:
+class ReviewerAgent(LLMBaseAgent):
     """
     Reviews a SyntheticUserDraft and CriticOutput, and returns a SyntheticUserReviewed. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(
-        self,
-        agent_config: Dict[str, Any],
-        schema: Dict[str, Any],
-        tracer: Optional[Any] = None,
-    ):
-        logger.debug(
-            f"ReviewerAgent.__init__ called with agent_config={agent_config}, schema=..."
-        )
+    def __init__(self, agent_config, schema, tracer=None, llm_call=None):
+        super().__init__(llm_call=llm_call)
         self.config = agent_config
         self.temperature = self.config["temperature"]
         self.description = AGENTS_UPDATE["ReviewerAgent"]["description"]
@@ -376,7 +350,6 @@ class ReviewerAgent:
         self.name = "ReviewerAgent"
         self.model = self.config.get("model", "gpt-4o")
         self.schema = schema
-        self.llm_client = openai.ChatCompletion
         self.tracer = tracer
         logger.debug(f"ReviewerAgent initialized: {self.get_metadata()}")
 
@@ -390,7 +363,7 @@ class ReviewerAgent:
             "model": self.model,
         }
 
-    def review_user(
+    async def review_user(
         self, user: SyntheticUserDraft, critic_output: CriticOutput
     ) -> dict:
         logger.debug(
@@ -409,16 +382,16 @@ class ReviewerAgent:
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt},
         ]
-        logger.debug(f"Calling OpenAI API with messages: {messages}")
+        logger.debug(f"Calling LLM with messages: {messages}")
         start_time = time.time()
         try:
-            response = openai.chat.completions.create(
-                model=self.model,
+            response = await self._call_llm(
                 messages=messages,
+                model=self.model,
                 response_format={"type": "json_object"},
             )
             elapsed = time.time() - start_time
-            logger.info(f"OpenAI review call took {elapsed:.2f} seconds.")
+            logger.info(f"LLM review call took {elapsed:.2f} seconds.")
             improved_user_json = response.choices[0].message.content
             improved_user = SyntheticUserReviewed.model_validate_json(
                 improved_user_json
@@ -432,7 +405,7 @@ class ReviewerAgent:
             logger.info(f"Review result: {improved_user}")
             if self.tracer:
                 self.tracer.log(
-                    message="OpenAI review call",
+                    message="LLM review call",
                     agent=self.get_metadata(),
                     activity="review_user",
                     data=improved_user.model_dump(),
@@ -458,7 +431,7 @@ class ReviewerAgent:
                 message="Reviewed synthetic user",
                 agent=self.get_metadata(),
                 activity="review_user",
-                data=reviewed,
+                data={"update_synthetic_user": improved_user.model_dump()},
                 llm_input=messages,
                 llm_output=improved_user.model_dump(),
             )
@@ -483,6 +456,7 @@ class Orchestrator:
         output_file: str,
         append: bool,
         tracer: Optional[Any] = None,
+        llm_call: Optional[Any] = None,
     ):
         logger.debug(
             f"Orchestrator.__init__ called with config_path={config_path}, agent_config_path={agent_config_path}, agent_state_path={agent_state_path}, output_file={output_file}, append={append}"
@@ -508,9 +482,10 @@ class Orchestrator:
         self.tracer = tracer or TracedGroupChat(
             os.path.join(PROJECT_ROOT, self.config["log_file"])
         )
+        self.llm_call = llm_call
         logger.info(f"Orchestrator output_file set to {self.output_file}")
 
-    def run(self):
+    async def run(self):
         logger.info("Orchestrator.run started")
         all_users = []
         # Handle append logic
@@ -556,12 +531,19 @@ class Orchestrator:
                 self.user_id_field,
                 self.schema,
                 tracer=self.tracer,
+                llm_call=self.llm_call,
             )
             validator = ValidatorAgent(
-                self.schema, self.agent_config["ValidatorAgent"], tracer=self.tracer
+                self.schema,
+                self.agent_config["ValidatorAgent"],
+                tracer=self.tracer,
+                llm_call=self.llm_call,
             )
             reviewer = ReviewerAgent(
-                self.agent_config["ReviewerAgent"], self.schema, tracer=self.tracer
+                self.agent_config["ReviewerAgent"],
+                self.schema,
+                tracer=self.tracer,
+                llm_call=self.llm_call,
             )
             segment_users = []
             for i in range(num_usuarios):
@@ -581,11 +563,11 @@ class Orchestrator:
                 logger.debug(
                     f"Generating user {i+1}/{num_usuarios} for segment {segment['nome']}"
                 )
-                user = generator.generate_user()
+                user = await generator.generate_user()
                 logger.debug(
                     f"Validating user {i+1}/{num_usuarios} for segment {segment['nome']}"
                 )
-                critic_output = validator.validate_user(user)
+                critic_output = await validator.validate_user(user)
                 if critic_output.recommendation != "accept":
                     logger.warning(
                         f"Validation failed for user {i+1} in segment {segment['nome']}"
@@ -602,7 +584,7 @@ class Orchestrator:
                     logger.debug(
                         f"Reviewing user {i+1}/{num_usuarios} for segment {segment['nome']}"
                     )
-                    reviewed = reviewer.review_user(user, critic_output)
+                    reviewed = await reviewer.review_user(user, critic_output)
                     user = reviewed["update_synthetic_user"]
                 else:
                     logger.info(
@@ -648,4 +630,4 @@ if __name__ == "__main__":
     orchestrator = Orchestrator(
         CONFIG_PATH, AGENT_CONFIG_PATH, AGENT_STATE_PATH, args.output, args.append
     )
-    orchestrator.run()
+    asyncio.run(orchestrator.run())

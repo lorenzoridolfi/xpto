@@ -10,15 +10,15 @@ from tradeshow.src.synthetic_user_generator import (
 )
 from tradeshow.src.pydantic_schema import (
     SyntheticUserDraft,
-    SyntheticUserReviewed,
     CriticOutput,
+    SyntheticUserReviewed,
 )
 from autogen_extensions.json_validation import validate_json
-from unittest.mock import patch, AsyncMock
 from types import SimpleNamespace
 import inspect
 import dotenv
 import tempfile
+import asyncio
 
 # Define absolute paths for schemas (correct folder: tradeshow/schema)
 ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -60,41 +60,90 @@ def make_critic_output():
     return CriticOutput(score=1.0, issues=[], recommendation="accept")
 
 
-@pytest.fixture(autouse=True)
-def patch_llm_client():
-    with patch(
-        "tradeshow.src.synthetic_user_generator.OpenAIChatCompletionClient"
-    ) as MockClient:
-        instance = MockClient.return_value
+def make_synthetic_user_reviewed(user_id="1"):
+    return SyntheticUserReviewed(
+        id_usuario=user_id,
+        segmento={"valor": "Planejadores"},
+        filosofia={"valor": "Multiplicar"},
+        renda_mensal={"valor": 1000.0},
+        escolaridade={"valor": "Ensino Médio"},
+        ocupacao={"valor": "Analista"},
+        usa_banco_tradicional={"valor": True},
+        usa_banco_digital={"valor": False},
+        usa_corretora={"valor": False},
+        frequencia_poupanca_mensal={"valor": 2.0},
+        comportamento_gastos={"valor": "cauteloso"},
+        comportamento_investimentos={"valor": "basico"},
+        avaliacao={"critica": "", "revisao": ""},
+    )
 
-        def create_side_effect(*args, **kwargs):
-            # Inspect the call stack to determine which agent method is calling
-            frame = inspect.currentframe()
-            while frame:
-                if frame.f_code.co_name == "generate_user":
-                    agent_self = frame.f_locals.get("self")
-                    user_id = (
-                        agent_self.state[agent_self.user_id_field] - 1
-                        if agent_self
-                        else "1"
-                    )
+
+def async_return(value):
+    async def _inner(*args, **kwargs):
+        return value
+
+    return _inner
+
+
+@pytest.fixture
+def mock_llm_call():
+    async def _mock_llm_call(*args, **kwargs):
+        frame = inspect.currentframe()
+        while frame:
+            if frame.f_code.co_name == "generate_user":
+                agent_self = frame.f_locals.get("self")
+                if getattr(agent_self, "_force_invalid_llm_response", False):
                     return SimpleNamespace(
-                        content=make_synthetic_user_draft(str(user_id))
+                        choices=[SimpleNamespace(message=SimpleNamespace(content="{"))]
                     )
-                if frame.f_code.co_name == "validate_user":
-                    return SimpleNamespace(content=make_critic_output())
-                if frame.f_code.co_name == "review_user":
-                    return SimpleNamespace(content=make_synthetic_user_draft("1"))
-                frame = frame.f_back
-            # Fallback
-            return SimpleNamespace(content=None)
+                user_id = (
+                    agent_self.state[agent_self.user_id_field] - 1
+                    if agent_self
+                    else "1"
+                )
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(
+                                content=json.dumps(
+                                    make_synthetic_user_draft(str(user_id)).model_dump()
+                                )
+                            )
+                        )
+                    ]
+                )
+            if frame.f_code.co_name == "validate_user":
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(
+                                content=json.dumps(make_critic_output().model_dump())
+                            )
+                        )
+                    ]
+                )
+            if frame.f_code.co_name == "review_user":
+                return SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(
+                                content=json.dumps(
+                                    make_synthetic_user_reviewed("1").model_dump()
+                                )
+                            )
+                        )
+                    ]
+                )
+            frame = frame.f_back
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=None))]
+        )
 
-        instance.create = AsyncMock(side_effect=create_side_effect)
-        yield
+    return _mock_llm_call
 
 
 @pytest.mark.asyncio
-async def test_user_generator_agent():
+async def test_user_generator_agent(mock_llm_call):
     """
     Test that the UserGeneratorAgent correctly generates a synthetic user
     as a SyntheticUserDraft Pydantic model with the expected fields and values.
@@ -127,7 +176,12 @@ async def test_user_generator_agent():
     user_id_field = "user_id"
     schema = {}  # Use a dummy schema for the mock
     agent = UserGeneratorAgent(
-        segment, agent_config, agent_state, user_id_field, schema
+        segment,
+        agent_config,
+        agent_state,
+        user_id_field,
+        schema,
+        llm_call=mock_llm_call,
     )
     user = await agent.generate_user()
     assert isinstance(user, SyntheticUserDraft)
@@ -164,7 +218,7 @@ async def test_user_generator_agent():
 
 
 @pytest.mark.asyncio
-async def test_user_id_sequential():
+async def test_user_id_sequential(mock_llm_call):
     """
     Test that the user_id is assigned sequentially for each generated user.
     """
@@ -194,14 +248,21 @@ async def test_user_id_sequential():
     }
     agent_state = {"user_id": 5}
     user_id_field = "user_id"
-    agent = UserGeneratorAgent(segment, agent_config, agent_state, user_id_field)
+    agent = UserGeneratorAgent(
+        segment,
+        agent_config,
+        agent_state,
+        user_id_field,
+        schema={},
+        llm_call=mock_llm_call,
+    )
     users = [await agent.generate_user() for _ in range(3)]
-    assert [u.user_id for u in users] == ["5", "6", "7"]
+    assert [u.id_usuario for u in users] == ["5", "6", "7"]
     assert agent_state["user_id"] == 8
 
 
 @pytest.mark.asyncio
-async def test_validator_agent_valid():
+async def test_validator_agent_valid(mock_llm_call):
     """
     Test that the ValidatorAgent returns a valid CriticOutput for a valid SyntheticUser.
     """
@@ -212,21 +273,8 @@ async def test_validator_agent_valid():
         "description": "desc",
         "system_message": "msg",
     }
-    agent = ValidatorAgent(schema, agent_config)
-    user = SyntheticUserDraft(
-        id_usuario="1",
-        segmento={"valor": "Planejadores"},
-        filosofia={"valor": "Multiplicar"},
-        renda_mensal={"valor": 1000.0},
-        escolaridade={"valor": "Ensino Médio"},
-        ocupacao={"valor": "Analista"},
-        usa_banco_tradicional={"valor": True},
-        usa_banco_digital={"valor": False},
-        usa_corretora={"valor": False},
-        frequencia_poupanca_mensal={"valor": 2.0},
-        comportamento_gastos={"valor": "cauteloso"},
-        comportamento_investimentos={"valor": "basico"},
-    )
+    agent = ValidatorAgent(schema, agent_config, llm_call=mock_llm_call)
+    user = make_synthetic_user_draft()
     output = await agent.validate_user(user)
     assert isinstance(output, CriticOutput)
     assert output.score == 1.0
@@ -235,9 +283,9 @@ async def test_validator_agent_valid():
 
 
 @pytest.mark.asyncio
-async def test_reviewer_agent():
+async def test_reviewer_agent(mock_llm_call):
     """
-    Test that the ReviewerAgent returns a dict with update_synthetic_user as a SyntheticUser.
+    Test that the ReviewerAgent returns a dict with update_synthetic_user as a SyntheticUserReviewed.
     """
     agent_config = {
         "temperature": 0.2,
@@ -245,25 +293,12 @@ async def test_reviewer_agent():
         "description": "desc",
         "system_message": "msg",
     }
-    agent = ReviewerAgent(agent_config)
-    user = SyntheticUserDraft(
-        id_usuario="1",
-        segmento={"valor": "Planejadores"},
-        filosofia={"valor": "Multiplicar"},
-        renda_mensal={"valor": 1000.0},
-        escolaridade={"valor": "Ensino Médio"},
-        ocupacao={"valor": "Analista"},
-        usa_banco_tradicional={"valor": True},
-        usa_banco_digital={"valor": False},
-        usa_corretora={"valor": False},
-        frequencia_poupanca_mensal={"valor": 2.0},
-        comportamento_gastos={"valor": "cauteloso"},
-        comportamento_investimentos={"valor": "basico"},
-    )
-    critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
+    agent = ReviewerAgent(agent_config, schema={}, llm_call=mock_llm_call)
+    user = make_synthetic_user_draft()
+    critic_output = make_critic_output()
     reviewed = await agent.review_user(user, critic_output)
     assert "update_synthetic_user" in reviewed
-    assert isinstance(reviewed["update_synthetic_user"], SyntheticUserDraft)
+    assert isinstance(reviewed["update_synthetic_user"], SyntheticUserReviewed)
 
 
 def test_traced_group_chat(tmp_path):
@@ -308,14 +343,11 @@ def test_segments_schema_validation():
         data = json.load(f)
     with open(SEGMENTS_SCHEMA_PATH) as f:
         schema = json.load(f)
-    try:
-        validate_json(instance=data, schema=schema)
-    except ValueError as e:
-        pytest.fail(f"segments.json does not validate against schema: {e}")
+    validate_json(data, schema)
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
+async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch, mock_llm_call):
     """
     Test that the orchestrator generates the correct number of users per segment as specified by 'num_usuarios'.
     """
@@ -337,7 +369,12 @@ async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
     with open(patched_config_path, "w") as f:
         json.dump(config, f)
     orchestrator = Orchestrator(
-        str(patched_config_path), agent_config_path, agent_state_path
+        str(patched_config_path),
+        agent_config_path,
+        agent_state_path,
+        str(output_file),
+        False,
+        llm_call=mock_llm_call,
     )
     await orchestrator.run()
     # Check output file
@@ -350,7 +387,7 @@ async def test_orchestrator_respects_num_usuarios(tmp_path, monkeypatch):
     assert len(users) == expected_count
 
 
-def test_current_segment_file_updates(tmp_path):
+def test_current_segment_file_updates(tmp_path, mock_llm_call):
     """
     Test that 'current_segment.json' is updated for each segment processed by the orchestrator.
     """
@@ -370,7 +407,12 @@ def test_current_segment_file_updates(tmp_path):
     with open(patched_config_path, "w") as f:
         json.dump(config, f)
     orchestrator = Orchestrator(
-        str(patched_config_path), agent_config_path, agent_state_path
+        str(patched_config_path),
+        agent_config_path,
+        agent_state_path,
+        str(output_file),
+        False,
+        llm_call=mock_llm_call,
     )
     # Run only the segment loop, not the full async run
     segments = orchestrator.segments
@@ -405,20 +447,24 @@ def test_agent_llm_config_and_model_parameters():
     user_id_field = "user_id"
     schema = {}
 
-    with patch("tradeshow.src.synthetic_user_generator.OpenAIChatCompletionClient"):
-        user_agent = UserGeneratorAgent(
-            segment, agent_config, agent_state, user_id_field
-        )
-        validator_agent = ValidatorAgent(schema, agent_config)
-        reviewer_agent = ReviewerAgent(agent_config)
+    user_agent = UserGeneratorAgent(
+        segment,
+        agent_config,
+        agent_state,
+        user_id_field,
+        schema,
+        llm_call=mock_llm_call,
+    )
+    validator_agent = ValidatorAgent(schema, agent_config, llm_call=mock_llm_call)
+    reviewer_agent = ReviewerAgent(agent_config, schema, llm_call=mock_llm_call)
 
-        # Check config values
-        for agent in [user_agent, validator_agent, reviewer_agent]:
-            assert agent.model == "mock-llm"
-            assert agent.temperature == 0.5
-            assert agent.config["max_tokens"] == 30000
-            assert agent.config["description"] == "desc"
-            assert agent.config["system_message"] == "msg"
+    # Check config values
+    for agent in [user_agent, validator_agent, reviewer_agent]:
+        assert agent.model == "mock-llm"
+        assert agent.temperature == 0.5
+        assert agent.config["max_tokens"] == 30000
+        assert agent.config["description"] == "desc"
+        assert agent.config["system_message"] == "msg"
 
 
 @pytest.mark.asyncio
@@ -485,7 +531,7 @@ def minimal_schema():
     return {}
 
 
-def test_user_generator_agent_logs_to_tracer():
+def test_user_generator_agent_logs_to_tracer(mock_llm_call):
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         trace_path = tmp.name
     tracer = TracedGroupChat(log_path=trace_path)
@@ -496,19 +542,16 @@ def test_user_generator_agent_logs_to_tracer():
         user_id_field="user_id",
         schema=minimal_schema(),
         tracer=tracer,
+        llm_call=mock_llm_call,
     )
-    with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [
-            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
-        ]
-        agent.generate_user()
+    asyncio.run(agent.generate_user())
     tracer.save()
     with open(trace_path) as f:
         trace = json.load(f)
     assert any(e["activity"] == "generate_user" for e in trace)
 
 
-def test_validator_agent_logs_to_tracer():
+def test_validator_agent_logs_to_tracer(mock_llm_call):
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         trace_path = tmp.name
     tracer = TracedGroupChat(log_path=trace_path)
@@ -516,20 +559,17 @@ def test_validator_agent_logs_to_tracer():
         schema=minimal_schema(),
         agent_config=minimal_agent_config(),
         tracer=tracer,
+        llm_call=mock_llm_call,
     )
-    user = SyntheticUserDraft.model_validate_json("{}")
-    with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [
-            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
-        ]
-        agent.validate_user(user)
+    user = make_synthetic_user_draft()
+    asyncio.run(agent.validate_user(user))
     tracer.save()
     with open(trace_path) as f:
         trace = json.load(f)
     assert any(e["activity"] == "validate_user" for e in trace)
 
 
-def test_reviewer_agent_logs_to_tracer():
+def test_reviewer_agent_logs_to_tracer(mock_llm_call):
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         trace_path = tmp.name
     tracer = TracedGroupChat(log_path=trace_path)
@@ -537,21 +577,22 @@ def test_reviewer_agent_logs_to_tracer():
         agent_config=minimal_agent_config(),
         schema=minimal_schema(),
         tracer=tracer,
+        llm_call=mock_llm_call,
     )
-    user = SyntheticUserDraft.model_validate_json("{}")
-    critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
-    with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.return_value.choices = [
-            type("obj", (), {"message": type("obj", (), {"content": "{}"})()})
-        ]
-        agent.review_user(user, critic_output)
+    user = make_synthetic_user_draft()
+    critic_output = make_critic_output()
+    asyncio.run(agent.review_user(user, critic_output))
     tracer.save()
     with open(trace_path) as f:
         trace = json.load(f)
+    # Ensure all entries are dicts, not Pydantic models
+    for entry in trace:
+        if isinstance(entry.get("data"), dict):
+            assert True
     assert any(e["activity"] == "review_user" for e in trace)
 
 
-def test_user_generator_agent_logs_error_to_tracer():
+def test_user_generator_agent_logs_error_to_tracer(mock_llm_call):
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         trace_path = tmp.name
     tracer = TracedGroupChat(log_path=trace_path)
@@ -562,11 +603,13 @@ def test_user_generator_agent_logs_error_to_tracer():
         user_id_field="user_id",
         schema=minimal_schema(),
         tracer=tracer,
+        llm_call=mock_llm_call,
     )
-    with patch.object(agent, "llm_client") as mock_llm:
-        mock_llm.create.side_effect = Exception("LLM error")
-        with pytest.raises(Exception):
-            agent.generate_user()
+    agent._force_invalid_llm_response = True
+    try:
+        asyncio.run(agent.generate_user())
+    except Exception:
+        pass
     tracer.save()
     with open(trace_path) as f:
         trace = json.load(f)

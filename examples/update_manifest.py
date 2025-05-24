@@ -15,7 +15,7 @@ import hashlib
 import datetime
 from dotenv import load_dotenv
 from typing import Dict, Any
-import openai
+from autogen_extensions.openai_utils import get_openai_client
 from autogen import AssistantAgent
 from autogen_extensions.auto_tracing_group_chat import AutoTracingGroupChat
 from autogen_extensions.log_utils import get_logger
@@ -38,11 +38,8 @@ get_logger(__name__).info(f"Project root: {PROJECT_ROOT}")
 # Load .env from the project root
 load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-if not openai_api_key:
-    raise RuntimeError("OPENAI_API_KEY not found in environment!")
-
-os.environ["OPENAI_API_KEY"] = openai_api_key
+# --- OpenAI Client Setup ---
+openai_client = get_openai_client()
 
 # Update paths to use project root
 DEFAULT_CONFIG_PATH = os.path.join(
@@ -128,7 +125,7 @@ MINIMAL_MANIFEST_SCHEMA = {
 
 # --- Agent Classes ---
 llm_config = {
-    "api_key": openai_api_key,
+    "api_key": openai_client.api_key,
     "model": "gpt-4",
 }
 
@@ -200,7 +197,7 @@ class SummarizerAgent(AssistantAgent):
         get_logger(__name__).debug(
             f"SummarizerAgent: Starting OpenAI API call for file: {file_path}"
         )
-        response = openai.chat.completions.create(
+        response = openai_client.chat.completions.create(
             model=llm_config["model"],
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000,

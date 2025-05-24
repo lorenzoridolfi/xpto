@@ -11,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Literal
 import secrets
-import logging
 from datetime import datetime, UTC
 import uuid
 import os
@@ -169,7 +168,7 @@ async def ask_question(
         question_id = generate_question_id()
 
         # Prepare the question with type context
-        question_prompt = f"[{request.question_type}] {request.question}"
+        # question_prompt = f"[{request.question_type}] {request.question}"
 
         # Process the question
         # response = await agent.run(question_prompt)
@@ -226,19 +225,16 @@ async def submit_feedback(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Question ID not found"
             )
 
-        # Get the original question-answer pair
-        qa_pair = question_store[request.question_id]
-
         # Process feedback
-        feedback_prompt = f"""
-        Analyze the following feedback:
-        Question: {qa_pair['question']}
-        Original Answer: {qa_pair['answer']}
-        Feedback: {request.feedback}
-        Rating: {request.rating if request.rating else 'Not provided'}
-        
-        Provide a root cause analysis and recommendations.
-        """
+        # feedback_prompt = f"""
+        # Analyze the following feedback:
+        # Question: {qa_pair['question']}
+        # Original Answer: {qa_pair['answer']}
+        # Feedback: {request.feedback}
+        # Rating: {request.rating if request.rating else 'Not provided'}
+        #
+        # Provide a root cause analysis and recommendations.
+        # """
 
         # analysis = await agent.run(feedback_prompt)
 

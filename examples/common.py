@@ -4,11 +4,11 @@ import jsonschema
 import hashlib
 from typing import Any, Dict, Tuple, List
 import datetime
-from openai import OpenAI
+from autogen_extensions.openai_utils import get_openai_client
 from pydantic import BaseModel
 from autogen_extensions.json_validation import validate_json
 
-client = OpenAI()
+client = get_openai_client()
 
 
 class JsonSchemaValidationError(Exception):

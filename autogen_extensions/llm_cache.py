@@ -25,15 +25,14 @@ class AbstractLLMCache(ABC):
 
 class MockLLMCache(AbstractLLMCache):
     """
-    Mock cache for testing. Returns pre-defined responses or simulates cache behavior.
+    Mock cache for testing. Stores and retrieves responses in-memory.
     """
 
-    def __init__(self, response_map=None):
-        self.response_map = response_map or {}
-        self.stored = {}
+    def __init__(self, initial: Optional[dict[str, Any]] = None):
+        self.stored = dict(initial) if initial is not None else {}
 
     def lookup(self, variable_prompt: str) -> Optional[Any]:
-        return self.response_map.get(variable_prompt)
+        return self.stored.get(variable_prompt)
 
     def store(self, variable_prompt: str, response: Any):
         self.stored[variable_prompt] = response
