@@ -4,14 +4,19 @@ globs:
 alwaysApply: false
 ---
 ---
-description: Conventions and restrictions for the Autogen project (project-specific rules)
+description: General coding best practices for all projects and languages (global rule)
 alwaysApply: true
 ---
-- Follow the Autogen project’s established architecture and module organization. Place new code in the appropriate location within the project structure (for example, put new agent classes in the `autogen/agents/` module, utility functions in `autogen/utils/`, etc.). Do not create miscellaneous or disorganized files—keep the codebase structured according to the project’s existing pattern and separation of concerns.
-- Adhere to Autogen-specific naming conventions. For instance, if the project uses a suffix like **`Agent`** for all agent classes or certain prefixes for module names, apply the same pattern for any new classes or files. Ensure that new identifiers (class names, function names, filenames) are consistent with the naming scheme already used in Autogen so that they blend in naturally with the existing code.
-- Use type annotations and docstrings consistently throughout the Autogen project. Every function, method, and class (including internal/helper ones) should have type hints and a docstring. Follow the project’s chosen docstring style (e.g. Google-style docstrings with **Args**, **Returns**, **Raises** sections) to maintain uniform documentation. This makes it easier for all contributors to understand new code.
-- All new code must be accompanied by appropriate tests. The Autogen project uses **pytest** for its test suite, so add new test functions under the `tests/` directory whenever you implement a new feature or fix a bug. Aim to maintain high test coverage: include tests for both typical use cases and edge cases. Make sure all tests pass (and existing tests are not broken) before considering code complete.
-- Leverage the project’s existing utilities and frameworks rather than introducing redundant code. For example, if Autogen provides helper functions or classes for interacting with external APIs or for formatting data, use those instead of writing new ones. Similarly, use the project’s logging setup (e.g. using the centralized logger or configuration in Autogen) for any debug or info output – avoid using raw `print()` statements for logging. This ensures consistency and that all parts of the project work together seamlessly.
-- Do not add new third-party dependencies without approval. If a functionality can be achieved with the Python standard library or already-included packages, prefer that. If a new library is truly needed, discuss it with the maintainers and update the project’s requirements file (e.g. `requirements.txt`) accordingly, making sure to pin versions as appropriate. All dependencies must be compatible with the project’s licensing and not excessively increase installation or build complexity.
-- Ensure that any automated loops or agent interactions have proper safeguards. Autogen may involve agents collaborating or running iteratively – implement clear stopping conditions or timeouts for such processes to avoid infinite loops or uncontrolled resource usage. Network calls (for example, calls to external AI APIs) should include error handling and respect any retry/backoff policies defined by the project so that the system is resilient to transient failures.
-- All configuration values, secrets, or API keys should be sourced from the Autogen project’s configuration system or environment variables. Never hard-code sensitive information (like API keys or tokens) in the code. For example, if the project expects an OpenAI API key via an environment variable, use that mechanism. This keeps sensitive data out of the codebase and aligns with the project’s security practices.
+- Follow the project's style guide and language-specific naming conventions for consistent code readability.
+- Use a code formatter (e.g. Black) or linter (e.g. flake8) to enforce a consistent code style.
+- Use descriptive names for variables, functions, and classes.
+- Use type hints for function parameters and return types to improve code clarity and catch errors early.
+- Follow DRY (Don't Repeat Yourself) and KISS (Keep It Simple) principles; avoid unnecessary complexity and duplication.
+- Prefer reusing existing classes, functions, variables, and configurations from the `autogen_extensions` folder before creating new ones.
+- Always implement robust and maintainable solutions; avoid cutting corners in your implementation.
+- Write unit tests for new features and ensure tests cover core functionality and edge cases.
+- Use mocks (mocked classes or functions) in tests only when absolutely necessary, and ensure they do not reduce test coverage.
+- Always include or update docstrings for all functions, classes, and methods.
+- Keep functions and modules small and focused; refactor them if they become too large or complex.
+- Document any significant design decisions, assumptions, or trade-offs in code comments or project documentation.
+- Avoid wildcard imports (e.g. `from module import *`); import only what is needed.

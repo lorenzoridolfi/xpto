@@ -8,12 +8,13 @@ from tradeshow.src.synthetic_user_generator import (
     TracedGroupChat,
     Orchestrator,
 )
-from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput
+from tradeshow.src.pydantic_schema import SyntheticUser, CriticOutput, SyntheticUserDraft
 from jsonschema import validate, ValidationError
 from unittest.mock import patch, AsyncMock
 from types import SimpleNamespace
 import inspect
 import dotenv
+import tempfile
 
 # Define absolute paths for schemas (correct folder: tradeshow/schema)
 ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -437,3 +438,131 @@ async def test_load_openai_api_key_from_env():
     assert (
         key is not None and key.strip() != ""
     ), "OPENAI_API_KEY not loaded from .env or is empty"
+
+
+def test_traced_group_chat_log_and_save():
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        path = tmp.name
+    tracer = TracedGroupChat(log_path=path)
+    tracer.log(
+        message="Test message",
+        agent={"name": "TestAgent"},
+        activity="test_activity",
+        data={"foo": "bar"},
+        tool_call=None,
+        llm_input=[{"role": "user", "content": "hi"}],
+        llm_output="response",
+        duration_seconds=1.23,
+    )
+    tracer.save()
+    with open(path) as f:
+        data = json.load(f)
+    assert len(data) == 1
+    entry = data[0]
+    assert entry["message"] == "Test message"
+    assert entry["activity"] == "test_activity"
+    assert entry["agent"]["name"] == "TestAgent"
+    assert entry["data"]["foo"] == "bar"
+    assert entry["llm_output"] == "response"
+    assert entry["duration_seconds"] == 1.23
+    os.remove(path)
+
+
+def minimal_segment():
+    return {
+        "nome": "TestSegment",
+        "descricao": "desc",
+        "atributos": [],
+    }
+
+def minimal_agent_config():
+    return {
+        "temperature": 0.1,
+        "model": "gpt-4o",
+        "description": "desc",
+        "system_message": "msg",
+    }
+
+def minimal_schema():
+    return {}
+
+def test_user_generator_agent_logs_to_tracer():
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        trace_path = tmp.name
+    tracer = TracedGroupChat(log_path=trace_path)
+    agent = UserGeneratorAgent(
+        segment=minimal_segment(),
+        agent_config=minimal_agent_config(),
+        agent_state={"user_id": 1},
+        user_id_field="user_id",
+        schema=minimal_schema(),
+        tracer=tracer,
+    )
+    with patch.object(agent, "llm_client") as mock_llm:
+        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        agent.generate_user()
+    tracer.save()
+    with open(trace_path) as f:
+        trace = json.load(f)
+    assert any(e["activity"] == "generate_user" for e in trace)
+
+
+def test_validator_agent_logs_to_tracer():
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        trace_path = tmp.name
+    tracer = TracedGroupChat(log_path=trace_path)
+    agent = ValidatorAgent(
+        schema=minimal_schema(),
+        agent_config=minimal_agent_config(),
+        tracer=tracer,
+    )
+    user = SyntheticUserDraft.model_validate_json("{}")
+    with patch.object(agent, "llm_client") as mock_llm:
+        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        agent.validate_user(user)
+    tracer.save()
+    with open(trace_path) as f:
+        trace = json.load(f)
+    assert any(e["activity"] == "validate_user" for e in trace)
+
+
+def test_reviewer_agent_logs_to_tracer():
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        trace_path = tmp.name
+    tracer = TracedGroupChat(log_path=trace_path)
+    agent = ReviewerAgent(
+        agent_config=minimal_agent_config(),
+        schema=minimal_schema(),
+        tracer=tracer,
+    )
+    user = SyntheticUserDraft.model_validate_json("{}")
+    critic_output = CriticOutput(score=1.0, issues=[], recommendation="accept")
+    with patch.object(agent, "llm_client") as mock_llm:
+        mock_llm.create.return_value.choices = [type("obj", (), {"message": type("obj", (), {"content": "{}"})()})]
+        agent.review_user(user, critic_output)
+    tracer.save()
+    with open(trace_path) as f:
+        trace = json.load(f)
+    assert any(e["activity"] == "review_user" for e in trace)
+
+
+def test_user_generator_agent_logs_error_to_tracer():
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        trace_path = tmp.name
+    tracer = TracedGroupChat(log_path=trace_path)
+    agent = UserGeneratorAgent(
+        segment=minimal_segment(),
+        agent_config=minimal_agent_config(),
+        agent_state={"user_id": 1},
+        user_id_field="user_id",
+        schema=minimal_schema(),
+        tracer=tracer,
+    )
+    with patch.object(agent, "llm_client") as mock_llm:
+        mock_llm.create.side_effect = Exception("LLM error")
+        with pytest.raises(Exception):
+            agent.generate_user()
+    tracer.save()
+    with open(trace_path) as f:
+        trace = json.load(f)
+    assert any("error" in e["message"].lower() for e in trace)

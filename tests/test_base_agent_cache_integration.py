@@ -1,5 +1,5 @@
 import pytest
-from autogen_extensions.base_agent_cache import BaseAgent
+from autogen_extensions.base_agent import BaseAgent
 from autogen_extensions.llm_cache import MockLLMCache, NoCacheLLMCache
 
 

@@ -30,6 +30,16 @@ A key feature of this architecture is the use of **dependency injection** for bo
 +-------------------+
          |
          v
++-------------------+
+|  SpawnExecutor    |
++-------------------+
+         |
+         v
++-------------------+
+|  Join/Aggregation |
++-------------------+
+         |
+         v
 +-------------------------------+
 | IdeaBrainstormer               |
 |  (exec strategy, llm cache)    |
@@ -58,9 +68,11 @@ A key feature of this architecture is the use of **dependency injection** for bo
 
 ## Result Collection and Communication in the Spawn-Join Pattern
 
-By default, the **SpawnJoinOrchestrator** and its execution strategies return a list of results after all tasks complete. This is sufficient for most agent-based, LLM, or batch-processing workflows:
-- ThreadPool, ProcessPool, and asyncio.gather all return results as a list (order matches submission).
-- The orchestrator summarizes or aggregates these results in a single step.
+The **SpawnExecutor** is responsible only for executing a list of zero-argument callables using the provided execution strategy and returning a list of results. **Join/aggregation is a separate concern** and can be handled by a dedicated function or class after execution.
+
+- This separation of concerns makes the system more modular and reusable.
+- The join/aggregation step can be customized for different workflows (e.g., summarization, filtering, reduction).
+- The default pattern (returning a list of results) is sufficient for most agent-based, LLM, or batch-processing workflows.
 
 **Advanced Coordination (Optional):**
 - If you need to stream results, handle partial failures, or coordinate between processes (e.g., for distributed or stateful workflows), you can extend the execution strategy interface to support callbacks, streaming, or event hooks.
@@ -87,7 +99,7 @@ Create a class that, given a list of users and a question, asks the question to 
 - For each user:
   - Uses an agent to generate the user's answer to the question
   - Can run these calls in parallel (e.g., ThreadPoolExecutor via strategy)
-- Collects all answers
-- Uses a summarization agent to produce a summary of the answers
+- Collects all answers (using SpawnExecutor)
+- Uses a summarization agent or function to produce a summary of the answers (join/aggregation)
 
 // ... rest of the document unchanged ... 

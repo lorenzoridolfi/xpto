@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from jsonschema import validate, ValidationError
 from dotenv import load_dotenv
 from pydantic import ValidationError as PydanticValidationError
@@ -17,6 +17,7 @@ import openai
 import pydantic
 import time
 import argparse
+from autogen_extensions.tracing import TracingMixin
 
 # --- Logging Configuration ---
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
@@ -104,15 +105,13 @@ def validate_segments_schema():
 validate_segments_schema()
 
 
-class TracedGroupChat:
+class TracedGroupChat(TracingMixin):
     """
     Class responsible for logging all actions and messages for traceability.
     Each log entry includes agent metadata and activity context.
     """
-
     def __init__(self, log_path: str):
-        self.log_path = log_path
-        self.trace = []
+        super().__init__(trace_path=log_path)
         logger.info(f"Trace log initialized at {log_path}")
 
     def log(
@@ -126,7 +125,6 @@ class TracedGroupChat:
         llm_output: Any = None,
         duration_seconds: float = None,
     ):
-        logger.debug(f"Trace log: {message} | Activity: {activity} | Agent: {agent}")
         entry = {
             "message": message,
             "activity": activity,
@@ -143,25 +141,16 @@ class TracedGroupChat:
             entry["llm_output"] = llm_output
         if duration_seconds is not None:
             entry["duration_seconds"] = duration_seconds
-        self.trace.append(entry)
+        self.log_event("trace", entry)
 
     def save(self):
-        logger.info(f"Saving trace log to {self.log_path}")
-
-        def pydantic_encoder(obj):
-            if isinstance(obj, pydantic.BaseModel):
-                return obj.model_dump()
-            raise TypeError(
-                f"Object of type {obj.__class__.__name__} is not JSON serializable"
-            )
-
-        with open(self.log_path, "w") as f:
-            json.dump(self.trace, f, indent=2, default=pydantic_encoder)
+        self.save_trace()
 
 
 class UserGeneratorAgent:
     """
     Generates a SyntheticUserDraft (before review) for a given segment.
+    Optionally logs events using a tracer (any object with a .log method).
     """
 
     def __init__(
@@ -171,6 +160,7 @@ class UserGeneratorAgent:
         agent_state: Dict[str, int],
         user_id_field: str,
         schema: Dict[str, Any],
+        tracer: Optional[Any] = None,
     ):
         logger.debug(
             f"UserGeneratorAgent.__init__ called with segment={segment}, agent_config={agent_config}, agent_state={agent_state}, user_id_field={user_id_field}, schema=..."
@@ -189,6 +179,7 @@ class UserGeneratorAgent:
             f"Initializing UserGeneratorAgent for segment: {segment.get('nome')}"
         )
         self.llm_client = openai.ChatCompletion
+        self.tracer = tracer
         logger.debug(f"UserGeneratorAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
@@ -201,7 +192,7 @@ class UserGeneratorAgent:
             "model": self.model,
         }
 
-    def generate_user(self, tracer: TracedGroupChat = None) -> SyntheticUserDraft:
+    def generate_user(self) -> SyntheticUserDraft:
         logger.debug(
             f"UserGeneratorAgent.generate_user called for segment: {self.segment.get('nome')}"
         )
@@ -239,8 +230,8 @@ class UserGeneratorAgent:
                 f"Generated id_usuario {user.id_usuario} for segment {self.segment.get('nome')}"
             )
             logger.debug(f"LLM response: {user}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="OpenAI user generation call",
                     agent=self.get_metadata(),
                     activity="generate_user",
@@ -251,8 +242,8 @@ class UserGeneratorAgent:
                 )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in UserGeneratorAgent: {e}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="Pydantic validation error in UserGeneratorAgent",
                     agent=self.get_metadata(),
                     activity="generate_user",
@@ -261,8 +252,8 @@ class UserGeneratorAgent:
                     llm_output=str(e),
                 )
             raise RuntimeError(f"Failed to generate valid synthetic user: {e}")
-        if tracer:
-            tracer.log(
+        if self.tracer:
+            self.tracer.log(
                 message="Generated synthetic user",
                 agent=self.get_metadata(),
                 activity="generate_user",
@@ -276,10 +267,10 @@ class UserGeneratorAgent:
 
 class ValidatorAgent:
     """
-    Validates a SyntheticUserDraft and produces a CriticOutput. Optionally, can return a SyntheticUserReviewed with avaliacao.critica filled.
+    Validates a SyntheticUserDraft and produces a CriticOutput. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any]):
+    def __init__(self, schema: Dict[str, Any], agent_config: Dict[str, Any], tracer: Optional[Any] = None):
         logger.debug(
             f"ValidatorAgent.__init__ called with schema=..., agent_config={agent_config}"
         )
@@ -291,6 +282,7 @@ class ValidatorAgent:
         self.name = "ValidatorAgent"
         self.model = self.config.get("model", "gpt-4o")
         self.llm_client = openai.ChatCompletion
+        self.tracer = tracer
         logger.debug(f"ValidatorAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
@@ -303,9 +295,7 @@ class ValidatorAgent:
             "model": self.model,
         }
 
-    def validate_user(
-        self, user: SyntheticUserDraft, tracer: TracedGroupChat = None
-    ) -> CriticOutput:
+    def validate_user(self, user: SyntheticUserDraft) -> CriticOutput:
         logger.debug(f"ValidatorAgent.validate_user called for user: {user}")
         schema_json = json.dumps(self.schema, ensure_ascii=False, indent=2)
         prompt = (
@@ -332,8 +322,8 @@ class ValidatorAgent:
             output_json = response.choices[0].message.content
             output = CriticOutput.model_validate_json(output_json)
             logger.info(f"Validation result: {output}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="OpenAI validation call",
                     agent=self.get_metadata(),
                     activity="validate_user",
@@ -347,8 +337,8 @@ class ValidatorAgent:
                 )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in ValidatorAgent: {e}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="Pydantic validation error in ValidatorAgent",
                     agent=self.get_metadata(),
                     activity="validate_user",
@@ -357,8 +347,8 @@ class ValidatorAgent:
                     llm_output=str(e),
                 )
             raise RuntimeError(f"Failed to validate synthetic user: {e}")
-        if tracer:
-            tracer.log(
+        if self.tracer:
+            self.tracer.log(
                 message="Validated synthetic user",
                 agent=self.get_metadata(),
                 activity="validate_user",
@@ -372,10 +362,10 @@ class ValidatorAgent:
 
 class ReviewerAgent:
     """
-    Reviews a SyntheticUserDraft and CriticOutput, and returns a SyntheticUserReviewed with avaliacao.critica and avaliacao.revisao filled.
+    Reviews a SyntheticUserDraft and CriticOutput, and returns a SyntheticUserReviewed. Optionally logs events using a tracer (any object with a .log method).
     """
 
-    def __init__(self, agent_config: Dict[str, Any], schema: Dict[str, Any]):
+    def __init__(self, agent_config: Dict[str, Any], schema: Dict[str, Any], tracer: Optional[Any] = None):
         logger.debug(
             f"ReviewerAgent.__init__ called with agent_config={agent_config}, schema=..."
         )
@@ -387,6 +377,7 @@ class ReviewerAgent:
         self.model = self.config.get("model", "gpt-4o")
         self.schema = schema
         self.llm_client = openai.ChatCompletion
+        self.tracer = tracer
         logger.debug(f"ReviewerAgent initialized: {self.get_metadata()}")
 
     def get_metadata(self) -> dict:
@@ -399,12 +390,7 @@ class ReviewerAgent:
             "model": self.model,
         }
 
-    def review_user(
-        self,
-        user: SyntheticUserDraft,
-        critic_output: CriticOutput,
-        tracer: TracedGroupChat = None,
-    ) -> dict:
+    def review_user(self, user: SyntheticUserDraft, critic_output: CriticOutput) -> dict:
         logger.debug(
             f"ReviewerAgent.review_user called for user: {user}, critic_output: {critic_output}"
         )
@@ -442,8 +428,8 @@ class ReviewerAgent:
                     f"Reviewed after critic: {critic_output}"
                 )
             logger.info(f"Review result: {improved_user}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="OpenAI review call",
                     agent=self.get_metadata(),
                     activity="review_user",
@@ -454,8 +440,8 @@ class ReviewerAgent:
                 )
         except PydanticValidationError as e:
             logger.error(f"Pydantic validation error in ReviewerAgent: {e}")
-            if tracer:
-                tracer.log(
+            if self.tracer:
+                self.tracer.log(
                     message="Pydantic validation error in ReviewerAgent",
                     agent=self.get_metadata(),
                     activity="review_user",
@@ -465,8 +451,8 @@ class ReviewerAgent:
                 )
             raise RuntimeError(f"Failed to review synthetic user: {e}")
         reviewed = {"update_synthetic_user": improved_user}
-        if tracer:
-            tracer.log(
+        if self.tracer:
+            self.tracer.log(
                 message="Reviewed synthetic user",
                 agent=self.get_metadata(),
                 activity="review_user",
@@ -484,7 +470,7 @@ def resolve_path(base_dir, path):
 
 class Orchestrator:
     """
-    Orchestrates the synthetic user generation workflow, coordinating all agents.
+    Orchestrates the synthetic user generation workflow, coordinating all agents and passing a tracer for logging.
     """
 
     def __init__(
@@ -494,6 +480,7 @@ class Orchestrator:
         agent_state_path: str,
         output_file: str,
         append: bool,
+        tracer: Optional[Any] = None,
     ):
         logger.debug(
             f"Orchestrator.__init__ called with config_path={config_path}, agent_config_path={agent_config_path}, agent_state_path={agent_state_path}, output_file={output_file}, append={append}"
@@ -516,7 +503,7 @@ class Orchestrator:
         self.append = append
         output_dir = os.path.dirname(self.output_file)
         os.makedirs(output_dir, exist_ok=True)
-        self.tracer = TracedGroupChat(
+        self.tracer = tracer or TracedGroupChat(
             os.path.join(PROJECT_ROOT, self.config["log_file"])
         )
         logger.info(f"Orchestrator output_file set to {self.output_file}")
@@ -566,9 +553,10 @@ class Orchestrator:
                 self.agent_state,
                 self.user_id_field,
                 self.schema,
+                tracer=self.tracer,
             )
-            validator = ValidatorAgent(self.schema, self.agent_config["ValidatorAgent"])
-            reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"], self.schema)
+            validator = ValidatorAgent(self.schema, self.agent_config["ValidatorAgent"], tracer=self.tracer)
+            reviewer = ReviewerAgent(self.agent_config["ReviewerAgent"], self.schema, tracer=self.tracer)
             segment_users = []
             for i in range(num_usuarios):
                 overall_user_count += 1
@@ -587,11 +575,11 @@ class Orchestrator:
                 logger.debug(
                     f"Generating user {i+1}/{num_usuarios} for segment {segment['nome']}"
                 )
-                user = generator.generate_user(tracer=self.tracer)
+                user = generator.generate_user()
                 logger.debug(
                     f"Validating user {i+1}/{num_usuarios} for segment {segment['nome']}"
                 )
-                critic_output = validator.validate_user(user, tracer=self.tracer)
+                critic_output = validator.validate_user(user)
                 if critic_output.recommendation != "accept":
                     logger.warning(
                         f"Validation failed for user {i+1} in segment {segment['nome']}"
@@ -609,7 +597,7 @@ class Orchestrator:
                         f"Reviewing user {i+1}/{num_usuarios} for segment {segment['nome']}"
                     )
                     reviewed = reviewer.review_user(
-                        user, critic_output, tracer=self.tracer
+                        user, critic_output
                     )
                     user = reviewed["update_synthetic_user"]
                 else:
